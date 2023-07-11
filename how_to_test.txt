@@ -1,0 +1,11 @@
+POSSIBLE TESTS
+
+1. generating classes + relevance scores of most important neurons of a layer
+2. generating classes + id of most highly activated neuron per layer
+3. relevance scores of all (?!) neurons of a layer
+3. generating classes + prediction + k most relevant neurons -> CMIsymb()
+4. test just one image, activations of all neurons are datapoints?
+5. train for shape, remove shape from variables, 
+6. add "time component" generating factors before neuron attributions
+7. 
+
