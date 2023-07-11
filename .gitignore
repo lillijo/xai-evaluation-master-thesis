@@ -1,3 +1,15 @@
+# data stuff
+*.pickle
+*.zip
+zennit-crp/
+trained_models/
+NetDissect/
+dsprites-dataset/
+crp-stuff/
+concept-embeddings-and-ilp/
+clevr-xai/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -127,6 +139,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+env.yml
+*.txt
 
 # Spyder project settings
 .spyderproject
