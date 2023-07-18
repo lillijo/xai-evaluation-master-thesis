@@ -7,7 +7,11 @@ NetDissect/
 dsprites-dataset/
 crp-stuff/
 concept-embeddings-and-ilp/
+causal-crp-layers/
 clevr-xai/
+model_0
+model_1
+model_2
 
 
 # Byte-compiled / optimized / DLL files
