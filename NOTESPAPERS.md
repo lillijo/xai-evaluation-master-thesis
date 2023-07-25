@@ -1229,7 +1229,6 @@ all current research fields:
 - showing strongest activating image (deep dreamed or something) for different classes
 
 ## Disentangled Explanations of Neural Network Predictions by Finding Relevant Subspaces
-
 - this is the paper with PCA?
 - disentangle explanations by finding relevant subspaces in activation space that can be mapped to more abstract human-understandable concepts and enable a joint attribution on concepts and input features
 - extend PCA to PRCA (principal relevant component analysis) and disentangled relevant subspace analysis (DRSA)
@@ -1249,4 +1248,34 @@ all current research fields:
 
 
 ## Inducing Causal Structure for Interpretable Neural Networks
+- learning from data while inducing a deterministic program/bayesian network (=SCM) 
+- by aligning neural model with causal model
+- *interchange intervention training* IIT
+- model has counterfactual behavior of causal model
+- "[...causal... ] insights have the potential to make up for gaps in available data, or more generally to provide useful inductive biases"
+- interchange interventions: swapping of internal states created for different inputs
+- seems kinda ridiculous to try and enforcea causal structure for a NN
 
+## Neural Network Attributions: A Causal Perspective
+- nn is viewed as SCM, computing causal effect from that
+-this approach induces a setting where input neurons are not causally related to each other, but can be jointly caused by a latent confounder
+- We note that our work is different from a related subfield of structure learning, where the goal is to discern the causal structure in given data. The objective of our work is to identify the causal influence of an input on a learned function’s (neural network’s) output
+- non-identifiability of “source of error”: *"It is impossible to distinguish whether an erroneous heatmap is an artifact of the attribution method or a consequence of poor representations learnt by the network"*
+- do not explicitly attempt to find the causal direction
+- for Recurrent Neural Networks: need to "time unfold" them
+- compute interventional expectations (changing other inputs while keeping one fixed)
+- setting: assume independency of input neurons
+- compute ACE (average causal effect) using interventional expectation and baseline
+- -> define baseline: E_xi[E_y[y | do(xi = a)]]. in practice: perturb input neuron xi uniformly in fixed intervals [low_i, high_i] and compute interventional expectation
+- interventional expectation: is function of xi, assume polynomial
+- use "Bayesian model selection" to determine optimal order of polynomial by maximizing marginal likelihood given data
+- learn *causal regressors* and obtain ACE by evaluating them at xi = a and subtract from baseline_xi
+- for recurrent nns: can't use distribution of data, estimate means and covariances after evaluating RNN for each input sequence with value at xi = a
+- would usually need Hessian for calculating interv. exp. -> estimate using taylor decomposition
+
+
+## Towards Higher-Order & Disentangled XAI (Montavon)
+- for scientific applications -> find influential proteins in networks
+- predict proteins from other proteins with best possible accuracy
+- multiplication example:  f(x) = x1*x2 + x3 -> 6 = 3*1+2 or 6 = 2*2 + 2?
+- better: "higher-order explanation": x1 and x2 contribute jointly
