@@ -18,6 +18,8 @@ model_5
 model_6
 MNIST/
 cache/
+dsprites-cache/
+causal-dsprites-cache/
 .vscode/
 
 
