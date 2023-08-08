@@ -16,11 +16,14 @@ model_3
 model_4
 model_5
 model_6
+model_7
 MNIST/
 cache/
 dsprites-cache/
 causal-dsprites-cache/
+causal-unbiased-cache/
 .vscode/
+*.npy
 
 
 # Byte-compiled / optimized / DLL files
