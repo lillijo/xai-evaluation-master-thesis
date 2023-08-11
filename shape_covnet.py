@@ -47,6 +47,8 @@ def train_one_epoch(
     for i, data in (pbar := tqdm(enumerate(training_loader))):
         # Every data instance is an input + label pair
         inputs, labels = data
+        if torch.cuda.is_available():
+            inputs, labels = inputs.cuda(), labels.cuda()
         # Zero your gradients for every batch!
         optimizer.zero_grad()
         # Make predictions for this batch
@@ -77,6 +79,10 @@ def train_network(
     training_loader, batch_size=128, load=False, path="model_dsprites.pickle"
 ):
     model = ShapeConvolutionalNeuralNetwork()
+    
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    print(device)
+    model = model.to(device)
     if load:
         model.load_state_dict(torch.load(path))
         return model

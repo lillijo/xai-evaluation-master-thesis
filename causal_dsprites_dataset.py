@@ -42,7 +42,6 @@ class CausalDSpritesDataset(Dataset):
                 )
             )
             self.causal_indices, self.watermarks = self.causal_process(len(self.labels))
-            self.unbiased_watermarks = self.rng.uniform(0, 1, len(self.labels)) > 0.7
 
     def __len__(self):
         if self.train:
@@ -68,7 +67,15 @@ class CausalDSpritesDataset(Dataset):
         )
         lats = np.zeros((length, 6))
         # shape
-        lats[:, 1] = generator + self.rng.normal(0.0, 0.02, length)
+        if self.causal:
+            lats[:, 1] = generator + self.rng.normal(0.0, 0.02, length)
+            lats[np.where(lats[:, 1] > 1), 1] = 1
+            lats[np.where(lats[:, 1] < 0), 1] = 0
+            lats[:, 1] = self.bin_to_size(
+                lats[:, 1], self.latents_sizes[1]
+            )
+        else:
+            lats[:, 1] = self.rng.integers(0, 3, length)
         # scale
         lats[:, 2] = self.rng.integers(0, self.latents_sizes[2], length)
         # orientation
@@ -83,14 +90,9 @@ class CausalDSpritesDataset(Dataset):
         lats[:, 5] = self.rng.integers(
             0, self.latents_sizes[5], length
         )  # lats[:, 4] + self.rng.normal(0, 0.2, length)
-        for latent in range(1, 6):
-            if latent == 1:
-                lats[np.where(lats[:, latent] > 1), latent] = 1
-                lats[np.where(lats[:, latent] < 0), latent] = 0
-                lats[:, latent] = self.bin_to_size(
-                    lats[:, latent], self.latents_sizes[latent]
-                )
-            if self.verbose:
+
+        if self.verbose:
+            for latent in range(1, 6):
                 # print distributions of latent variables
                 for s in range(self.latents_sizes[latent]):
                     print(
@@ -106,10 +108,7 @@ class CausalDSpritesDataset(Dataset):
         if self.train:
             index += TEST_DATASET_LENGTH
         causal_index = self.causal_indices[index]
-        if self.causal:
-            has_watermark = self.watermarks[index]
-        else:
-            has_watermark = self.unbiased_watermarks[index]
+        has_watermark = self.watermarks[index]
         img_path = os.path.join(self.img_dir, f"{causal_index}.npy")
         image = np.load(img_path)
         image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
@@ -121,8 +120,6 @@ class CausalDSpritesDataset(Dataset):
     def get_item_info(self, index):
         causal_index = self.causal_indices[index]
         has_watermark = self.watermarks[index]
-        if not self.causal:
-            has_watermark = self.unbiased_watermarks[index]
         return (self.labels[causal_index][1:], has_watermark)
 
 

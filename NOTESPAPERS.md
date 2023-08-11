@@ -1279,3 +1279,12 @@ all current research fields:
 - predict proteins from other proteins with best possible accuracy
 - multiplication example:  f(x) = x1*x2 + x3 -> 6 = 3*1+2 or 6 = 2*2 + 2?
 - better: "higher-order explanation": x1 and x2 contribute jointly
+
+## When are Post-hoc Conceptual Explanations Identifiable?
+- concept discovery should be identifiable, meaning that a number of known concepts can be provably recovered to guarantee reliability of the explanations
+- use automatic/ unsupervised concept discovery 
+- unsupervised concept spaces can be highly distorted
+- methods such as PCA and ICA (independent component analysis) cover independent non-gaussian ground truth components.
+- in practice: complex dependencies, generative models often use gaussian distribution
+- concept discovery method based on *independent mechanisms*
+- 
