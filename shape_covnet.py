@@ -1,15 +1,12 @@
-import torch.nn as nn
 import numpy as np
 import torch.nn as nn
 import torch
 import os
-
-# from torchvision import transforms, utils
-import pickle
-import torchvision
+from torch import manual_seed
 from torch.optim import SGD
 from tqdm import tqdm
 
+SEED = 42
 
 class ShapeConvolutionalNeuralNetwork(nn.Module):
     def __init__(self):
@@ -78,12 +75,14 @@ def train_one_epoch(
 def train_network(
     training_loader, batch_size=128, load=False, path="model_dsprites.pickle"
 ):
+    #manual_seed(SEED)
+    #np.random.seed(SEED)
     model = ShapeConvolutionalNeuralNetwork()
     
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     print(device)
     model = model.to(device)
-    if load:
+    if load and os.path.exists(path):
         model.load_state_dict(torch.load(path))
         return model
     loss_fn = nn.CrossEntropyLoss()

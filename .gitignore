@@ -21,8 +21,8 @@ MNIST/
 cache/
 dsprites-cache/
 causal-dsprites-cache/
-causal-unbiased-cache/
-causal-noncausal-unbiased-cache/
+unbiased-cache/
+biased-cache/
 .vscode/
 *.npy
 

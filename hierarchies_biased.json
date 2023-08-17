@@ -1,0 +1,216 @@
+{
+  "0": {
+    "0": {
+      "linear_layers.2_0": {
+        "linear_layers.0_4": 0.6389466929435728,
+        "linear_layers.0_2": 0.17502696512266983,
+        "linear_layers.0_3": 0.15835305184125914,
+        "linear_layers.0_1": -0.007673236429691315
+      },
+      "linear_layers.0_4": { "convolutional_layers.2_5": 0.06 },
+      "linear_layers.0_2": { "convolutional_layers.2_5": -0.06 },
+      "linear_layers.0_3": { "convolutional_layers.2_5": -0.06 },
+      "linear_layers.0_0": {},
+      "linear_layers.0_1": { "convolutional_layers.2_5": -0.06 },
+      "linear_layers.0_5": {},
+      "convolutional_layers.2_0": {},
+      "convolutional_layers.2_1": {},
+      "convolutional_layers.2_2": {},
+      "convolutional_layers.2_3": {},
+      "convolutional_layers.2_4": {},
+      "convolutional_layers.2_5": {
+        "convolutional_layers.0_1": -6.320778993540443e-8,
+        "convolutional_layers.0_3": -3.992529818788171e-5,
+        "convolutional_layers.0_2": -0.009782928228378295,
+        "convolutional_layers.0_4": -0.007810524553060532,
+        "convolutional_layers.0_0": -0.010520988702774048,
+        "convolutional_layers.0_5": -0.0318455696105957
+      }
+    },
+    "1": {
+      "linear_layers.2_0": {
+        "linear_layers.0_0": 0.856518843173981,
+        "linear_layers.0_5": -0.1234811635315419
+      },
+      "linear_layers.0_0": { "convolutional_layers.2_5": 0.9800000000000005 },
+      "linear_layers.0_1": {},
+      "linear_layers.0_2": {},
+      "linear_layers.0_3": {},
+      "linear_layers.0_4": {},
+      "linear_layers.0_5": { "convolutional_layers.2_5": -0.9800000000000005 },
+      "convolutional_layers.2_5": {
+        "convolutional_layers.0_2": 0.4095816743373872,
+        "convolutional_layers.0_0": 0.06272229231894018,
+        "convolutional_layers.0_4": 0.1676235526800156,
+        "convolutional_layers.0_3": 0.16123559981584554,
+        "convolutional_layers.0_5": 0.17807101070880896
+      },
+      "convolutional_layers.2_0": {},
+      "convolutional_layers.2_1": {},
+      "convolutional_layers.2_2": {},
+      "convolutional_layers.2_3": {},
+      "convolutional_layers.2_4": {}
+    }
+  },
+  "1": {
+    "0": {
+      "linear_layers.2_2": {
+        "linear_layers.0_1": 0.744938864707947,
+        "linear_layers.0_0": -0.007460419544950128,
+        "linear_layers.0_4": -0.03413294222205876,
+        "linear_layers.0_5": -0.07346777109138203
+      },
+      "linear_layers.0_1": { "convolutional_layers.2_5": 0.9600000000000005 },
+      "linear_layers.0_2": {},
+      "linear_layers.0_3": {},
+      "linear_layers.0_5": { "convolutional_layers.2_5": -0.7400000000000003 },
+      "linear_layers.0_4": { "convolutional_layers.2_5": -0.9200000011920935 },
+      "linear_layers.0_0": { "convolutional_layers.2_5": 0.0 },
+      "convolutional_layers.2_5": {
+        "convolutional_layers.0_5": 0.40169060170650484,
+        "convolutional_layers.0_0": 0.154222978502512,
+        "convolutional_layers.0_2": 0.19163916483521465,
+        "convolutional_layers.0_4": 0.2261001612618565,
+        "convolutional_layers.0_3": 0.006316382933728166,
+        "convolutional_layers.0_1": 1.476450856898737e-6
+      },
+      "convolutional_layers.2_0": {},
+      "convolutional_layers.2_1": {},
+      "convolutional_layers.2_2": {},
+      "convolutional_layers.2_3": {},
+      "convolutional_layers.2_4": {},
+      "linear_layers.2_0": {},
+      "linear_layers.2_1": {
+        "linear_layers.0_1": 0.06070598244667054,
+        "linear_layers.0_5": 0.0052216747100465,
+        "linear_layers.0_4": -0.013894647061824798,
+        "linear_layers.0_0": 0.00017769759986549616
+      }
+    },
+    "1": {
+      "linear_layers.2_1": {
+        "linear_layers.0_1": 0.7462187522649767,
+        "linear_layers.0_5": 0.20417026836425065,
+        "linear_layers.0_0": 0.0015441210940480231,
+        "linear_layers.0_4": -0.008066859468817711
+      },
+      "linear_layers.0_1": { "convolutional_layers.2_5": 0.9600000000000005 },
+      "linear_layers.0_5": { "convolutional_layers.2_5": 0.9200000000000005 },
+      "linear_layers.0_0": { "convolutional_layers.2_5": 0.19999999999999998 },
+      "linear_layers.0_2": {},
+      "linear_layers.0_3": {},
+      "linear_layers.0_4": { "convolutional_layers.2_5": 0.02 },
+      "convolutional_layers.2_5": {
+        "convolutional_layers.0_5": 0.39048592656850817,
+        "convolutional_layers.0_0": 0.16600396905094383,
+        "convolutional_layers.0_2": 0.21902924366295345,
+        "convolutional_layers.0_4": 0.18867978543043132,
+        "convolutional_layers.0_3": 0.015379240686306733,
+        "convolutional_layers.0_1": 5.957099027398273e-7
+      },
+      "convolutional_layers.2_0": {},
+      "convolutional_layers.2_1": {},
+      "convolutional_layers.2_2": {},
+      "convolutional_layers.2_3": {},
+      "convolutional_layers.2_4": {},
+      "linear_layers.2_0": {}
+    }
+  },
+  "2": {
+    "0": {
+      "linear_layers.2_2": {
+        "linear_layers.0_1": 0.785411434173584,
+        "linear_layers.0_4": -0.06498937524855138,
+        "linear_layers.0_5": -0.038394581265747546,
+        "linear_layers.0_2": -0.00877954512834549,
+        "linear_layers.0_3": -0.005168311148881912,
+        "linear_layers.0_0": -0.01725675031542778
+      },
+      "linear_layers.0_1": { "convolutional_layers.2_5": 0.8600000000000004 },
+      "linear_layers.0_0": { "convolutional_layers.2_5": -0.12000000000000001 },
+      "linear_layers.0_3": { "convolutional_layers.2_5": -0.02 },
+      "linear_layers.0_5": { "convolutional_layers.2_5": -0.6400000000000002 },
+      "linear_layers.0_4": { "convolutional_layers.2_5": -0.6999999594688419 },
+      "linear_layers.0_2": { "convolutional_layers.2_5": 0.09999999880790711 },
+      "convolutional_layers.2_5": {
+        "convolutional_layers.0_2": 0.14835922677069893,
+        "convolutional_layers.0_4": 0.1842432667315006,
+        "convolutional_layers.0_5": 0.3785325893759728,
+        "convolutional_layers.0_0": 0.1432883448339999,
+        "convolutional_layers.0_3": 0.005071499951218356,
+        "convolutional_layers.0_1": 1.0014523979862132e-6
+      },
+      "convolutional_layers.2_0": {},
+      "convolutional_layers.2_1": {},
+      "convolutional_layers.2_2": {},
+      "convolutional_layers.2_3": {},
+      "convolutional_layers.2_4": {},
+      "linear_layers.2_0": {
+        "linear_layers.0_4": 0.026286147832870484,
+        "linear_layers.0_2": 0.007124168872833252,
+        "linear_layers.0_3": 0.004836295694112778,
+        "linear_layers.0_1": -0.0017533869296312331
+      }
+    },
+    "1": {
+      "linear_layers.2_1": {
+        "linear_layers.0_1": 0.2640949130058288,
+        "linear_layers.0_5": 0.11445982545614243,
+        "linear_layers.0_0": 0.0014452654588967564
+      },
+      "linear_layers.0_1": { "convolutional_layers.2_5": 0.7800000000000004 },
+      "linear_layers.0_5": { "convolutional_layers.2_5": -0.21999999999999997 },
+      "linear_layers.0_0": { "convolutional_layers.2_5": 0.14 },
+      "linear_layers.0_2": {},
+      "linear_layers.0_3": {},
+      "linear_layers.0_4": { "convolutional_layers.2_5": -0.04 },
+      "convolutional_layers.2_5": {
+        "convolutional_layers.0_5": 0.2778161010891199,
+        "convolutional_layers.0_4": 0.1125410083308816,
+        "convolutional_layers.0_0": 0.087951348554343,
+        "convolutional_layers.0_1": 4.44890368314077e-6,
+        "convolutional_layers.0_3": -0.06153294173534959,
+        "convolutional_layers.0_2": 0.011309143602848052
+      },
+      "convolutional_layers.2_0": {},
+      "convolutional_layers.2_1": {},
+      "convolutional_layers.2_2": {},
+      "convolutional_layers.2_3": {},
+      "convolutional_layers.2_4": {},
+      "linear_layers.2_2": {
+        "linear_layers.0_1": 0.2116800582408905,
+        "linear_layers.0_5": -0.18605562403798107,
+        "linear_layers.0_4": -0.0020126503705978393,
+        "linear_layers.0_0": -0.02025166127830744
+      },
+      "linear_layers.2_0": {
+        "linear_layers.0_0": 0.07790851652622224,
+        "linear_layers.0_5": -0.045584098175168036,
+        "linear_layers.0_1": -0.016507385969161986
+      }
+    }
+  },
+  "nodes": [
+    "linear_layers.0_5",
+    "convolutional_layers.2_1",
+    "convolutional_layers.0_5",
+    "linear_layers.2_1",
+    "convolutional_layers.2_2",
+    "convolutional_layers.2_3",
+    "convolutional_layers.2_4",
+    "linear_layers.0_2",
+    "convolutional_layers.2_0",
+    "linear_layers.2_2",
+    "linear_layers.0_1",
+    "convolutional_layers.0_1",
+    "convolutional_layers.0_2",
+    "convolutional_layers.2_5",
+    "linear_layers.0_0",
+    "linear_layers.0_4",
+    "linear_layers.2_0",
+    "convolutional_layers.0_4",
+    "linear_layers.0_3",
+    "convolutional_layers.0_0",
+    "convolutional_layers.0_3"
+  ]
+}
