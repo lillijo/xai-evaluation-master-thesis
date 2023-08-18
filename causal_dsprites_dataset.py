@@ -71,9 +71,7 @@ class CausalDSpritesDataset(Dataset):
             lats[:, 1] = generator + self.rng.normal(0.0, 0.02, length)
             lats[np.where(lats[:, 1] > 1), 1] = 1
             lats[np.where(lats[:, 1] < 0), 1] = 0
-            lats[:, 1] = self.bin_to_size(
-                lats[:, 1], self.latents_sizes[1]
-            )
+            lats[:, 1] = self.bin_to_size(lats[:, 1], self.latents_sizes[1])
         else:
             lats[:, 1] = self.rng.integers(0, 3, length)
         # scale
@@ -125,7 +123,7 @@ class CausalDSpritesDataset(Dataset):
 
 def get_datasets(batch_size=128):
     dsprites_dataset_train = CausalDSpritesDataset(
-        train=True, verbose=True, with_watermark=True
+        train=True, verbose=False, with_watermark=True
     )
     dsprites_dataset_test_biased = CausalDSpritesDataset(
         train=False, with_watermark=True, causal=True

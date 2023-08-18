@@ -1288,3 +1288,7 @@ all current research fields:
 - in practice: complex dependencies, generative models often use gaussian distribution
 - concept discovery method based on *independent mechanisms*
 - 
+
+## Theoretical Behavior of XAI Methods in the Presence of Suppressor Variables
+- simple 2D artifical dataset that is capable of creating "supressor" variables (vairables independent of prediction target)
+- suppresors variable -> like watermark: w->X, Y->X (X=target is a collider -> selection bias)
