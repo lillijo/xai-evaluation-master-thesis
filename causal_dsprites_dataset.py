@@ -159,6 +159,63 @@ def get_datasets(batch_size=128):
     }
 
 
+class BinaryDspritesDataset(Dataset):
+    def __init__(
+        self,
+        train=True,
+        with_watermark=True,
+        causal=True,
+    ):
+        self.train = train
+        self.with_watermark = with_watermark
+        self.causal = causal
+        self.img_dir = "dsprites-dataset/images/"
+        self.rng = np.random.default_rng(seed=42)
+        self.water_image = np.load("watermark.npy")
+        with open("labels.pickle", "rb") as f:
+            labels = pickle.load(f)
+            self.labels = labels
+            self.watermarks = self.causal_process(len(self.labels))
+
+    def __len__(self):
+        if self.train:
+            return TRAINING_DATASET_LENGTH
+        return TEST_DATASET_LENGTH
+
+    def causal_process(self, length):
+        if self.causal and self.with_watermark:
+            watermarks = []
+            for latent in self.labels:
+                if latent[1] == 1 and self.rng.random() > 0.1:
+                    watermarks.append(1)
+                elif latent[1] != 1 and self.rng.random() > 0.9:
+                    watermarks.append(1)
+                else:
+                    watermarks.append(0)
+        elif self.with_watermark:
+            watermarks = self.rng.choice([0, 1], length, True, p=[0.8, 0.2])
+        else:
+            watermarks = np.zeros(length, dtype=np.bool8)
+        return watermarks
+
+    def __getitem__(self, index):
+        if self.train:
+            index += TEST_DATASET_LENGTH
+        has_watermark = self.watermarks[index]
+        img_path = os.path.join(self.img_dir, f"{index}.npy")
+        image = np.load(img_path)
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
+        if has_watermark:
+            image[self.water_image] = 1.0
+        target = self.labels[index][1]
+        if target == 2:
+            target = 0
+        return (image, target)
+
+    def get_item_info(self, index):
+        return (self.labels[index][1:], self.watermarks[index])
+
+
 def main():
     dset = CausalDSpritesDataset()
     print(len(dset))

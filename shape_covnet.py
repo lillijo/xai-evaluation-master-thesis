@@ -7,6 +7,7 @@ from torch.optim import SGD
 from tqdm import tqdm
 
 SEED = 42
+EPOCHS = 3
 
 class ShapeConvolutionalNeuralNetwork(nn.Module):
     def __init__(self):
@@ -22,6 +23,27 @@ class ShapeConvolutionalNeuralNetwork(nn.Module):
             nn.Linear(384, 6),
             nn.ReLU(),
             nn.Linear(6, 3),
+        )
+
+    def forward(self, x):
+        x = self.convolutional_layers(x)
+        x = x.view(x.size(0), -1)
+        x = self.linear_layers(x)
+        return x
+    
+class MiniNeuralNetwork(nn.Module):
+    def __init__(self):
+        super(MiniNeuralNetwork, self).__init__()
+        self.convolutional_layers = nn.Sequential(
+            nn.Conv2d(1, 3, kernel_size=9, stride=3, padding=0),
+            nn.ReLU(),
+            nn.Conv2d(3, 3, kernel_size=5, stride=3, padding=0),
+            nn.ReLU(),
+        )
+        self.linear_layers = nn.Sequential(
+            nn.Linear(75, 4),
+            nn.ReLU(),
+            nn.Linear(4, 2),
         )
 
     def forward(self, x):
@@ -73,11 +95,15 @@ def train_one_epoch(
 
 
 def train_network(
-    training_loader, batch_size=128, load=False, path="model_dsprites.pickle"
+    training_loader, batch_size=128, load=False, path="model_dsprites.pickle", modeltype="normal"
 ):
     #manual_seed(SEED)
     #np.random.seed(SEED)
+
     model = ShapeConvolutionalNeuralNetwork()
+
+    if modeltype == "mini":
+        model = MiniNeuralNetwork()
     
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     print(device)
@@ -88,7 +114,6 @@ def train_network(
     loss_fn = nn.CrossEntropyLoss()
     optimizer = SGD(model.parameters(), lr=0.03, momentum=0.55)
     epoch_number = 0
-    EPOCHS = 4
     best_vloss = 1_000_000.0
     for epoch in range(EPOCHS):
         print("EPOCH {}:".format(epoch_number + 1))

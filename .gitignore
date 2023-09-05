@@ -23,6 +23,8 @@ dsprites-cache/
 causal-dsprites-cache/
 unbiased-cache/
 biased-cache/
+unbiased-cache-mini/
+biased-cache-mini/
 .vscode/
 *.npy
 
