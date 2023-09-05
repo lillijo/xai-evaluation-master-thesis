@@ -176,7 +176,6 @@ Causal Decision Problem (CDP) using Causal Graphical Model (CGM):
 - should only counterfactually depend along _unfair paths_
 - Therefore we can define fairness by demanding that protected variables do not cause the outcome along an unfair network, i.e., a network that consists entirely of unfair paths.
 
-
 ## XAI Methods for Neural Time Series Classification: A Brief Review
 
 - a) predicting a sample given a set of samples, b) assign a sample to one of known groups of samples
@@ -445,6 +444,8 @@ Hurley and Rickard, 2009 -> gini index
 - trained on real life image classification cnn -> testing "global" property _area of object_ (as fraction of image pixels based on ground truth)
 - Note that a saliency map only highlights the region in the image that contains, for example, the yellow lores, while our method can distinguish between the area and the color of this region as different features
 - feature _symmetry_ of a skin lesion
+- "feature of interest" is chosen and described manually
+- treat model as black box -> only look at dependence between feature and model output
 
 ## Persuasive Contrastive Explanations for Bayesian Networks
 
@@ -1215,7 +1216,7 @@ all current research fields:
 
 ## CASTLE: Regularization via Auxiliary Causal Graph Discovery
 
-- regulaization improves generalization of supervised models to out-of-sample data
+- regularization improves generalization of supervised models to out-of-sample data
 - causal direction has better accuracy than anti-causal
 - CASTLE: causal strucure learning regulaization
 - learns DAG as adjacency matrix embedded in nn input layers
@@ -1225,10 +1226,11 @@ all current research fields:
 
 ## Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps
 
-- showing heatmaps (and cutting according to segmenation)
+- showing heatmaps (and cutting according to segmentation)
 - showing strongest activating image (deep dreamed or something) for different classes
 
 ## Disentangled Explanations of Neural Network Predictions by Finding Relevant Subspaces
+
 - this is the paper with PCA?
 - disentangle explanations by finding relevant subspaces in activation space that can be mapped to more abstract human-understandable concepts and enable a joint attribution on concepts and input features
 - extend PCA to PRCA (principal relevant component analysis) and disentangled relevant subspace analysis (DRSA)
@@ -1246,21 +1248,22 @@ all current research fields:
 - therefore PRCA ignores high variance directions if model responds invariant or negatively to these variations
 - DRSA: relevant and _disentangled_ e.g low spatial overlap
 
-
 ## Inducing Causal Structure for Interpretable Neural Networks
-- learning from data while inducing a deterministic program/bayesian network (=SCM) 
+
+- learning from data while inducing a deterministic program/bayesian network (=SCM)
 - by aligning neural model with causal model
-- *interchange intervention training* IIT
+- _interchange intervention training_ IIT
 - model has counterfactual behavior of causal model
 - "[...causal... ] insights have the potential to make up for gaps in available data, or more generally to provide useful inductive biases"
 - interchange interventions: swapping of internal states created for different inputs
-- seems kinda ridiculous to try and enforcea causal structure for a NN
+- seems kinda ridiculous to try and enforce a causal structure for a NN
 
 ## Neural Network Attributions: A Causal Perspective
+
 - nn is viewed as SCM, computing causal effect from that
--this approach induces a setting where input neurons are not causally related to each other, but can be jointly caused by a latent confounder
+  -this approach induces a setting where input neurons are not causally related to each other, but can be jointly caused by a latent confounder
 - We note that our work is different from a related subfield of structure learning, where the goal is to discern the causal structure in given data. The objective of our work is to identify the causal influence of an input on a learned function’s (neural network’s) output
-- non-identifiability of “source of error”: *"It is impossible to distinguish whether an erroneous heatmap is an artifact of the attribution method or a consequence of poor representations learnt by the network"*
+- non-identifiability of “source of error”: _"It is impossible to distinguish whether an erroneous heatmap is an artifact of the attribution method or a consequence of poor representations learnt by the network"_
 - do not explicitly attempt to find the causal direction
 - for Recurrent Neural Networks: need to "time unfold" them
 - compute interventional expectations (changing other inputs while keeping one fixed)
@@ -1269,26 +1272,374 @@ all current research fields:
 - -> define baseline: E_xi[E_y[y | do(xi = a)]]. in practice: perturb input neuron xi uniformly in fixed intervals [low_i, high_i] and compute interventional expectation
 - interventional expectation: is function of xi, assume polynomial
 - use "Bayesian model selection" to determine optimal order of polynomial by maximizing marginal likelihood given data
-- learn *causal regressors* and obtain ACE by evaluating them at xi = a and subtract from baseline_xi
+- learn _causal regressors_ and obtain ACE by evaluating them at xi = a and subtract from baseline_xi
 - for recurrent nns: can't use distribution of data, estimate means and covariances after evaluating RNN for each input sequence with value at xi = a
 - would usually need Hessian for calculating interv. exp. -> estimate using taylor decomposition
 
-
 ## Towards Higher-Order & Disentangled XAI (Montavon)
+
 - for scientific applications -> find influential proteins in networks
 - predict proteins from other proteins with best possible accuracy
-- multiplication example:  f(x) = x1*x2 + x3 -> 6 = 3*1+2 or 6 = 2*2 + 2?
+- multiplication example: f(x) = x1*x2 + x3 -> 6 = 3*1+2 or 6 = 2\*2 + 2?
 - better: "higher-order explanation": x1 and x2 contribute jointly
 
 ## When are Post-hoc Conceptual Explanations Identifiable?
+
 - concept discovery should be identifiable, meaning that a number of known concepts can be provably recovered to guarantee reliability of the explanations
-- use automatic/ unsupervised concept discovery 
+- use automatic/ unsupervised concept discovery
 - unsupervised concept spaces can be highly distorted
-- methods such as PCA and ICA (independent component analysis) cover independent non-gaussian ground truth components.
+- methods such as PCA and ICA (independent component analysis) cover independent non-gaussian ground truth components. (no causal/spurious links)
 - in practice: complex dependencies, generative models often use gaussian distribution
-- concept discovery method based on *independent mechanisms*
-- 
+- concept discovery method based on _independent mechanisms_
+- identifiability is important concept for my thesis. Statement: "if a known number of _ground truth components_ generated the data, the concept discovery method provably yields concepts that correspond to the individual ground truth components and can correctly represent an input in the concept space"
+- utilize "_visual compositionality properties_": tiny changes in (generative) components affect input images in orthogonal or even disjoint ways
+- -> new discovery method from this using "disjoint/independent mechanisms" criterion
+- **disjoint mechanism analysis (DMA)**:
+- **independent mechanism analysis (IM A)**:
+- Träuble et al. (2021) shows that even if just two components of a dataset are correlated, current disentanglement learning methods fail
+- unsupervised disentanglement, without further conditions, is impossible (Hyvärinen and Pajunen, 1999; Locatello et al., 2019; Moran et al., 2022)
+- using idea of concept activation vectors (CAVs)
+- **terminology**: _components_ in ground truth, _concepts_ in learned representations/directions
+- faithful encoder: ground truth components are recoverable with full rank, f is lazy and invariant to changes in x which cannot be explained by ground truth components
+- -> sufficient to find encoder Mf whose Jacobian MJ_f has disjoint rows
+- searching for an M Jf with orthogonal (instead of disjoint) rows permits post-hoc discovery of concepts. We refer to is property of M Jf as the _IMA criterion_.
 
 ## Theoretical Behavior of XAI Methods in the Presence of Suppressor Variables
+
 - simple 2D artifical dataset that is capable of creating "supressor" variables (vairables independent of prediction target)
 - suppresors variable -> like watermark: w->X, Y->X (X=target is a collider -> selection bias)
+- a feature is important if it has a statistical dependence with target variable
+- experiment: X1 = z+e where z=y, X2 = e, -> perfect prediction of z = X1- X2 = z +e -e = y
+- watermarks are confounders? (according to Sebastian Lapuschkin)
+- "in practice, XAI methods do not distinguish whether a feature is a confounder or a suppressor, which can lead to misunderstandings about a model’s performance and interpretation"
+- Linear Generative Model: x= az+e, y=z, z = Rademacher(1/2), a=(1,0)^T,, H = N(0,SIG) where SIG is covariance matrix
+- argument: for linear models suppressor variable should be irrelevant, it is "glass box". however XAI methods attribute non-zero importance
+  -> even a "bayes optimal classifier" attributes importance -> need to know suppressor variable to accurately predict
+- Haufe: covariance between model output and each input feature -> global importance map: "linear activation pattern" -> works
+- faithfulness + pixel flipping assigns importance to suprresor feature:
+- simplest form: set corresponding weight of feature to 0 -> squared error of expectation of accuracy with and without feature -> does not work
+- permutation: random permutations of feature -> also assigne importance, does not work
+- partial dependency plots: does not work with correlated data
+- **marginal plots**: vis. assess scatter plots of y as function of individual features -> vainishing importance of suppressor var -> works???
+- shapley values: difference between "value functions" of all subsets including feature and all subsets not including feature
+- assess differenct value functions: "coefficient of multiple determination"
+- value function "R² measure", shapley values work because x2 has no importance assigned
+- SHAP: "shapley additive explanations" (approximate by assuming feature independence), can be extended with conditional expectation
+- counterfactual explanations: for linear: just closest point of decision boundary -> includes shift in x2 -> does not work
+- FIRM (feature importance ranking measure) -> conditional expectation ~ do-operator? -> works
+- integrated gradients: does not work
+- LIME: constructs "glass box" linear model in local neighbourhood -> real linear model assigns weight to x2 -> does not work
+- Saliency Maps, LRP, Deep Taylor decomposition (DTD), DTD works sometimes, depends on parameters, "DTD can generally yield almost any explanation"
+- methods that "work" use the statistics of the training data including correlation structure of data and not just model
+- whole idea is questionable: if "suppressor variable" is necessary to predict accurately, it should have importance!
+- most methods only fail when correlation is present between x1 and x2 (watermark and shape)
+
+## Restricting the Flow: Information Bottlenecks for Attribution
+
+- first impression: similar to CRP but adding noise to intermediate feature masks (instead of boolean masks?)
+- information-theoretic: estimate the information a pixel has
+- "information bottleneck method": "bottleneck" inserted into neural networw, restricts flow by adding noise to activation maps
+- unimportant actiations replaced by noise -> learn parameters per sample or whole dataset ("readout")
+- IBA (information bottlenec attribution)-> "theoretic upper-bound on used information, demonstrating strong empirical performance"
+- "loss function" minimize information flow (optimize intensity of noise) and maximize classification accuracy
+- function: introduce new random variable Z, maximizes shared info with Y, minimize with X: max(I[Y;Z] - b \* I[X;Z])
+- insert bottleneck "where nn still has local information" e.g. after conv layers
+- R is intermediate representation at this layer, add noise to it with factor lambda for each feature (lambda*R + (1-lambda)* noise)
+- assume independence of features (!) - dumb
+
+## When Explanations Lie: Why Many Modified BP Attributions Fail
+
+- analyze lots of backpropagation XAI methods: DTD, LRP, ExcitationBP, PatternAttribution, DeepLIFT, Deconv, RectGrad, GuidedBP
+- they find that explanations independent of parameters of later layers except for DeepLift
+- new evaluation metric: "CSC" - cosine similarity convergence
+- for CuidedBP last layer is fully irrelevant -> problem!
+- modified BP: backpropagate custom relevance score instead of gradient
+- z+ rule (used by DTD, LRP, ExcitationBP) yields multiplication chain of non-negative matrices
+- Our findings show that many modified BP methods are prone to class-insensitive explanations and provide saliency maps that rather highlight low-level features
+- Negative relevance scores are crucial to avoid the convergence to a rank-1 matrix — a possible future research direction
+- z+ rule: only bp positive values
+- theoretical problem: all those methods converge to a rank 1 matrix
+- why not noticed: often only single class prediction tasks (class insensitivity is irrelevant)
+
+## A Rigorous Study Of The Deep Taylor Decomposition
+
+- fundamental assumption of taylor theorem: DTD roots lie in same linear regions as the input -> not true in empirical evaluation
+- many methods simplify to make accessible to human eye: local neighbourhood, assume linearity (gradient-based) or independence (shapley approximation)
+  summary:
+
+1. proof that root points must be contained in same linear region as input
+2. LRP0: if root points locally constant, relevances are similar to input x gradient
+3. DTD underconstrained: if root points depend on lyers input, DTD can create arbitrary explanations
+4. DTD cannot extend to analytic activation functions (e.g. Softplus)
+5. train-free DTD does not enforce root points locations
+6. validate empirically
+7. reproducibility study of Clever-XAI paper -> DTD is black-box, hard to evaluate explanation quality empirically
+
+- problem shown in clever-xai images: it will only show positive evidence -> last layer is irrelevant. correctly identifies important region, but has class insensitivity -> if other classes prediction output is > 0 it will give same explanation
+- reproduced clever-xai test, "then compared 1000 saliency maps for the correct answer, an incorrect answer (but from the same category), and the correct answer but a different question"
+- they scaled saliency maps (maybe that is an issue?)
+- indicates that "information leakage" between questionand LRPs saliency map is present
+
+## Sparse Subspace Clustering for Concept Discovery (SSCCD)
+
+- motivation: reveal coherent, discriminative structures exploited by model, rather than accordance with human-identified concepts
+- concepts not one- but low-dimensional subspaces
+- approach does not require reinforcing "interpretability" e.g. enforcing dissimilarity of concepts
+- concept interpretability method: a. concept discovery, b. mapping feature - input space c. relevance quantification
+- for b. translate feature level concept maps to the input level by simple bilinear interpolation
+-
+
+## Identifying Interpretable Subspaces in Image Representations
+
+- method named: Automatic Feature Explanation using Contrasting Concepts (FALCON)
+- captions its highly activating cropped images using a large captioning dataset (like LAION-400m) and a pre-trained vision-language model like CLIP
+- FALCON also applies contrastive interpretation using lowly activating (counterfactual) images, to eliminate spurious concepts
+- We show that features in larger spaces become more interpretable when studied in groups
+- natural language explanations as a complement to heatmaps and visual explanations
+- remove words/ captions that are not highly activating given neuron
+
+## But that's not why: Inference adjustment by interactive prototype deselection
+
+- concepts learned by NN can neither be accessed nor interpreted directly
+- interaction in segmentation tasks has clear focus on "where" aspect, "what" aspect is also important, but harder to access
+- evidence from cognitive psychology suggests that human
+- cognition relies on conceptual spaces that are organized by prototypes
+- "prototypical part networks"
+- propose new method: "deep interactive prototype adjustment (DIPA)"
+- Prototype-based Learning: Prototype-based deep learning builds on the insight that similar features form compact clusters in latent space
+- Prototypes are understood as concepts that are more central for a class as compared to instances which reside close to the decision boundary
+
+## Explaining nonlinear classification decisions with deep Taylor decomposition (DTD)
+
+- 2 properties should be satisified by heatmap/relevance scoring:
+  1. _conservative_ the sum of assigned relevances in the pixel space corresponds to the total relevance detected by the model
+  2. _positive_ all values forming the heatmap are >= zero
+     together _consistency_
+- consistent heatmap is 0 everywhere if f(x) = 0 -> empty heatmap if no object detected
+- **natural decomposition**: prediction function: f(x) = sum_p sigma_p(x_p) where sigma are set of positive nonlinear function applying to each pixel. If there is deactivated state x0_p such that sigma_p(x0_p) = 0, the R_p(x) is effect on prediction of deactivating pixel p
+- **taylor decomposition**: taylor expansion of function at some well chosen root point **x0** where f(x0) = 0
+- _first order taylor expansion_: f(x0) + gradient at x _ (x-x0) + e = 0 + sum over pixel of gradient of f at pixel _ (x_p - x0_p) + e
+- in words: heatmap is element-wise product between gradient of function at root point
+- good root point: removes what causes positive f(x) but minimally changes image
+- if x, x0 in \R then gradient points to same direction as x-x0
+- obtain root by minimizing L2 of z with f(z) = 0 to x min_z||z-x||² -> expensive, not generally solvable due to convexity
+- practically: nearest point x0 often not visually different
+- hard to find nearest root in constrained input space -> further restrict search domain to subset of X
+- for ReLU: has to be positive -> z_ij+ = x_i\*w_ij+ only positive weights
+- _relevance model_: maps set of neuron activations at given layer to relevance of a neuron in a higher layer
+- output of relevance model can be redistributed onto its input variables to backpropagate
+- min-max relevance model:
+  - y_j = max(0, sum_i(x_i\*v_ij + a_j) ) and R_k = sum_j(y_j)
+  - a_j = min(0, sum_l(R_l\*v_lj + d_j) ) -> negative bias=inihibitor: prevents relevance activation of no upper-layer neuron uses it
+- training-free relevance model: assume something as constant
+
+## Learning how to explain neural networks: PatternNet and PatternAttribution
+
+- other methods fail on linear model -> should "work reliably in the limit of simplicity, the linea models"
+- test methods on linear generative data and linear model
+- uses same example as _"Theoretical Behavior of XAI Methods in the Presence of Suppressor Variables"_ with supressor/distractor variable
+- "PatternAttribution is a DTD extension that learns from data how to set the root point"
+
+## Axiomatic Attribution for Deep Network
+
+- paper about Integrated Gradients -> averaging the gradient through multiple attribution steps
+
+## The (Un)reliability of Saliency Methods
+
+- In order to guarantee reliability, we posit that methods should fulfill input invariance
+- "implementation invariance": functionally equivalent networks (different architecture, same output for all inputs) always attribute in an identical way
+- "input invariance":t a saliency method mirrors the sensitivity of the model with respect to transformations of the input
+- evaluated by comparing the saliency heatmaps for the predictions of network 1 and 2, where xi2 is simply the mean shifted input (xi1 + m2 )
+- A saliency method that satisfies input invariance will produce identical saliency heatmaps for Network 1 and 2 despite the constant shift in input
+- bold assumption: network 1 and network 2 have "identical f(x)"
+- gradient and signal methods (guided Backprop, DeConvNet..) are input invariant -> attribution entirely function of weights
+- gradientXinput fails, as input shift is carried thorugh to final attribution
+- IntegratedGradients and DTD are dependent on "reference point" -> "baseline" for IG and "root point" for DTD
+- reference point is hyperparameter of those methods
+- input invariance (e.g. adding checkered pattern to image) fails for all methods except DTD with "PA" root point
+- PA = PatternAttribution achieves input invariance
+- for LRP root point = zero vector
+- for PA root point = natural direction of variation in the data -> determined by covariance of data, compensates for input shift
+  PA root point: x0 = x - a*w^T*x, where a^T*w = 1 -> in linear model a = cov/weights*cov
+- reference point is important!
+
+## From Clustering to Cluster Explanations via Neural Networks
+
+- using LRP style explanation method to attribute clustering decision to input features
+- turning clustering method into "neural network" by "neuralizing" it
+
+## Coherence Evaluation of Visual Concepts With Objects and Language
+
+- "how to automatically assess meaningfulness of unsupervised visual concepts using _objects and language_ as forms of supervision"
+- propose Semantic-level, Object and Language-Guided Coherence Evaluation (SOLaCE)
+- assigns "semantic meanings" in the form of words to concepts and evaluates "degree of meaningfulness"
+- with user study that confirms that evaluations highly agree with human perception of coherence
+- thesis: "_meaningful visual concepts have concise descriptions in natural language_"
+
+## Challenging Common Assumptions in the Unsupervised Learning of Disentangled Representations
+
+- "The key idea behind the unsupervised learning of disentangled representations is that real-world data is generated by a few explanatory factors of variation which can be recovered by unsupervised learning algorithms"
+- "theoretically show that the unsupervised learning of disentangled representations is fundamentally impossible without inductive biases on both the models and the data"
+- often assumed: 2-step generative process: random latent Z (variance/"meaningful" noise), X sampled from P(X|Z) -> basically f(x) is extracting useful info
+- claim of other work: _disentangled_ representations should be able to "integrate out nuisance factors, perform interventions and answer counterfactual questions (pearl)"
+- SOTA approaches of _unsupervised disentanglement learning_ mostly **Variational Autoencoders**
+- investigate current approaches with large scale experiment (12000 models)
+- challenged common beliefs:
+  - all methods effective at decorrelating posterior, but dimensions of representation are correlated
+  - random seeds and hyperparameters matter more than model choice -> not "unsupervised"
+  - cannot validate assumption that disentanglement useful for downstream tasks
+- future research therefore: research on inductive bias, why do we need disentanglement, more reproducible experiments, test on datasets of varying complexity
+
+## Explaining Deep Learning Models using Causal Inference
+
+- general framework idea to interpret NN as SCM
+- ability to perform arbitrary causal interventions
+- not like "ablation testing" (turning features on and off)
+- this approach only one time construction of causal abstraction
+- use inherent DAG structure of NN model as skeleton for causal model
+- need to select appropriate transformation function to answer the right _what if_ questions
+- from convolution response matrix to real number phi: R^(p\*q) -> R
+- learn function r = f(PA_r) (r is function of its parents)
+- function for j-th filter in i-th layer can be approximated with r_ij = f_ij(R^i-1)
+- simplest transformation phi: binary: filter has high variance or not
+- other phi: take frobenius norm of matrix
+- sanity check: using SCM as prediction model (using frobenius norm transformation)
+- **_might be good as a reference point to start from_**
+
+## Causal Learning and Explanation of Deep Neural Networks via Autoencoded Activations
+
+- _LOL: In highly sensitive domains like credit scoring or **money laundering**_
+- contributions:
+  - causal model of DNN formulated with human-understandable concepts
+  - unsupervised extraction of concepts highly likely to be human understandable
+  - measure causal effects of inputs and concepts on DNNs outputs
+- formulation of explanation as "What changes can be made to the input for the output to change or stay the same?"
+- "For example, gradient-based methods of explanation such as layerwise relevance propagation (LRP) and Grad–CAM attempt to explain the output activation of a class C in terms of the input P activations, realized for a specific input Pj . While these methods are certainly useful, they don’t provide the causal intervention semantics that are sufficient for robust explanation."
+- adversarial examples show that local behavior of DNNs "does not have semantic relevance"
+- in this work compute _expected causal effect_ (compare effect of intervention to no intervention)
+- if model predicts correctly, then causal effect of any variable on false output is zero (if output binary)
+- which concepts to use? one possible way: activations, but "specific representation of instance features given by activation values does not necessarily have any special relevance"
+- concept representation = transformation on activations
+- desirable properties of concept representation:
+  1. low-dimensional
+  2. concepts are interpretably ("contiguous areas containing consistent interpretable visual features")
+  3. should contain all relevant info needed for achieving target networks task
+- uses autoencoder to construct concepts
+- loss function of autoencoder is "shallow": L1 norm of difference between input and output activations
+- but also "deep" loss incorporating total accuracy of network
+- series of autoencoders for each layer of activations
+
+## Conditional dependence tests reveal the usage of ABCD rule features and bias variables in automatic skin lesion classification
+
+- ABCD rule: Asymmetry, Border, Color, Dermoscopic structures
+- thresholding score out of ABCD features yields high accuracy to detect melanoma
+- features such as asymmetry do not correspond to an image region
+- not relevant because "feature of interest" is predetermined in this case
+- also the method treats model as black box (model agnostic)
+
+## Causes of Outcome Learning: a causal inference-inspired machine learning approach to disentangling common combinations of potential causes of a health outcome
+
+- not just one but multiple/combinations of causes:
+- seeks to discover combinations of exposures that lead to an increased risk of a specific outcome in parts of the population
+- define causal model, fit model on additive scale, decompoes ris contributions, cluster individuals based on risk contributions, hypothesis development
+- study synergistic effects A + B > A and B individually
+-
+
+## Understanding Failures of Deep Networks via Robust Feature Extraction
+
+- method called "Barlow" inspired from _Fault Tree Analysis_
+- approach can be used to reveal _spurious correlations_ and _overemphasized features_
+- Ideally, we would like to find clusters that jointly have large error rates and that cover a significant portion of the total errors from the benchmark
+- most activating images -> not clear which part of image
+- heatmaps -> not clear if overlapping
+- feature attack
+- use top6 max activation images, corresponding heat maps and feature attack images for desired feature
+
+## CXPlain: Causal Explanations for Model Interpretation under Uncertainty
+
+- "we frame the task of providing explanations for the decisions of machine-learning models as a causal learning task, and train causal explanation (CXPlain) models that learn to estimate to what degree certain inputs cause outputs in another machine-learning model"
+- conrtibutions:
+  - causal explanation models (CXPlain) -> train causal model on explaining any ML model
+  - use "bootstrap resampling" to derive uncertainty estimates for feature importance score
+  - experiments show: fast and more accurate than other model-agnostic methods
+- grangers definition of causality: better able to predict Y if X present than only all other variables
+- assumption: causal sufficiency (all relevant variables known), x temporally before y
+- "without input feature" -> mask with zero??? or replacing with mean value or considering (cond?) distribution of feature
+- use loss function to compute predictive error -> causal effect = degree of reduction in error
+- **causal objective**: _L_causal = 1/N sum_l KL(Omega_X_l, A_X_l)_ -> minimize KL-divergence between target importance distribution Omega for given sample X and distribution of importance scores A
+- train supervised learning models on causal "loss" _L_causal_
+- for high-dimensional images -> group pixels
+
+## Pruning by Explaining: A Novel Criterion for Deep Neural Network Pruning
+
+- for transfer-learning setups
+- good for "resource-constrained" application -> little data, no fine-tuning
+- scenario 1: prune pre-trained models, afterwards fine-tuning
+- scenario 2: transfer to data-scarece new task with constrained time, computational power/energy -> mobile/embedded applications
+- (for myself/ causal cause: if you can "prune" certain neurons, their causal effect must be none or extremely small)
+- outperforms other methods quite significantly in their experiments (except in one case "weight magnitude pruning")
+
+## Revealing Hidden Context Bias in Segmentation and Object Detection Through Concept-Specific Explanations
+
+- for segmentation: "heatmap" just resembles segmentation itself (just tresholded)
+- glocal/ CRP: _where_ the model pays attention to and _what_ it sees
+- "Especially in the multi-object context, it is crucial to attain object-class-specific explanations, which is not possible by the analysis of latent activations: Concepts with the highest activation values can refer to any class that is present in the image, such as the horse’s rider, or none at all, since activations do not indicate whether a feature is actually used for inference."
+- basically same content as main paper, showing how to use concept relevance maximization to visualize features and find biases/context dependency -> "context bias"
+
+## From Hope to Safety: Unlearning Biases of Deep Models by Enforcing the Right Reasons in Latent Space
+
+- using CRP to identify biases und then "unlearning" -> dampening effect of bias neurons/activations
+- effectiveness of "Class Artifact Compensation (ClArC)" using Concept Activation Vectors (CAVs) limited by only targeting activations -> not class specific, may only partially unlearn due to "methods indirect regularization"
+- new method "Right Reason ClArC": _explicitly penalizes latent gradient along bias direction_
+- only requires sparse sample-wise label annotation
+- annotations can be acquired semi-automatically using XAI tools
+- "post-hoc model correction based on only few fine-tuning steps"
+- paper compares mostly to TCAV
+- Augmentive ClArC: adds artifact to all samples to make model invariant in that direction
+- Projective ClArC: suppress artifact direction during test phase, does not require fine-tuning
+- bias concept activation vector (CAV) **h** loss term explicitly penalizes magnitude of this vector with L_RR = (feature gradient \* h)^2
+- to ensure that bias direction **h** stays constant: freeze weights of layers <= l during fine-tuning phase
+- ablation study: images that should use "bias" feature, should not suffer in accuracy (e.g. digital clock uses date stamp feature)
+- only uses one layer (last convolutional layer in this case) to find bias concepts
+
+## Reveal to Revise: An Explainable AI Life Cycle for Iterative Bias Correction of Deep Models
+
+- framework combining lots of methods from frauenhofer people in one
+- life cycle:
+  1. Identification of model weakness
+  1. a) explanation embedding: cluster images, find outliers, visualize heatmaps of outliers using **SpRAy**
+  1. b) Concept embedding: **CRP** concept visualization
+  1. Artifact labeling & localization
+  1. a) finding artifact direction (CAV) (e.g. through clustering)
+  1. b) localizing artifact (heatmaps)
+  1. Model Correction -> unlearn artifacts (using RR-ClArC?)
+  1. Model Evaluation
+  1. a) poisoning dataset
+  1. b) Artifact Relevance
+
+## ContrXT: Generating contrastive explanations from any text classifier
+
+- how does model change prediction in contrast to previous models (e.g. due to retraining)
+- not relevant
+
+## Persuasive Contrastive Explanations for Bayesian Networks
+
+- combine questions "why correct" and "how not correct" (to "why outcome t instead of t' ? ")
+- they identify 4 explanation methods:
+  1. explanation o evidence
+  2. explanation of reasoning
+  3. explanation of the model itself
+  4. explanation of decisions
+- paper not really relevant: focuses on bayesian networks
+
+## Towards Best Practice in Explaining Neural Network Decisions with LRP
+
+- used to apply same rule to all layers, now specific rules:
+- COMPOSITE rule = LRP_CMP->
+  - fully connected layers: LRP_epsilonwith e << 1
+  - conv layers: LRP_alpha_beta with alpha,beta in {1,2}
+  - input layer LRP_b /DTD_Z_B
+
+## Learning to Explain: An Information-Theoretic Perspective on Model Interpretation
+
+-
