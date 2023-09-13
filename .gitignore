@@ -23,10 +23,13 @@ dsprites-cache/
 causal-dsprites-cache/
 unbiased-cache/
 biased-cache/
+input-shift-cache/
 unbiased-cache-mini/
 biased-cache-mini/
 .vscode/
 *.npy
+
+formalize-experiment/crp-data
 
 
 # Byte-compiled / optimized / DLL files

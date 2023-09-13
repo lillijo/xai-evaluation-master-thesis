@@ -1626,7 +1626,7 @@ all current research fields:
 
 - combine questions "why correct" and "how not correct" (to "why outcome t instead of t' ? ")
 - they identify 4 explanation methods:
-  1. explanation o evidence
+  1. explanation of evidence
   2. explanation of reasoning
   3. explanation of the model itself
   4. explanation of decisions
@@ -1642,4 +1642,21 @@ all current research fields:
 
 ## Learning to Explain: An Information-Theoretic Perspective on Model Interpretation
 
--
+- instance-wise feature selection: select information-theoretically closest features for each sample
+- maximize mutual information between selected subset of features and response variable
+- firect estimation of MI and discrete subset samping are intractable -> apply lower bound for MI an develop continous reparametrization of sampling distribution
+- results dont seem to be very good
+
+## On the Relationship Between Explanation and Prediction: A Causal View
+
+- look at treatment effect of prediction on explanation when blocking paths to hyperparameters
+- effect is small (probably because hyperparameters and input data make all the difference)
+
+
+## XAI-TRIS: Non-linear benchmarks to quantify ML explanation performance (Benedict Clark, Rick Wilming, Stefan Haufe)
+- suppressor variables in non-linear benchmarks
+- suppressor variable e.g.: background lighting helps with normalizing objects colors
+- 1 linear, 3 non-linear binary image classification problems
+- 2 suitable metrics based on signal detection theory and optimal transport
+- use different kinds of background noise to study effec of suppressor variables on explanation performance
+- evaluate 16 XAI methods, 3 machine learning architectures
