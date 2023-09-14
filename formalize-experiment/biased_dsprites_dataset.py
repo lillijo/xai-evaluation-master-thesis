@@ -79,7 +79,6 @@ class BiasedDSpritesDataset(Dataset):
         watermark = w > self.strength
         shape_r = np.asarray(shape == True).nonzero()
         shape_e = np.asarray(shape == False).nonzero()
-        print(len(shape_r), len(shape_e))
         wms_r = watermark[shape_r[0][:ITEM_L]]
         wms_e = watermark[shape_e[0][:ITEM_L]]
         wms = np.zeros(SIZE, dtype=np.bool8)

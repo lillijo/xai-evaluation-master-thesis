@@ -13,6 +13,7 @@ from crp.attribution import CondAttribution
 from crp.visualization import FeatureVisualization
 from crp.graph import trace_model_graph
 from crp.attribution import AttributionGraph
+from crp.helper import abs_norm
 
 from biased_dsprites_dataset import BiasedDSpritesDataset
 
@@ -61,6 +62,12 @@ class CRPAttribution:
         self.layer_id_map = {
             l_name: np.arange(0, out[0]) for l_name, out in self.output_shape.items()
         }
+        mask = torch.zeros(64, 64)
+        mask[52:64:, 0:17] = 1
+        antimask = torch.ones(64, 64)
+        antimask[52:64:, 0:17] = 0
+        self.mask = mask
+        self.antimask = antimask
 
     def compute_feature_vis(self):
         print("computing feature vis")
@@ -153,7 +160,7 @@ class CRPAttribution:
         print(
             f"output: {output.data}, \n latents: {latents}, \n watermark: {watermark}, \n prediction:{res}  {result_string}"
         )
-        self.relevance_for_image(label, sample)
+        self.relevance_for_image(pred, sample)
 
     def get_reference_scores(self, img, label, layer, neurons):
         conditions = [{"y": [label]}]
@@ -167,7 +174,7 @@ class CRPAttribution:
         names = {
             "linear_layers.2_0": "0_rectangle",
             "linear_layers.2_1": "1_ellipse",
-            #"linear_layers.2_2": "2_heart",
+            # "linear_layers.2_2": "2_heart",
         }
         img, _ = self.dataset[index]
         sample = img.view(1, 1, 64, 64)
@@ -201,3 +208,22 @@ class CRPAttribution:
             for i in nodes
         ]
         return node_labels, edges
+
+    def watermark_importance(self, index):
+        img, label = self.dataset[index]
+        sample = img.view(1, 1, 64, 64)
+        sample.requires_grad = True
+
+        output = self.model(sample)
+        pred = int(output.data.max(1)[1][0])
+
+        conditions = [{"y": [pred]}]  # pred label
+
+        attr = self.attribution(
+            sample, conditions, self.composite, record_layer=self.layer_names
+        )
+        masked = attr.heatmap * self.mask[None, :, :]
+        antimasked = attr.heatmap * self.antimask[None, :, :]
+        sum_watermark_relevance = float(torch.sum(masked, dim=(1, 2)))
+        sum_rest_relevance = float(torch.sum(antimasked, dim=(1, 2)))
+        return sum_watermark_relevance, sum_rest_relevance, attr.heatmap, output.data, label

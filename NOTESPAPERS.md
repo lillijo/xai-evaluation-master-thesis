@@ -1660,3 +1660,9 @@ all current research fields:
 - 2 suitable metrics based on signal detection theory and optimal transport
 - use different kinds of background noise to study effec of suppressor variables on explanation performance
 - evaluate 16 XAI methods, 3 machine learning architectures
+- performance metric:
+  - earth mover distance (EMD) / Wasserstein metric 
+  - importance of pixels in feature (tetris shape in this paper) 
+  - cost of transforming importance map output into mask of this feature
+  - using euclidean distance between pixels
+  - normalize EMD score
