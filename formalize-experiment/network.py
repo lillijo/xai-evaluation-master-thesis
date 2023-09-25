@@ -12,7 +12,7 @@ from biased_dsprites_dataset import get_dataset
 SEED = 37
 EPOCHS = 3
 LEARNING_RATE = 0.1
-MOMENTUM = 0.5
+MOMENTUM = 0.55
 
 
 class ShapeConvolutionalNeuralNetwork(nn.Module):
@@ -107,6 +107,9 @@ def train_network(
     loss_fn = nn.CrossEntropyLoss()
     optimizer = SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
     epoch_number = 0
+    best_loss = 100
+    avg_loss = 100
+    best_epoch = ""
     for epoch in range(EPOCHS):
         print("EPOCH {}:".format(epoch_number + 1))
         # Make sure gradient tracking is on, and do a pass over the data
@@ -115,11 +118,18 @@ def train_network(
             batch_size, epoch_number, model, loss_fn, optimizer, training_loader
         )
         print(f"loss epoch: {avg_loss}")
+        if avg_loss < best_loss:
+            best_epoch = f'model_{epoch_number}'
+            best_loss = avg_loss
         # save the model's state
         model_path = "model_{}".format(epoch_number)
         torch.save(model.state_dict(), model_path)
 
         epoch_number += 1
+    print("best loss: ", best_loss, " last loss: ", avg_loss, " best epoch: ", best_epoch)
+    if best_loss < avg_loss:
+        print("getting older epoch", best_epoch)
+        model.load_state_dict(torch.load(best_epoch))
     torch.save(model.state_dict(), path)
     return model
 
@@ -151,12 +161,12 @@ def accuracy_per_class(model, loader):
             )
             output = model(data)
             preds = output.data.max(dim=1)[1].cpu().numpy().astype(np.int64)
-            t = target.data.cpu().numpy().astype(np.int64)
-            for label, pred in zip(target, preds):
-                if label == pred:
-                    correct[label] += 1
-                else:
-                    wrong[label] += 1
+            t = target.numpy()
+            corr = t == preds
+            wro = t != preds
+            for i in range(n_classes):
+                correct[i] += np.count_nonzero(t[corr] == i)
+                wrong[i] += np.count_nonzero(t[wro] == i)
     assert correct.sum() + wrong.sum() == len(loader.dataset)
     return 100.0 * correct / (correct + wrong)
 

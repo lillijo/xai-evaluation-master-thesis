@@ -1651,9 +1651,8 @@ all current research fields:
 
 - look at treatment effect of prediction on explanation when blocking paths to hyperparameters
 - effect is small (probably because hyperparameters and input data make all the difference)
-
-
 ## XAI-TRIS: Non-linear benchmarks to quantify ML explanation performance (Benedict Clark, Rick Wilming, Stefan Haufe)
+
 - suppressor variables in non-linear benchmarks
 - suppressor variable e.g.: background lighting helps with normalizing objects colors
 - 1 linear, 3 non-linear binary image classification problems
@@ -1661,8 +1660,32 @@ all current research fields:
 - use different kinds of background noise to study effec of suppressor variables on explanation performance
 - evaluate 16 XAI methods, 3 machine learning architectures
 - performance metric:
-  - earth mover distance (EMD) / Wasserstein metric 
-  - importance of pixels in feature (tetris shape in this paper) 
+  - earth mover distance (EMD) / Wasserstein metric
+  - importance of pixels in feature (tetris shape in this paper)
   - cost of transforming importance map output into mask of this feature
   - using euclidean distance between pixels
   - normalize EMD score
+
+## Do Users Benefit From Interpretable Vision? A User Study, Baseline, And Dataset
+
+- compare "baseline" (just predictions ordered by confidence) with some other XAI methods
+- other methods:
+  - "Invertible Neural Networks": moving along weight vector changes prediction
+  - "Concepts (Zhang)": automatically-discovered concepts (NMF approach), non-negative matrix factorization -> non-negative TCAVs
+- claim: first to extensively test counterfactual-based and concept-based explanations on bias discovery using a challenging dataset
+- Spatially overlapping attributes, like color and shape, directly challenge saliency map explanations.
+- might be good measure for ground-truth feature importance: "PREDICTION FLIP" measure difference in prediction with feature on/off
+- calculated a linear fit for each parameter change to the logit change. We reported the coefficient of determination R2 , which indicates how much of the variance in the prediction can be explained linearly by the analyzed property
+
+## From attribution maps to human-understandable explanations through Concept Relevance Propagation
+
+- for pixel map might be clear where important information can be found, but not what characteristics of the raw input features the model has extracted and used during inference, *or whether this information is a singular characteristic or an overlapping plurality thereof*
+- they do user study with RelMax, against other attribution map-based
+- determining the flow of relevance via controlled masking operations in the backwards process -> what are controlled masking operations?
+- condition sets theta are configured automatically: ranking units in descending order of relevance, 
+- advantage of RelMax: conditional maximization: how does model use latent feature for different classes, not just in general
+- relate quite a lot to negative relevance?
+- for their user study -> easier to identify clever hans than to reject existence
+- clarity suffers from CRP -> too complex, users prefer simple explanations
+- for my experiment: would be cool/important to know whether CRP identifies if artifact is relevant vs not
+- method for comparing filters: averaged cosine similarity on reference samples

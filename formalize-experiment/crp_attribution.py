@@ -63,22 +63,23 @@ class CRPAttribution:
             l_name: np.arange(0, out[0]) for l_name, out in self.output_shape.items()
         }
         mask = torch.zeros(64, 64)
-        mask[52:64:, 0:17] = 1
+        mask[52:, 0:17] = 1
+        weight = np.count_nonzero(mask)
         antimask = torch.ones(64, 64)
-        antimask[52:64:, 0:17] = 0
-        self.mask = mask
-        self.antimask = antimask
+        antimask[52:, 0:17] = 0
+        self.mask = mask / weight
+        self.antimask = antimask / (64 * 64 - weight)
 
     def compute_feature_vis(self):
         print("computing feature vis")
-        saved_files = self.fv.run(self.composite, 0, len(self.dataset), 32, 500)
+        saved_files = self.fv.run(self.composite, 0, len(self.dataset), 128, 500)
         self.fv.precompute_ref(
             self.layer_id_map,
             plot_list=[vis_simple],
             mode="relevance",
-            r_range=(0, 10),
+            r_range=(0, 5),
             composite=self.composite,
-            batch_size=32,
+            batch_size=128,
             stats=True,
         )
         return saved_files
@@ -112,6 +113,8 @@ class CRPAttribution:
         all_refs = {}
         all_refs["sample"] = torch.ones((6, 64, 64))
         all_refs["sample"][:] = image
+        vmin = -1
+        vmax = 1
         for l in self.layer_id_map.keys():
             conditions = [{"y": [label], l: [i]} for i in self.layer_id_map[l]]
             attr = self.attribution(
@@ -119,12 +122,22 @@ class CRPAttribution:
                 conditions,
                 self.composite,
                 record_layer=self.layer_names,
+                init_rel=1,
             )
+            # vmin = min(vmin, attr.heatmap.min())
+            # vmax = max(vmax, attr.heatmap.max())
             all_refs[f"{l[:4]}_{l[-1]}"] = torch.zeros((6, 64, 64))
             for h in range(attr.heatmap.shape[0]):
                 all_refs[f"{l[:4]}_{l[-1]}"][h] = attr.heatmap[h]
-
-        plot_grid(all_refs, figsize=(6, 6), padding=False)
+        print(vmin, vmax)
+        plot_grid(
+            all_refs,
+            figsize=(6, 6),
+            padding=False,
+            vmax=vmax,
+            vmin=vmin,
+            symmetric=True,
+        )
 
     def image_info(self, index=None):
         if index is None:
@@ -220,10 +233,134 @@ class CRPAttribution:
         conditions = [{"y": [pred]}]  # pred label
 
         attr = self.attribution(
-            sample, conditions, self.composite, record_layer=self.layer_names
+            sample,
+            conditions,
+            self.composite,
+            record_layer=self.layer_names,
+            init_rel=1,
         )
         masked = attr.heatmap * self.mask[None, :, :]
         antimasked = attr.heatmap * self.antimask[None, :, :]
         sum_watermark_relevance = float(torch.sum(masked, dim=(1, 2)))
         sum_rest_relevance = float(torch.sum(antimasked, dim=(1, 2)))
-        return sum_watermark_relevance, sum_rest_relevance, attr.heatmap, output.data, label
+        return (
+            sum_watermark_relevance,
+            sum_rest_relevance,
+            attr.heatmap,
+            output.data,
+            label,
+        )
+
+    def heatmap(self, index):
+        img, label = self.dataset[index]
+        sample = img.view(1, 1, 64, 64)
+        sample.requires_grad = True
+        output = self.model(sample)
+        pred = int(output.data.max(1)[1][0])
+
+        conditions = [{"y": [pred]}]  # pred label
+        attr = self.attribution(
+            sample,
+            conditions,
+            self.composite,
+            record_layer=self.layer_names,
+            init_rel=1,
+        )
+        return attr.heatmap
+
+    def watermark_concept_importances(self, indices, test_ds):
+        neuron_map = {
+            l: {
+                int(n): {
+                    0: {0: 0.0, 1: 0.0},
+                    1: {0: 0.0, 1: 0.0},
+                }
+                for n in self.layer_id_map[l]
+            }
+            for l in self.layer_id_map.keys()
+        }
+        for s in range(2):
+            for w in range(2):
+                for ind in indices[s][w]:
+                    img, label = test_ds[ind]
+                    _, wm = test_ds.get_item_info(ind)
+                    sample = img.view(1, 1, 64, 64)
+                    sample.requires_grad = True
+                    conditions = [{"y": [w]}]
+                    attr = self.attribution(
+                        sample,
+                        conditions,
+                        self.composite,
+                        record_layer=self.layer_names,
+                    )
+                    for cond_layer in self.layer_id_map.keys():
+                        if cond_layer == "linear_layers.2":
+                            rel_c = attr.prediction.detach().numpy()
+                        else:
+                            rel_c = self.cc.attribute(
+                                attr.relevances[cond_layer], abs_norm=True
+                            )
+                        for n in self.layer_id_map[cond_layer]:
+                            neuron_map[cond_layer][n][s][w] += float(rel_c[0][n])
+        return neuron_map
+
+    def watermark_mask_importance(self, indices, test_ds):
+        conditions_w = [
+            {l: [n], "y": [1]}
+            for l in self.layer_id_map.keys()
+            for n in self.layer_id_map[l]
+        ]
+        conditions_0 = [
+            {l: [n], "y": [0]}
+            for l in self.layer_id_map.keys()
+            for n in self.layer_id_map[l]
+        ]
+        all_layers = [
+            f"{l}_{i}" for l in self.layer_id_map.keys() for i in self.layer_id_map[l]
+        ]
+        blubtype = {}
+        masked_importance = {
+            0: {0: blubtype, 1: blubtype},
+            1: {0: blubtype, 1: blubtype},
+        }
+        for s in range(2):
+            for w in range(2):
+                rels_masked = torch.zeros(len(conditions_0))
+                rels_antimasked = torch.zeros(len(conditions_0))
+                for ind in indices[s][w]:
+                    img, label = test_ds[ind]
+                    _, wm = test_ds.get_item_info(ind)
+                    sample = img.view(1, 1, 64, 64)
+                    sample.requires_grad = True
+                    assert wm == w and label == s
+                    if w == 1:
+                        conditions = conditions_w
+                    else:
+                        conditions = conditions_0
+                    rel_c_masked = torch.zeros(len(conditions))
+                    rel_c_antimasked = torch.zeros(len(conditions))
+                    i = 0
+                    for attr in self.attribution.generate(
+                        sample,
+                        conditions,
+                        self.composite,
+                        record_layer=self.layer_names,
+                        batch_size=1,
+                        exclude_parallel=False,
+                        verbose=False,
+                    ):
+                        masked = attr.heatmap * self.mask[None, :, :]
+                        antimasked = attr.heatmap * self.antimask[None, :, :]
+                        rel_c_masked[i] = torch.sum(masked, dim=(1, 2))
+                        rel_c_antimasked[i] = torch.sum(antimasked, dim=(1, 2))
+                        i += 1
+                    rels_masked += rel_c_masked
+                    rels_antimasked += rel_c_antimasked
+                masked_importance[s][w] = {
+                    all_layers[k]: {
+                        "wm": float(rels_masked[k]),
+                        "rest": float(rels_antimasked[k]),
+                    }
+                    for k in range(len(all_layers))
+                }
+        return masked_importance

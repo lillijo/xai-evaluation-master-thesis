@@ -138,28 +138,39 @@ def get_all_datasets(batch_size=128):
 
 
 def get_dataset(
-    bias, strength, batch_size=128
+    bias, strength, batch_size=128, verbose=True
 ) -> Tuple[BiasedDSpritesDataset, DataLoader, BiasedDSpritesDataset, DataLoader]:
     torch.manual_seed(SEED)
     rand_gen = torch.Generator().manual_seed(SEED)
     np.random.seed(SEED)
-    ds = BiasedDSpritesDataset(verbose=True, strength=strength, bias=bias)
+    ds = BiasedDSpritesDataset(verbose=verbose, strength=strength, bias=bias)
     unbiased_ds = BiasedDSpritesDataset(
         verbose=False,
         bias=0.0,
         strength=0.5,
     )
-    [train_ds, test_ds] = random_split(ds, [0.3, 0.7], generator=rand_gen)
+    [train_ds, _] = random_split(ds, [0.3, 0.7], generator=rand_gen)
+    [unb_ds, _] = random_split(unbiased_ds, [0.2, 0.8], generator=rand_gen)
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(unbiased_ds, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(unb_ds, batch_size=batch_size, shuffle=True)
     return ds, train_loader, unbiased_ds, test_loader
 
-
-def get_biased_loader(bias, strength, batch_size=128) -> DataLoader:
+def get_test_dataset(split=0.3, batch_size=128):
     torch.manual_seed(SEED)
     rand_gen = torch.Generator().manual_seed(SEED)
     np.random.seed(SEED)
-    ds = BiasedDSpritesDataset(verbose=True, strength=strength, bias=bias)
-    [train_ds, test_ds] = random_split(ds, [0.3, 0.7], generator=rand_gen)
+    unbiased_ds = BiasedDSpritesDataset(
+        verbose=False,
+        bias=0.0,
+        strength=0.5,
+    )
+    [unb_short, unb_long] = random_split(unbiased_ds, [split, 1-split], generator=rand_gen)
+    test_loader = DataLoader(unb_short, batch_size=batch_size, shuffle=True)
+    return unb_short, unbiased_ds, test_loader
+
+
+def get_biased_loader(bias, strength, batch_size=128, verbose=True) -> DataLoader:
+    ds = BiasedDSpritesDataset(verbose=verbose, strength=strength, bias=bias)
+    [train_ds, test_ds] = random_split(ds, [0.3, 0.7])
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
     return train_loader
