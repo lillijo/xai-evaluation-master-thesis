@@ -10,8 +10,8 @@ import torch.nn.functional as F
 from biased_dsprites_dataset import get_dataset
 
 SEED = 37
-EPOCHS = 3
-LEARNING_RATE = 0.1
+EPOCHS = 4
+LEARNING_RATE = 0.05
 MOMENTUM = 0.55
 
 
@@ -88,8 +88,8 @@ def train_one_epoch(
 def train_network(
     training_loader, bias, strength, name, batch_size=128, load=False, retrain=False
 ):
-    manual_seed(SEED)
-    np.random.seed(SEED)
+    #manual_seed(SEED)
+    #np.random.seed(SEED)
 
     model = ShapeConvolutionalNeuralNetwork()
     device = "cuda:0" if torch.cuda.is_available() else "cpu"

@@ -5,11 +5,11 @@ from network import train_network, performance_analysis, accuracy_per_class
 from biased_dsprites_dataset import get_test_dataset, get_biased_loader
 import json
 
-BIASES = [0.68]#np.round(np.linspace(0.4, 1.0, 31), 2)
+BIASES = np.round(np.linspace(0.8, 1, 41), 3) # np.round(np.linspace(0, 0.4, 21), 2)
 STRENGTHS = [0.5]  # [0.3, 0.5, 0.7]
 
 BATCH_SIZE = 128
-NAME = "models/m"
+NAME = "models/fine"
 FV_NAME = "fv_model"
 ITEMS_PER_CLASS = 245760
 
@@ -18,7 +18,7 @@ accuracies = {}
 
 def to_name(b, s):
     return "data-{}-{}".format(
-        str(round(b, 2)).replace("0.", "0_"), str(round(s,2)).replace("0.", "0_")
+        str(round(b, 2)).replace("0.", "0_"), str(round(s, 2)).replace("0.", "0_")
     )
 
 
@@ -39,7 +39,7 @@ def main():
     for bias in BIASES:
         for strength in STRENGTHS:
             name = to_name(bias, strength)
-            #if name not in accuracies:
+            # if name not in accuracies:
             print(name)
             train_loader = get_biased_loader(bias, strength, batch_size=128)
             model = train_network(

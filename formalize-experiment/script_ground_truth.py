@@ -7,7 +7,7 @@ from network import train_network
 from biased_dsprites_dataset import get_biased_loader
 from ground_truth_measures import GroundTruthMeasures
 
-BIASES = np.round(np.linspace(0.4, 1.0, 31), 2)
+BIASES = np.round(np.linspace(0, 1, 51), 2)
 STRENGTHS = [0.5]  # [0.3, 0.5, 0.7]
 
 BATCH_SIZE = 128
@@ -28,7 +28,7 @@ def compute_multiple_flips(model, gm):
         "posY": 0.0,
     }
 
-    for i in tqdm(range(0, 737280, 1847)):
+    for i in tqdm(range(0, 737280, 3943)):
         pred_flip = gm.prediction_flip(i, model)
         count += 1
         for k in pred_flip_all.keys():
