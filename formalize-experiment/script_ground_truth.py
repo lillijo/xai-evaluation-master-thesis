@@ -20,7 +20,7 @@ ground_truths = {}
 def compute_multiple_flips(model, gm):
     count = 0
     pred_flip_all = {
-        "wm": 0.0,
+        "watermark": 0.0,
         "shape": 0.0,
         "scale": 0.0,
         "orientation": 0.0,

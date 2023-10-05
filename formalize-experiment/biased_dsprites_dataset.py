@@ -13,18 +13,25 @@ SEED = 37
 
 
 class BiasedDSpritesDataset(Dataset):
-    def __init__(self, bias=0.0, strength=0.0, verbose=False, length=None):
+    def __init__(
+        self,
+        bias=0.0,
+        strength=0.0,
+        verbose=False,
+        length=None,
+        img_path="../dsprites-dataset",
+    ):
         self.bias = bias
         self.strength = strength
         self.verbose = verbose
-        self.img_dir = "../dsprites-dataset/images/"
+        self.img_dir = f"{img_path}/images/"
         self.rng = np.random.default_rng(seed=SEED)
-        self.water_image = np.load("../watermark.npy")
+        self.water_image = np.load("watermark.npy")
         self.fixed_length = length
-        with open("../labels.pickle", "rb") as f:
+        with open("labels.pickle", "rb") as f:
             labels = pickle.load(f)
             self.labels = labels
-        with open("../metadata.pickle", "rb") as mf:
+        with open("metadata.pickle", "rb") as mf:
             metadata = pickle.load(mf)
             self.metadata = metadata
             self.latents_sizes = np.array(metadata["latents_sizes"])
@@ -46,26 +53,10 @@ class BiasedDSpritesDataset(Dataset):
             return self.fixed_length
         return (len(self.labels) // 3) * 2  # len(self.labels)
 
-    """ 
-    def watermark_process(self):
-        b_generator = self.rng.random(len(self.labels))
-        s_generator = self.rng.random(len(self.labels))
-        self.watermarks = []
-        ww = 0
-        for i in range(len(b_generator)):
-            b = b_generator[i]
-            s = s_generator[i]
-            l = self.labels[i][1]
-            if l == 1 and b < self.bias and s < self.strength:
-                self.watermarks.append(True)
-                ww += 1
-            elif l != 1 and b > self.bias and s < self.strength:
-                self.watermarks.append(True)
-                ww += 1
-            else:
-                self.watermarks.append(False)
-        if self.verbose:
-            print(f"{ww} of {len(self.labels)}") """
+    def reinitialize_bias(self, bias, strength):
+        self.bias = bias
+        self.strength = strength
+        self.causal_process()
 
     def causal_process(self):
         SIZE = (len(self.labels) // 3) * 2
@@ -81,7 +72,7 @@ class BiasedDSpritesDataset(Dataset):
         shape_e = np.asarray(shape == False).nonzero()
         wms_r = watermark[shape_r[0][:ITEM_L]]
         wms_e = watermark[shape_e[0][:ITEM_L]]
-        wms = np.zeros(SIZE, dtype=np.bool8)
+        wms = np.zeros(SIZE, dtype=np.bool_)
         wms[:ITEM_L] = wms_r
         wms[ITEM_L:] = wms_e
 
@@ -106,7 +97,7 @@ class BiasedDSpritesDataset(Dataset):
 
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
-        image = np.load(img_path)
+        image = np.load(img_path, mmap_mode="r")
         image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
         if self.watermarks[index]:
             image[self.water_image] = 1.0
@@ -155,6 +146,7 @@ def get_dataset(
     test_loader = DataLoader(unb_ds, batch_size=batch_size, shuffle=True)
     return ds, train_loader, unbiased_ds, test_loader
 
+
 def get_test_dataset(split=0.3, batch_size=128):
     torch.manual_seed(SEED)
     rand_gen = torch.Generator().manual_seed(SEED)
@@ -164,13 +156,15 @@ def get_test_dataset(split=0.3, batch_size=128):
         bias=0.0,
         strength=0.5,
     )
-    [unb_short, unb_long] = random_split(unbiased_ds, [split, 1-split], generator=rand_gen)
+    [unb_short, unb_long] = random_split(
+        unbiased_ds, [split, 1 - split], generator=rand_gen
+    )
     test_loader = DataLoader(unb_short, batch_size=batch_size, shuffle=True)
     return unb_short, unbiased_ds, test_loader
 
 
-def get_biased_loader(bias, strength, batch_size=128, verbose=True) -> DataLoader:
+def get_biased_loader(bias, strength, batch_size=128, verbose=True, split=0.3) -> DataLoader:
     ds = BiasedDSpritesDataset(verbose=verbose, strength=strength, bias=bias)
-    [train_ds, test_ds] = random_split(ds, [0.3, 0.7])
+    [train_ds, test_ds] = random_split(ds, [split, 1 - split])
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
     return train_loader

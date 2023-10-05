@@ -1,0 +1,204 @@
+{
+  "hyperparameters": [
+    {
+      "train_acc": [
+        99.26840233784282,
+        99.85011140368645
+      ],
+      "optimizer": "Adam",
+      "bias": 0.7,
+      "learning_rate": 0.008,
+      "name": "hyper-0_01-0_7"
+    },
+    {
+      "train_acc": [
+        99.26840233784282,
+        99.85011140368645
+      ],
+      "optimizer": "Adam",
+      "bias": 0.8,
+      "learning_rate": 0.008,
+      "name": "hyper-0_01-0_8"
+    },
+    {
+      "train_acc": [
+        99.90599583111947,
+        99.34778205387887
+      ],
+      "optimizer": "Adam",
+      "bias": 0.7,
+      "learning_rate": 0.009,
+      "name": "hyper-0_01-0_7"
+    },
+    {
+      "train_acc": [
+        99.90599583111947,
+        99.34778205387887
+      ],
+      "optimizer": "Adam",
+      "bias": 0.8,
+      "learning_rate": 0.009,
+      "name": "hyper-0_01-0_8"
+    },
+    {
+      "train_acc": [
+        99.77929456001962,
+        98.61859428802917
+      ],
+      "optimizer": "Adam",
+      "bias": 0.7,
+      "learning_rate": 0.01,
+      "name": "hyper-0_01-0_7"
+    },
+    {
+      "train_acc": [
+        99.77929456001962,
+        98.61859428802917
+      ],
+      "optimizer": "Adam",
+      "bias": 0.8,
+      "learning_rate": 0.01,
+      "name": "hyper-0_01-0_8"
+    },
+    {
+      "train_acc": [
+        99.74251032002289,
+        96.10694753899129
+      ],
+      "optimizer": "Adam",
+      "bias": 0.7,
+      "learning_rate": 0.011,
+      "name": "hyper-0_01-0_7"
+    },
+    {
+      "train_acc": [
+        99.74251032002289,
+        96.10694753899129
+      ],
+      "optimizer": "Adam",
+      "bias": 0.8,
+      "learning_rate": 0.011,
+      "name": "hyper-0_01-0_8"
+    },
+    {
+      "train_acc": [
+        99.30518657783954,
+        99.38019039902775
+      ],
+      "optimizer": "Adam",
+      "bias": 0.7,
+      "learning_rate": 0.012,
+      "name": "hyper-0_01-0_7"
+    },
+    {
+      "train_acc": [
+        99.30518657783954,
+        99.38019039902775
+      ],
+      "optimizer": "Adam",
+      "bias": 0.8,
+      "learning_rate": 0.012,
+      "name": "hyper-0_01-0_8"
+    },
+    {
+      "train_acc": [
+        99.79564311112928,
+        98.8940652217946
+      ],
+      "optimizer": "Adam",
+      "bias": 0.7,
+      "learning_rate": 0.013,
+      "name": "hyper-0_01-0_7"
+    },
+    {
+      "train_acc": [
+        99.79564311112928,
+        98.8940652217946
+      ],
+      "optimizer": "Adam",
+      "bias": 0.8,
+      "learning_rate": 0.013,
+      "name": "hyper-0_01-0_8"
+    },
+    {
+      "train_acc": [
+        99.55041484448441,
+        97.47214907838769
+      ],
+      "optimizer": "Adam",
+      "bias": 0.7,
+      "learning_rate": 0.014,
+      "name": "hyper-0_01-0_7"
+    },
+    {
+      "train_acc": [
+        99.55041484448441,
+        97.47214907838769
+      ],
+      "optimizer": "Adam",
+      "bias": 0.8,
+      "learning_rate": 0.014,
+      "name": "hyper-0_01-0_8"
+    },
+    {
+      "train_acc": [
+        99.82016593779376,
+        99.17358719870367
+      ],
+      "optimizer": "Adam",
+      "bias": 0.7,
+      "learning_rate": 0.015,
+      "name": "hyper-0_02-0_7"
+    },
+    {
+      "train_acc": [
+        99.82016593779376,
+        99.17358719870367
+      ],
+      "optimizer": "Adam",
+      "bias": 0.8,
+      "learning_rate": 0.015,
+      "name": "hyper-0_02-0_8"
+    },
+    {
+      "train_acc": [
+        99.79564311112928,
+        99.63540611707515
+      ],
+      "optimizer": "Adam",
+      "bias": 0.7,
+      "learning_rate": 0.016,
+      "name": "hyper-0_02-0_7"
+    },
+    {
+      "train_acc": [
+        99.79564311112928,
+        99.63540611707515
+      ],
+      "optimizer": "Adam",
+      "bias": 0.8,
+      "learning_rate": 0.016,
+      "name": "hyper-0_02-0_8"
+    },
+    {
+      "train_acc": [
+        99.48093350226836,
+        98.48896090743366
+      ],
+      "optimizer": "Adam",
+      "bias": 0.7,
+      "learning_rate": 0.017,
+      "name": "hyper-0_02-0_7"
+    },
+    {
+      "train_acc": [
+        99.48093350226836,
+        98.48896090743366
+      ],
+      "optimizer": "Adam",
+      "bias": 0.8,
+      "learning_rate": 0.017,
+      "name": "hyper-0_02-0_8"
+    }
+  ]
+}

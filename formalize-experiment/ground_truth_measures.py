@@ -1,41 +1,21 @@
-from matplotlib import pyplot as plt
-import matplotlib as mpl
 import numpy as np
 import torch
-import math
-import networkx as nx
-from tqdm import tqdm
-from PIL import Image
-from crp.image import imgify, vis_opaque_img, plot_grid
-from collections import Counter
-from tigramite import plotting as tp
-import json
-from cmiknnmixed import CMIknnMixed
-from crp_attribution import CRPAttribution
-from network import train_network, performance_analysis, accuracy_per_class
-from causal_discovery import CausalDiscovery
-from plotting import plot_multipartite, draw_graph
-from biased_dsprites_dataset import get_dataset, get_biased_loader
-from crp_hierarchies import sample_from_categories, average_hierarchies
 import copy
 import numpy as np
 import torch
 import os
-from torch.utils.data import Dataset, DataLoader, random_split
 import pickle
-from collections import Counter
-from typing import Tuple
-from matplotlib import pyplot as plt
 
 
 class GroundTruthMeasures:
-    def __init__(self) -> None:
-        self.img_dir = "../dsprites-dataset/images/"
-        self.water_image = np.load("../watermark.npy")
+    def __init__(self, binary=False, img_path="../dsprites-dataset") -> None:
+        self.img_dir = f"{img_path}/images/"
+        self.water_image = np.load("watermark.npy")
+        self.binary = binary
         with open("labels.pickle", "rb") as f:
             labels = pickle.load(f)
             self.labels = labels
-        with open("../metadata.pickle", "rb") as mf:
+        with open("metadata.pickle", "rb") as mf:
             metadata = pickle.load(mf)
             self.metadata = metadata
             self.latents_sizes = np.array(metadata["latents_sizes"])
@@ -71,11 +51,16 @@ class GroundTruthMeasures:
         if watermark:
             image[self.water_image] = 1.0
         image = image.view(1, 1, 64, 64)
+        if torch.cuda.is_available():
+            image = image.cuda()
         return image
 
     def get_prediction(self, index, model, wm):
         image = self.load_image(index, wm)
         output = model(image)
+        if self.binary:
+            pred = output.data.round()
+            return int(pred[0, 0])
         pred = output.data.max(1, keepdim=True)[1]
         return int(pred[0, 0])
 
@@ -84,9 +69,11 @@ class GroundTruthMeasures:
         pred_flip = {}
         pred_flip["label"] = latents[1]
         pred_flip["pred"] = self.get_prediction(index, model, False)
-        pred_flip["wm"] = self.get_prediction(index, model, True)
-        if pred_flip["pred"] != pred_flip["wm"]:
+        wm = self.get_prediction(index, model, True)
+        if pred_flip["pred"] != wm:
             pred_flip["watermark"] = 1
+        else:
+            pred_flip["watermark"] = 0
         for lat in range(1, self.latents_sizes.size):
             lat_name = self.latents_names[lat]
             pred_flip[lat_name] = 0
