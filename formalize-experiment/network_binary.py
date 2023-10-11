@@ -114,7 +114,7 @@ def train_network(
     )
     print(path)
     if load and os.path.exists(path):
-        model.load_state_dict(torch.load(path))
+        model.load_state_dict(torch.load(path, map_location=torch.device(device)))
         if not retrain:
             return model
     loss_fn = nn.BCELoss()  # binary cross entropy

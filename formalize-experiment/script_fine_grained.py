@@ -89,19 +89,22 @@ def train_model_evaluate(*args):
 
 
 def compute_all():
+    with open("accuracies_fine.json", "r") as f:
+        accuracies = json.load(f)
     _, unb_long, test_loader = get_test_dataset()
     indices = sample_from_categories(unb_long)
     allwm = get_biased_loader(0.0, 0.0, batch_size=128, verbose=False, split=0.1)
     nowm = get_biased_loader(0.0, 1.0, batch_size=128, verbose=False, split=0.1)
     gm = GroundTruthMeasures(binary=True)
 
-    accuracies = {}
     for bias in BIASES:
         for strength in STRENGTHS:
-            (name, result) = train_model_evaluate(
-                bias, strength, unb_long, indices, allwm, nowm, gm, LEARNING_RATE
-            )
-            accuracies[name] = result
+            name = to_name(bias, strength, LEARNING_RATE)
+            if not (name in accuracies and accuracies[name]["train_accuracy"][0] > 80):
+                (name, result) = train_model_evaluate(
+                    bias, strength, unb_long, indices, allwm, nowm, gm, LEARNING_RATE
+                )
+                accuracies[name] = result
 
         with open("accuracies_fine.json", "w") as f:
             json.dump(accuracies, f, indent=2)

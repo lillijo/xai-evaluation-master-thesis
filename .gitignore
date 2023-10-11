@@ -19,7 +19,7 @@ model_6
 model_7
 MNIST/
 cache/
-dsprites-cache/
+clustermodels/
 causal-dsprites-cache/
 unbiased-cache/
 biased-cache/
@@ -29,7 +29,9 @@ biased-cache-mini/
 .vscode/
 *.npy
 
+
 formalize-experiment/crp-data
+formalize-experiment/heatmaps
 
 
 # Byte-compiled / optimized / DLL files

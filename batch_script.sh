@@ -6,7 +6,7 @@
 #SBATCH --exclusive                     # https://slurm.schedmd.com/sbatch.html#OPT_exclusive
 #SBATCH --mem=0                         # Request all memory available on all nodes
 #SBATCH --account=bd1083
-#SBATCH --time=03:00:00                 # Set a limit on the total run time
+#SBATCH --time=08:00:00                 # Set a limit on the total run time
 #SBATCH --mail-type=FAIL                # Notify user by email in case of job failure
 
 set -e
@@ -17,4 +17,4 @@ source ~/.bashrc
 conda activate mt-lilli
 
 # Execute serial programs, e.g.
-python -u script_test.py
+python -u script_rerun.py
