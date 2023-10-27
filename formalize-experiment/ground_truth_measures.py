@@ -126,7 +126,9 @@ class GroundTruthMeasures:
             pred_flip_all[k] = pred_flip_all[k] / count
         return pred_flip_all
 
-    def get_func(self, attribution, composite, cc, layer_names, conditions, func_type):
+    def get_func(
+        self, attribution, composite, cc, layer_names, func_type, model
+    ):
         if func_type == "bbox":
             mask = torch.zeros(64, 64)
             mask[52:, 0:17] = 1
@@ -140,6 +142,12 @@ class GroundTruthMeasures:
                 image.requires_grad = True
                 rels_masked = []
                 i = 0
+                if self.binary:
+                    pred = 0
+                else:
+                    output = model(image)
+                    pred = output.data.max(1, keepdim=True)[1]
+                conditions = [{"linear_layers.0": [n], "y": [pred]} for n in range(6)]
                 for attr in attribution.generate(
                     image,
                     conditions,
@@ -164,8 +172,13 @@ class GroundTruthMeasures:
                 if torch.cuda.is_available():
                     image = image.cuda()
                 image.requires_grad = True
+                if self.binary:
+                    pred = 0
+                else:
+                    output = model(image)
+                    pred = output.data.max(1, keepdim=True)[1]
                 attr = attribution(
-                    image, [{"y": [0]}], composite, record_layer=layer_names
+                    image, [{"y": [pred]}], composite, record_layer=layer_names
                 )
                 rel_c = cc.attribute(
                     attr.relevances["linear_layers.0"], abs_norm=True
@@ -181,6 +194,12 @@ class GroundTruthMeasures:
                 if torch.cuda.is_available():
                     image = image.cuda()
                 image.requires_grad = True
+                if self.binary:
+                    pred = 0
+                else:
+                    output = model(image)
+                    pred = output.data.max(1, keepdim=True)[1]
+                conditions = [{"linear_layers.0": [n], "y": [pred]} for n in range(6)]
                 attr = attribution(
                     image, conditions, composite, record_layer=layer_names
                 )
@@ -229,9 +248,8 @@ class GroundTruthMeasures:
         tdev = torch.device(device)
         attribution = CondAttribution(model, no_param_grad=True, device=tdev)
         layer_names = get_layer_names(model, [torch.nn.Conv2d, torch.nn.Linear])
-        conditions = [{"linear_layers.0": [n], "y": [0]} for n in range(6)]
         apply_func = self.get_func(
-            attribution, composite, cc, layer_names, conditions, func_type
+            attribution, composite, cc, layer_names, func_type, model
         )
         indices = range(0, MAX_INDEX, STEP_SIZE)
         all_inds = []
@@ -255,7 +273,6 @@ class GroundTruthMeasures:
         """
         * For the R2 score, we fitted an ordinary least squares from the factors' deltas
         * to the deltas of the model's logits and then report the coefficient of determination.
-        * numpy.linalg.lstsq(a= coefficient matrix, b=dependent variable values)
         * Here: from latent index/value to reference score value
         """
         composite = EpsilonPlusFlat()
@@ -270,7 +287,12 @@ class GroundTruthMeasures:
             if torch.cuda.is_available():
                 image = image.cuda()
             image.requires_grad = True
-            attr = attribution(image, [{"y": [0]}], composite, record_layer=layer_names)
+            if self.binary:
+                pred = 0
+            else:
+                output = model(image)
+                pred = output.data.max(1, keepdim=True)[1]
+            attr = attribution(image, [{"y": [pred]}], composite, record_layer=layer_names)
             rel_c = cc.attribute(
                 attr.relevances["linear_layers.0"], abs_norm=True
             )  #  activations
@@ -391,7 +413,7 @@ class GroundTruthMeasures:
             record_layer=layer_names,
             exclude_parallel=False,
         )
-        image_heatmaps = torch.cat((heatmaps,heatmapswm))
+        image_heatmaps = torch.cat((heatmaps, heatmapswm))
         vmin = min([heatmaps.min(), heatmapswm.min()])
         vmax = max([heatmaps.max(), heatmapswm.max()])
         grid = {}

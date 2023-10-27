@@ -31,7 +31,7 @@ class ShapeConvolutionalNeuralNetwork(nn.Module):
             nn.Linear(216, 6),
             nn.ReLU(),
             nn.Linear(6, 1),  # only rectangle and ellipse???
-            nn.Sigmoid(),
+            nn.Sigmoid(), # also relu!!! and nn.Softmax()
         )
 
     def forward(self, x):

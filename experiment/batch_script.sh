@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=fine_grained         # Specify job name
-#SBATCH --output=fine_grained.o%j       # File name for standard output
+#SBATCH --job-name=script_models         # Specify job name
+#SBATCH --output=script_models.o%j       # File name for standard output
 #SBATCH --partition=gpu                 # Specify partition name
 #SBATCH --gpus=4                        # Specify number of GPUs needed for the job
 #SBATCH --exclusive                     # https://slurm.schedmd.com/sbatch.html#OPT_exclusive
@@ -17,4 +17,4 @@ source ~/.bashrc
 conda activate mt-lilli
 
 # Execute serial programs, e.g.
-python -u script_rerun.py
+python -u script_models.py

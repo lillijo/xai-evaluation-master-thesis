@@ -122,18 +122,13 @@ class CRPAttribution:
         for l in self.layer_id_map.keys():
             conditions = [{"y": [label], l: [i]} for i in self.layer_id_map[l]]
             attr = self.attribution(
-                image,
-                conditions,
-                self.composite,
-                record_layer=self.layer_names,
-                init_rel=1,
+                image, conditions, self.composite, record_layer=self.layer_names
             )
             # vmin = min(vmin, attr.heatmap.min())
             # vmax = max(vmax, attr.heatmap.max())
             all_refs[f"{l[:4]}_{l[-1]}"] = torch.zeros((6, 64, 64))
             for h in range(attr.heatmap.shape[0]):
                 all_refs[f"{l[:4]}_{l[-1]}"][h] = attr.heatmap[h]
-        print(vmin, vmax)
         plot_grid(
             all_refs,
             figsize=(6, 6),
@@ -278,7 +273,7 @@ class CRPAttribution:
                         batch_size=1,
                         exclude_parallel=False,
                         verbose=False,
-                        on_device=self.device
+                        on_device=self.device,
                     ):
                         masked = attr.heatmap * self.mask[None, :, :]
                         antimasked = attr.heatmap * self.antimask[None, :, :]

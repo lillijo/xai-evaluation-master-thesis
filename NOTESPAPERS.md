@@ -1283,27 +1283,6 @@ all current research fields:
 - multiplication example: f(x) = x1*x2 + x3 -> 6 = 3*1+2 or 6 = 2\*2 + 2?
 - better: "higher-order explanation": x1 and x2 contribute jointly
 
-## When are Post-hoc Conceptual Explanations Identifiable?
-
-- concept discovery should be identifiable, meaning that a number of known concepts can be provably recovered to guarantee reliability of the explanations
-- use automatic/ unsupervised concept discovery
-- unsupervised concept spaces can be highly distorted
-- methods such as PCA and ICA (independent component analysis) cover independent non-gaussian ground truth components. (no causal/spurious links)
-- in practice: complex dependencies, generative models often use gaussian distribution
-- concept discovery method based on _independent mechanisms_
-- identifiability is important concept for my thesis. Statement: "if a known number of _ground truth components_ generated the data, the concept discovery method provably yields concepts that correspond to the individual ground truth components and can correctly represent an input in the concept space"
-- utilize "_visual compositionality properties_": tiny changes in (generative) components affect input images in orthogonal or even disjoint ways
-- -> new discovery method from this using "disjoint/independent mechanisms" criterion
-- **disjoint mechanism analysis (DMA)**:
-- **independent mechanism analysis (IM A)**:
-- Träuble et al. (2021) shows that even if just two components of a dataset are correlated, current disentanglement learning methods fail
-- unsupervised disentanglement, without further conditions, is impossible (Hyvärinen and Pajunen, 1999; Locatello et al., 2019; Moran et al., 2022)
-- using idea of concept activation vectors (CAVs)
-- **terminology**: _components_ in ground truth, _concepts_ in learned representations/directions
-- faithful encoder: ground truth components are recoverable with full rank, f is lazy and invariant to changes in x which cannot be explained by ground truth components
-- -> sufficient to find encoder Mf whose Jacobian MJ_f has disjoint rows
-- searching for an M Jf with orthogonal (instead of disjoint) rows permits post-hoc discovery of concepts. We refer to is property of M Jf as the _IMA criterion_.
-
 ## Theoretical Behavior of XAI Methods in the Presence of Suppressor Variables
 
 - simple 2D artifical dataset that is capable of creating "supressor" variables (vairables independent of prediction target)
@@ -1651,6 +1630,7 @@ all current research fields:
 
 - look at treatment effect of prediction on explanation when blocking paths to hyperparameters
 - effect is small (probably because hyperparameters and input data make all the difference)
+
 ## XAI-TRIS: Non-linear benchmarks to quantify ML explanation performance (Benedict Clark, Rick Wilming, Stefan Haufe)
 
 - suppressor variables in non-linear benchmarks
@@ -1679,13 +1659,74 @@ all current research fields:
 
 ## From attribution maps to human-understandable explanations through Concept Relevance Propagation
 
-- for pixel map might be clear where important information can be found, but not what characteristics of the raw input features the model has extracted and used during inference, *or whether this information is a singular characteristic or an overlapping plurality thereof*
+- for pixel map might be clear where important information can be found, but not what characteristics of the raw input features the model has extracted and used during inference, _or whether this information is a singular characteristic or an overlapping plurality thereof_
 - they do user study with RelMax, against other attribution map-based
 - determining the flow of relevance via controlled masking operations in the backwards process -> what are controlled masking operations?
-- condition sets theta are configured automatically: ranking units in descending order of relevance, 
+- condition sets theta are configured automatically: ranking units in descending order of relevance,
 - advantage of RelMax: conditional maximization: how does model use latent feature for different classes, not just in general
 - relate quite a lot to negative relevance?
 - for their user study -> easier to identify clever hans than to reject existence
 - clarity suffers from CRP -> too complex, users prefer simple explanations
 - for my experiment: would be cool/important to know whether CRP identifies if artifact is relevant vs not
 - method for comparing filters: averaged cosine similarity on reference samples
+
+## When are Post-hoc Conceptual Explanations Identifiable?
+
+- concept discovery should be identifiable, meaning that a number of known concepts can be provably recovered to guarantee reliability of the explanations
+- use automatic/ unsupervised concept discovery
+- unsupervised concept spaces can be highly distorted
+- methods such as PCA and ICA (independent component analysis) cover independent non-gaussian ground truth components. (no causal/spurious links)
+- in practice: complex dependencies, generative models often use gaussian distribution
+- concept discovery method based on _independent mechanisms_
+- identifiability is important concept for my thesis. Statement: "if a known number of _ground truth components_ generated the data, the concept discovery method provably yields concepts that correspond to the individual ground truth components and can correctly represent an input in the concept space"
+- utilize "_visual compositionality properties_": tiny changes in (generative) components affect input images in orthogonal or even disjoint ways
+- -> new discovery method from this using "disjoint/independent mechanisms" criterion
+- **disjoint mechanism analysis (DMA)**:
+- **independent mechanism analysis (IM A)**:
+- Träuble et al. (2021) shows that even if just two components of a dataset are correlated, current disentanglement learning methods fail
+- unsupervised disentanglement, without further conditions, is impossible (Hyvärinen and Pajunen, 1999; Locatello et al., 2019; Moran et al., 2022)
+- using idea of concept activation vectors (CAVs)
+- **terminology**: _components_ in ground truth, _concepts_ in learned representations/directions
+- faithful encoder: ground truth components are recoverable with full rank, f is lazy and invariant to changes in x which cannot be explained by ground truth components
+- -> sufficient to find encoder Mf whose Jacobian MJ_f has disjoint rows
+- searching for an M Jf with orthogonal (instead of disjoint) rows permits post-hoc discovery of concepts. We refer to is property of M Jf as the _IMA criterion_.
+- "identifiable" necessary for our work
+
+## Invertible Concept-based Explanations for CNN Models with Non-negative Concept Activation Vectors
+
+- Non-negative concept activation vectors *perform best in computational and human subject experiments*
+- saliency maps *only point out important area* and dont *identify key concepts*
+- ACE (automated concept based explanations): learn clustering of image segments from CAVs
+- ACE drawbacks: learned concept weights inconsistent for different instances, hard to measure performance,
+- information can be lost: in unused segments, distance between segments, cluster centroids...
+- NCAV sort of similar to ACE, cause k-means ~ dimensionality reduction ~ matrix factorization
+- in addition to DR, matrix factorization also analyzes information loss with inverse function
+- through inverse function of matrix factorization, information lost in in explanation can be measured
+- NMF (non-negative matrix factorization): gives global but also local explanations through inverse function
+- **interpretabiliy** and **fidelity**
+- main idea: reduce feature space of neurons dimensionality
+- measure for **fidelity**: 0-1 loss -> accuracy loss when predicting from F' instead of F
+- 
+
+## CRAFT: Concept Recursive Activation FacTorization for Explainability
+- "Where" vs "What" question
+- recursive strategy to detect and decompose concepts across layers
+- faithful estimation of concept importance using Sobol indices
+- use implicit differentiation to unlock Concept Attribution Maps
+- CRAFT uses non-negative matrix factorization
+
+## Multi-dimensional concept discovery (MCD): A unifying framework with completeness guarantees
+- *completeness axiom:* attributions sum up to the model prediction
+- Concepts as multi-dimensional subspaces: space spanned by hidden neurons is decomposed in the most general way:
+- not just allow rotation and non-orthogonality but also multi-dimensionality
+- allow rotation = Zhang 2021, PCA
+- allow non-orthogonality = concepts can be linearly independent but not orthogonal
+- allow multi-dimensionality = concept can lie on hyperplane spanned by multiple neurons
+- *most faithful* capture any meaningful structure within hidden feature layer
+- covers relevant feature space with fewer concepts, reaches specified level of completeness earlier
+- method: 
+  (i)  randomly choose and cluster a set of feature vectors with any clustering algorithm
+  (ii) construct subspace bases for all clusters Cl via PCA
+- use sparse subspace clustering (SSC) for clustering of feature maps
+- test concepts by masking out images with a classical inputation algorithm (Bertalmia 2001)
+- MCD-SSC is actually not the best, but they argue that the ones that are better consistently only find one concept and therefore have no benefit over classical attribution methods like LRP
