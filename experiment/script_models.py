@@ -68,7 +68,7 @@ def compute_all():
     for bias in BIASES:
         for strength in STRENGTHS:
             name = to_name(bias, strength, LEARNING_RATE)
-            if not (name in accuracies and accuracies[name]["train_accuracy"][0] > 80):
+            if not (name in accuracies and accuracies[name]["train_accuracy"][2] > 80):
                 (name, result) = train_model_evaluate(
                     bias, strength, allwm, nowm, unbiased_ds, LEARNING_RATE
                 )
