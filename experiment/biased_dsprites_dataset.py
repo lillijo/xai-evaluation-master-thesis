@@ -131,9 +131,7 @@ def get_all_datasets(batch_size=128):
 def get_dataset(
     bias, strength, batch_size=128, verbose=True
 ) -> Tuple[BiasedDSpritesDataset, DataLoader, BiasedDSpritesDataset, DataLoader]:
-    torch.manual_seed(SEED)
     rand_gen = torch.Generator().manual_seed(SEED)
-    np.random.seed(SEED)
     ds = BiasedDSpritesDataset(verbose=verbose, strength=strength, bias=bias)
     unbiased_ds = BiasedDSpritesDataset(
         verbose=False,
@@ -148,9 +146,7 @@ def get_dataset(
 
 
 def get_test_dataset(split=0.3, batch_size=128):
-    torch.manual_seed(SEED)
     rand_gen = torch.Generator().manual_seed(SEED)
-    np.random.seed(SEED)
     unbiased_ds = BiasedDSpritesDataset(
         verbose=False,
         bias=0.0,

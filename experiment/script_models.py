@@ -4,7 +4,7 @@ from network import train_network, accuracy_per_class
 from biased_dsprites_dataset import get_biased_loader, BiasedDSpritesDataset
 from crp_attribution import CRPAttribution
 
-BIASES = np.round(np.linspace(0.6, 1, 21), 3)# np.round(np.linspace(0, 1, 51), 3)
+BIASES = np.round(np.linspace(0, 1, 51), 3)
 STRENGTHS = [0.5]  # [0.3, 0.5, 0.7]
 LEARNING_RATE = 0.016
 EPOCHS = 4
@@ -34,7 +34,7 @@ def train_model_evaluate(*args):
         strength,
         NAME,
         BATCH_SIZE,
-        load=True,
+        load=False,
         retrain=False,
         learning_rate=lr,
         epochs=EPOCHS,
@@ -46,8 +46,8 @@ def train_model_evaluate(*args):
     res["train_accuracy"] = list(accuracy_per_class(model, test_loader))
     res["all_wm_accuracy"] = list(accuracy_per_class(model, allwm))
     res["no_wm_accuracy"] = list(accuracy_per_class(model, nowm))
-    crp_attribution = CRPAttribution(model, unbiased_ds, "nmf", strength, bias)
-    crp_attribution.compute_feature_vis()
+    #crp_attribution = CRPAttribution(model, unbiased_ds, "nmf", strength, bias)
+    #crp_attribution.compute_feature_vis()
     res["bias"] = bias
     res["strength"] = strength
     res["learning_rate"] = lr
