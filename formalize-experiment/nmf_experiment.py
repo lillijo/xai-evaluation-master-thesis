@@ -92,7 +92,9 @@ def nmf_experiment(
             for l in range(2):
                 for w in range(2):
                     for p in range(1):
-                        means = filter_type(l, w, p, watermarks, labels, predictions, arr)
+                        means = filter_type(
+                            l, w, p, watermarks, labels, predictions, arr
+                        )
                         results[f"{v_name[v]}_{m_name[m]}"].append(
                             [
                                 means,
@@ -100,6 +102,7 @@ def nmf_experiment(
                             ]
                         )
     return results
+
 
 def tsne_experiment(
     crp_attribution,
@@ -170,43 +173,49 @@ def relevance_distance(
     for l in range(2):
         for w in range(2):
             d = np.logical_and(watermarks == w, labels == l)
-            tmean = torch.mean(vector[d, :],0).tolist()
+            tmean = torch.mean(vector[d, :], 0).tolist()
             results.append([tmean, f"label{l}_wm{w}"])
     return results
 
-def something_else(
+
+def nmf_centroids(
     crp_attribution,
-    activations=ACTIVATIONS,
     n_samples=N_SAMPLES,
 ):
     vector = torch.zeros((n_samples, 6))
     labels = []
     watermarks = []
-
+    relu = torch.nn.ReLU()
+    nmf = NMF(n_components=4, max_iter=1000)
     idx = np.round(np.linspace(0, 491519, n_samples)).astype(int)
     for i in range(n_samples):
         img_idx = idx[i]
-        att, predict, label, wm = crp_attribution.relevances(
-            img_idx, activations=activations
-        )
+        att, predict, label, wm = crp_attribution.relevances(img_idx, activations=True)
+        att = relu(att)
         labels.append(label)
         watermarks.append(wm)
         vector[i] = att
     watermarks = np.array(watermarks)
     labels = np.array(labels)
-    results = []
     vector = vector / torch.abs(vector).max()
-    for l in range(2):
-        for w in range(2):
-            d = np.logical_and(watermarks == w, labels == l)
-            tmean = torch.mean(vector[d, :],0).tolist()
-            results.append([tmean, f"label{l}_wm{w}"])
-    return results
+    W = nmf.fit_transform(vector)
+    H = nmf.components_
+    return H.tolist()
+
+
+def nmf_points(
+    item,
+):
+    pca = PCA(n_components=2)
+    nmf_centroids = item["nmf_centroids"]
+    nmf_centroids = pca.fit_transform(np.array(nmf_centroids))
+    return nmf_centroids
+
 
 def train_model_evaluate(name, item, gm, unbiased_ds):
     res = item
     print(name)
-    train_loader = get_biased_loader(
+    """ train_loader = get_biased_loader(
         item["bias"], item["strength"], batch_size=128, verbose=False
     )
     model = train_network(
@@ -222,11 +231,10 @@ def train_model_evaluate(name, item, gm, unbiased_ds):
     )
     crp_attribution = CRPAttribution(
         model, unbiased_ds, "nmf", item["strength"], item["bias"]
-    )
-    #nmf_exp = nmf_experiment(model, gm, crp_attribution)
-    #res["tsne_experiment"] = nmf_exp
-    reldsit = relevance_distance(crp_attribution)
-    res["relevance_distance"] = reldsit
+    ) """
+    
+    reldsit = nmf_points(item)
+    res["nmf_centroids_2d"] = reldsit
     return (name, res)
 
 
@@ -235,13 +243,13 @@ def compute_all():
         accuracies = json.load(f)
 
     _, unb_long, test_loader = get_test_dataset()
-    gm = GroundTruthMeasures(binary=True)
+    # gm = GroundTruthMeasures()
     for akey in accuracies.keys():
         item = accuracies[akey]
-        (name, result) = train_model_evaluate(akey, item, gm, unb_long)
+        (name, result) = train_model_evaluate(akey, item, None, unb_long)
         accuracies[name] = result
 
-        with open("model_accuracies2.json", "w") as f:
+        with open("model_accuracies3.json", "w") as f:
             json.dump(accuracies, f, indent=2)
 
 

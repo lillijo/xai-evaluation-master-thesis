@@ -125,9 +125,6 @@ def train_network(
     learning_rate=LEARNING_RATE,
     optim=OPTIMIZER,
 ):
-    manual_seed(SEED)
-    np.random.seed(SEED)
-
     model = ShapeConvolutionalNeuralNetwork()
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     print(device)
