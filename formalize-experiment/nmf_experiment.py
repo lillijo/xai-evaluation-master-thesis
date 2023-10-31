@@ -15,7 +15,7 @@ from crp_attribution import CRPAttribution
 
 ACTIVATIONS = False
 FEATURE = "linear_layers.1"
-N_SAMPLES = 400
+N_SAMPLES = 800
 FV_NAME = "fv_model"
 BIASES = [0.2, 0.5, 0.6, 0.8, 0.9, 0.99]
 STRENGTH = 0.5
@@ -24,7 +24,6 @@ BATCH_SIZE = 128
 LR = 0.01
 NAME = "../clustermodels/nmf"
 EPOCHS = 4
-
 
 def to_name(b, s, l):
     return "b{}-s{}-l{}".format(
@@ -113,8 +112,7 @@ def tsne_experiment(
     predictions = []
     labels = []
     watermarks = []
-    tsne = TSNE(n_components=2, perplexity=30, learning_rate=0.1)
-
+    tsne = TSNE(n_components=2, perplexity=30, learning_rate=15, random_state=13)
     idx = np.round(np.linspace(0, 491519, n_samples)).astype(int)
     for i in range(n_samples):
         img_idx = idx[i]
@@ -126,26 +124,154 @@ def tsne_experiment(
         watermarks.append(wm)
         vector[i] = att
 
+    centroids = np.empty((8, 2))
+    centroids[:] = np.nan
     if torch.all(vector == 0):
         print("did not work")
-        return []
+        return (centroids.tolist(), [])
     watermarks = np.array(watermarks)
     predictions = np.array(predictions)
     labels = np.array(labels)
     results = []
     vector = vector / torch.abs(vector).max()
     arr = tsne.fit_transform(vector.numpy())
-    for l in range(2):
-        for w in range(2):
-            for p in range(1):
-                means = filter_type(l, w, p, watermarks, labels, predictions, arr)
-                results.append(
-                    [
-                        means,
-                        f"label{l}_wm{w}_pred{p}",
-                    ]
+    for label in [0, 1]:
+        for watermark in [0, 1]:
+            for prediction in [0, 1]:
+                d = np.logical_and(watermarks == watermark, labels == label)
+                d = np.logical_and(d, predictions == prediction)
+                if arr[d, 0].shape[0] > 0:
+                    centroids[label + 2 * watermark + 4 * prediction] = np.mean(
+                        arr[d], axis=0
+                    )
+    return centroids.tolist()
+
+def tsne_experiment_no_prediction(
+    crp_attribution,
+    activations=ACTIVATIONS,
+    n_samples=N_SAMPLES,
+):
+    vector = torch.zeros((n_samples, 6))
+    labels = []
+    watermarks = []
+    tsne = TSNE(n_components=2, perplexity=30, random_state=13)
+    idx = np.round(np.linspace(0, 491519, n_samples)).astype(int)
+    for i in range(n_samples):
+        img_idx = idx[i]
+        att, predict, label, wm = crp_attribution.relevances(
+            img_idx, activations=activations
+        )
+        labels.append(label)
+        watermarks.append(wm)
+        vector[i] = att
+
+    centroids = np.empty((4, 2))
+    centroids[:] = np.nan
+    if torch.all(vector == 0):
+        print("did not work")
+        return (centroids.tolist(), [])
+    watermarks = np.array(watermarks)
+    labels = np.array(labels)
+    results = []
+    #vector = vector / torch.abs(vector).max()
+    arr = tsne.fit_transform(vector.numpy())
+    for label in [0, 1]:
+        for watermark in [0, 1]:
+            d = np.logical_and(watermarks == watermark, labels == label)
+            if arr[d, 0].shape[0] > 5:
+                centroids[label + 2 * watermark] = np.mean(
+                    arr[d], axis=0
                 )
-    return results
+    return centroids.tolist()
+
+
+def pca_experiment(
+    crp_attribution,
+    activations=ACTIVATIONS,
+    n_samples=N_SAMPLES,
+):
+    vector = torch.zeros((n_samples, 6))
+    predictions = []
+    labels = []
+    watermarks = []
+    pca = PCA(n_components=2)
+    idx = np.round(np.linspace(0, 491519, n_samples)).astype(int)
+    for i in range(n_samples):
+        img_idx = idx[i]
+        att, predict, label, wm = crp_attribution.relevances(
+            img_idx, activations=activations
+        )
+        predictions.append(int(predict))
+        labels.append(label)
+        watermarks.append(wm)
+        vector[i] = att
+
+    centroids = np.empty((8, 2))
+    centroids[:] = np.nan
+    if torch.all(vector == 0):
+        print("did not work")
+        return (centroids.tolist(), [])
+    watermarks = np.array(watermarks)
+    predictions = np.array(predictions)
+    labels = np.array(labels)
+    results = []
+    vector = vector / torch.abs(vector).max()
+    arr = pca.fit_transform(vector.numpy())
+    for label in [0, 1]:
+        for watermark in [0, 1]:
+            for prediction in [0, 1]:
+                d = np.logical_and(watermarks == watermark, labels == label)
+                d = np.logical_and(d, predictions == prediction)
+                if arr[d, 0].shape[0] > 0:
+                    centroids[label + 2 * watermark + 4 * prediction] = np.mean(
+                        arr[d], axis=0
+                    )
+    return centroids.tolist()
+
+
+def watermark_relevance(
+    crp_attribution,
+    n_samples=N_SAMPLES,
+):
+    vector = torch.zeros((n_samples, 6))
+    predictions = []
+    labels = []
+    watermarks = []
+    pca = PCA(n_components=2)
+    idx = np.round(np.linspace(0, 491519, n_samples)).astype(int)
+    for i in range(n_samples):
+        img_idx = idx[i]
+        lat, wm = crp_attribution.dataset.get_item_info(img_idx)
+        watermarks.append(wm)
+        for n in range(6):
+            att, rest, predict, label = crp_attribution.watermark_neuron_importance(
+                img_idx, "linear_layers.0", n
+            )
+            if n == 0:
+                predictions.append(int(predict))
+                labels.append(label)
+            vector[i, n] = att
+
+    centroids = np.empty((8, 6))
+    centroids[:] = np.nan
+    """ if torch.all(vector == 0):
+        print("did not work")
+        return centroids.tolist() """
+    watermarks = np.array(watermarks)
+    predictions = np.array(predictions)
+    labels = np.array(labels)
+    results = []
+    arr = vector.numpy()# pca.fit_transform(vector.numpy())
+    for label in [0, 1]:
+        for watermark in [0, 1]:
+            for prediction in [0, 1]:
+                d = np.logical_and(watermarks == watermark, labels == label)
+                d = np.logical_and(d, predictions == prediction)
+                if arr[d, 0].shape[0] > 0:
+                    centroids[label + 2 * watermark + 4 * prediction] = np.mean(
+                        arr[d], axis=0
+                    )
+    return centroids.tolist()
 
 
 def relevance_distance(
@@ -169,7 +295,15 @@ def relevance_distance(
     watermarks = np.array(watermarks)
     labels = np.array(labels)
     results = []
-    vector = vector / torch.abs(vector).max()
+    for label in [0, 1]:
+        for watermark in [0, 1]:
+            for prediction in [0, 1]:
+                d = np.logical_and(watermarks == watermark, labels == label)
+                d = np.logical_and(d, predictions == prediction)
+                if arr[d, 0].shape[0] > 0:
+                    centroids[label + 2 * watermark + 4 * prediction] = np.mean(
+                        arr[d], axis=0
+                    )
     for l in range(2):
         for w in range(2):
             d = np.logical_and(watermarks == w, labels == l)
@@ -203,19 +337,10 @@ def nmf_centroids(
     return H.tolist()
 
 
-def nmf_points(
-    item,
-):
-    pca = PCA(n_components=2)
-    nmf_centroids = item["nmf_centroids"]
-    nmf_centroids = pca.fit_transform(np.array(nmf_centroids))
-    return nmf_centroids
-
-
 def train_model_evaluate(name, item, gm, unbiased_ds):
     res = item
     print(name)
-    """ train_loader = get_biased_loader(
+    train_loader = get_biased_loader(
         item["bias"], item["strength"], batch_size=128, verbose=False
     )
     model = train_network(
@@ -231,25 +356,24 @@ def train_model_evaluate(name, item, gm, unbiased_ds):
     )
     crp_attribution = CRPAttribution(
         model, unbiased_ds, "nmf", item["strength"], item["bias"]
-    ) """
-    
-    reldsit = nmf_points(item)
-    res["nmf_centroids_2d"] = reldsit
+    )
+    stuff = tsne_experiment_no_prediction(crp_attribution)
+    res["tsne_experiment_no_prediction"] = stuff
     return (name, res)
 
 
 def compute_all():
-    with open("model_accuracies2.json", "r") as f:
+    with open("tsne_experiment.json", "r") as f:
         accuracies = json.load(f)
 
-    _, unb_long, test_loader = get_test_dataset()
+    _, unb_long, _ = get_test_dataset()
     # gm = GroundTruthMeasures()
     for akey in accuracies.keys():
         item = accuracies[akey]
         (name, result) = train_model_evaluate(akey, item, None, unb_long)
         accuracies[name] = result
 
-        with open("model_accuracies3.json", "w") as f:
+        with open("tsne_experiment.json", "w") as f:
             json.dump(accuracies, f, indent=2)
 
 

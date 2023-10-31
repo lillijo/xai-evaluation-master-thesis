@@ -12,7 +12,7 @@ from biased_dsprites_dataset import get_dataset
 SEED = 37
 EPOCHS = 4
 LEARNING_RATE = 0.0003
-MOMENTUM = 0.55
+MOMENTUM = 0.45
 OPTIMIZER = "Adam"
 
 
@@ -162,6 +162,11 @@ def train_network(
         if avg_loss < best_loss:
             best_epoch = model_path
             best_loss = avg_loss
+        if avg_loss > 0.6:
+            print("resetting parameters")
+            for layer in model.children():
+                if hasattr(layer, 'reset_parameters'):
+                    layer.reset_parameters()
         torch.save(model.state_dict(), model_path)
 
     print(

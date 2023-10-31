@@ -198,14 +198,11 @@ class CRPAttribution:
             sample, conditions, self.composite, record_layer=self.layer_names
         )
         if activations:
-            relevances = self.cc.attribute(
-                attr.activations["linear_layers.0"], abs_norm=True
-            )
+            relu = torch.nn.ReLU()
+            activs = relu(attr.activations["linear_layers.0"])
+            relevances = activs
         else:
             relevances = attr.relevances["linear_layers.0"][0]
-            """ self.cc.attribute(
-                attr.relevances["linear_layers.0"], abs_norm=True
-            ) """
         return relevances, pred, datum[1], watermark
 
     def get_reference_scores(self, img, label, layer, neurons):
@@ -306,7 +303,7 @@ class CRPAttribution:
         return (
             sum_watermark_relevance,
             sum_rest_relevance,
-            output.data,
+            pred,  # output.data,
             label,
         )
 
