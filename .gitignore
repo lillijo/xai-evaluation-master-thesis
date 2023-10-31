@@ -15,8 +15,8 @@ models/
 *.npy
 archive/
 
-formalize-experiment/crp-data
-formalize-experiment/heatmaps
+experiments/crp-data
+experiments/heatmaps
 
 
 # Byte-compiled / optimized / DLL files
