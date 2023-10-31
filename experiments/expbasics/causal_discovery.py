@@ -4,9 +4,6 @@ import numpy as np
 import torch
 
 from tigramite import data_processing as pp
-
-from cmiknnmixed import CMIknnMixed
-
 # from tigramite.toymodels import structural_causal_processes
 from tigramite import plotting as tp
 from tigramite.pcmci import PCMCI
@@ -19,9 +16,10 @@ from tigramite.independence_tests.gsquared import Gsquared
 from tigramite.independence_tests.cmisymb import CMIsymb
 from tigramite.independence_tests.regressionCI import RegressionCI
 
-from crp_attribution import CRPAttribution
-from biased_dsprites_dataset import BiasedDSpritesDataset
-from network import ShapeConvolutionalNeuralNetwork
+from expbasics.crp_attribution import CRPAttribution
+from expbasics.biased_dsprites_dataset import BiasedDSpritesDataset
+from expbasics.network import ShapeConvolutionalNeuralNetwork
+from expbasics.cmiknnmixed import CMIknnMixed
 
 
 class CausalDiscovery:

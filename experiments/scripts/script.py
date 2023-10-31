@@ -1,9 +1,10 @@
 import numpy as np
+import json
+
 from crp_attribution import CRPAttribution
 from crp_hierarchies import sample_from_categories
 from network import train_network, performance_analysis, accuracy_per_class
 from biased_dsprites_dataset import get_test_dataset, get_biased_loader
-import json
 
 BIASES = np.linspace(0.4, 1.0, 31)
 STRENGTHS = [0.5]  # [0.3, 0.5, 0.7]

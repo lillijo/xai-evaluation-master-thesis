@@ -4,14 +4,15 @@ from sklearn.decomposition import NMF
 from torchvision.models.feature_extraction import create_feature_extractor
 from sklearn.manifold import TSNE, Isomap
 from sklearn.decomposition import PCA
-from network import train_network as train_network
-from biased_dsprites_dataset import get_test_dataset, get_biased_loader
 import json
 from tqdm import tqdm
-from crp_hierarchies import sample_from_categories
-from network import train_network, accuracy_per_class
-from ground_truth_measures import GroundTruthMeasures
-from crp_attribution import CRPAttribution
+
+from expbasics.network import train_network as train_network
+from expbasics.biased_dsprites_dataset import get_test_dataset, get_biased_loader
+from expbasics.crp_hierarchies import sample_from_categories
+from expbasics.network import train_network, accuracy_per_class
+from expbasics.ground_truth_measures import GroundTruthMeasures
+from expbasics.crp_attribution import CRPAttribution
 
 ACTIVATIONS = False
 FEATURE = "linear_layers.1"
@@ -363,7 +364,7 @@ def train_model_evaluate(name, item, gm, unbiased_ds):
 
 
 def compute_all():
-    with open("tsne_experiment.json", "r") as f:
+    with open("outputs/tsne_experiment.json", "r") as f:
         accuracies = json.load(f)
 
     _, unb_long, _ = get_test_dataset()
@@ -373,7 +374,7 @@ def compute_all():
         (name, result) = train_model_evaluate(akey, item, None, unb_long)
         accuracies[name] = result
 
-        with open("tsne_experiment.json", "w") as f:
+        with open("outputs/tsne_experiment.json", "w") as f:
             json.dump(accuracies, f, indent=2)
 
 

@@ -7,7 +7,7 @@ from torch.optim import SGD, Adam
 from tqdm import tqdm
 from torch.autograd import Variable
 import torch.nn.functional as F
-from biased_dsprites_dataset import get_dataset
+from expbasics.biased_dsprites_dataset import get_dataset
 
 SEED = 37
 EPOCHS = 4

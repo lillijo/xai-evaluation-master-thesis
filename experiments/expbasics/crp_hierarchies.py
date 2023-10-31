@@ -1,6 +1,6 @@
 import numpy as np
-from crp_attribution_binary import CRPAttribution
-from biased_dsprites_dataset import BiasedDSpritesDataset
+from expbasics.crp_attribution_binary import CRPAttribution
+from expbasics.biased_dsprites_dataset import BiasedDSpritesDataset
 
 SAMPLE_SIZE = 100
 
