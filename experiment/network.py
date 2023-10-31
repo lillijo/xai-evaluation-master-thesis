@@ -12,7 +12,7 @@ from biased_dsprites_dataset import get_dataset
 SEED = 37
 EPOCHS = 4
 LEARNING_RATE = 0.0003
-MOMENTUM = 0.55
+MOMENTUM = 0.45
 OPTIMIZER = "Adam"
 
 
@@ -124,9 +124,10 @@ def train_network(
     epochs=EPOCHS,
     learning_rate=LEARNING_RATE,
     optim=OPTIMIZER,
+    cuda_num=0,
 ):
     model = ShapeConvolutionalNeuralNetwork()
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = f"cuda:{cuda_num}" if torch.cuda.is_available() else "cpu"
     print(device)
 
     model = model.to(device)

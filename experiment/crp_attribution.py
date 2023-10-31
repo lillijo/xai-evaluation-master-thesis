@@ -1,6 +1,10 @@
 import numpy as np
 import torch
+import os
+
 from crp.image import vis_opaque_img, plot_grid
+
+# from zennit.canonizers import SequentialMergeBatchNorm
 from zennit.composites import EpsilonPlusFlat
 from crp.concepts import ChannelConcept
 from crp.helper import get_layer_names, get_output_shapes, abs_norm
@@ -97,7 +101,7 @@ class CRPAttribution:
                 "relevance",
                 (0, no_ref_samples),
                 composite=self.composite,
-                rf=False,
+                rf=True,
                 plot_fn=vis_simple,
             )
             all_refs[f"{i}:{targets}"] = ref_c[f"{i}:{targets}"]
@@ -302,7 +306,7 @@ class CRPAttribution:
         return (
             sum_watermark_relevance,
             sum_rest_relevance,
-            output.data,
+            pred,  # output.data,
             label,
         )
 

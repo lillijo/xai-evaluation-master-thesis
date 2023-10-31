@@ -24,8 +24,8 @@ class BiasedDSpritesDataset(Dataset):
         self.bias = bias
         self.strength = strength
         self.verbose = verbose
-        self.img_dir = f"images/" #{img_path}/
-        self.rng = np.random.default_rng(seed=SEED)
+        self.img_dir = f"images/"  # {img_path}/
+        self.rng = np.random.default_rng()  # seed=SEED
         self.water_image = np.load("watermark.npy")
         self.fixed_length = length
         with open("labels.pickle", "rb") as f:
@@ -159,7 +159,9 @@ def get_test_dataset(split=0.3, batch_size=128):
     return unb_short, unbiased_ds, test_loader
 
 
-def get_biased_loader(bias, strength, batch_size=128, verbose=True, split=0.3) -> DataLoader:
+def get_biased_loader(
+    bias, strength, batch_size=128, verbose=True, split=0.3
+) -> DataLoader:
     ds = BiasedDSpritesDataset(verbose=verbose, strength=strength, bias=bias)
     [train_ds, test_ds] = random_split(ds, [split, 1 - split])
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)

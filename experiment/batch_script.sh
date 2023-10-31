@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=script_models         # Specify job name
-#SBATCH --output=script_models.o%j       # File name for standard output
+#SBATCH --job-name=many_models         # Specify job name
+#SBATCH --output=many_models.o%j       # File name for standard output
 #SBATCH --partition=gpu                 # Specify partition name
-#SBATCH --gpus=4                        # Specify number of GPUs needed for the job
+#SBATCH --gpus=2                        # Specify number of GPUs needed for the job
 #SBATCH --exclusive                     # https://slurm.schedmd.com/sbatch.html#OPT_exclusive
 #SBATCH --mem=0                         # Request all memory available on all nodes
 #SBATCH --account=bd1083
