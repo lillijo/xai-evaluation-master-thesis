@@ -1,15 +1,19 @@
 import numpy as np
 import os
+from tqdm import tqdm
+from functools import partialmethod
 
-BIASES = np.round(np.linspace(0, 1, 101), 3)
-STRENGTHS = [0.5]  # [0.3, 0.5, 0.7]  #
-LEARNING_RATE = [0.009, 0.007, 0.005, 0.001]
+BIASES = np.round(np.linspace(0, 1, 4), 3) #101
+STRENGTHS = [0.5] 
+
+tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
+
 
 def compute_all():
     for bias in BIASES:
         for strength in STRENGTHS:
-            for learnr in LEARNING_RATE:
-                os.system(f"sbatch ./batch_script_parallel.sh {bias} {strength} {learnr}")                
+            os.system(f"sbatch -J models_{bias} ./batch_script_parallel.sh {bias} {strength}")
+
 
 if __name__ == "__main__":
     compute_all()

@@ -2,16 +2,15 @@ import numpy as np
 import json
 from network import train_network, accuracy_per_class
 from biased_dsprites_dataset import get_biased_loader, BiasedDSpritesDataset
-from crp_attribution import CRPAttribution
+# from crp_attribution import CRPAttribution
 import argparse
 
-BIASES = np.round(np.linspace(0, 1, 101), 3)
-STRENGTHS = [0.5]  # [0.3, 0.5, 0.7]  #
 LEARNING_RATE = [0.009, 0.007, 0.005, 0.001]
 EPOCHS = 3
 BATCH_SIZE = 128
 NAME = "models/nmf"
 FV_NAME = "fv_model"
+IMAGE_PATH = "images/"
 
 
 def to_name(b, s, l):
@@ -41,7 +40,7 @@ def train_model_evaluate(*args):
     )
 
     test_loader = get_biased_loader(
-        bias, strength, batch_size=128, verbose=False, split=0.05
+        bias, strength, batch_size=128, verbose=False, split=0.05, img_path=IMAGE_PATH
     )
     res["train_accuracy"] = list(accuracy_per_class(model, test_loader))
     res["all_wm_accuracy"] = list(accuracy_per_class(model, allwm))
@@ -54,31 +53,33 @@ def train_model_evaluate(*args):
     return (name, res)
 
 
-def compute_with_param(bias, strength, learnr):
+def compute_with_param(bias, strength):
     with open("parallel_accuracies.json", "r") as f:
         accuracies = json.load(f)
-    allwm = get_biased_loader(0.0, 0.0, batch_size=128, verbose=False, split=0.05)
-    nowm = get_biased_loader(0.0, 1.0, batch_size=128, verbose=False, split=0.05)
-    unbiased_ds = BiasedDSpritesDataset(
-        verbose=False,
-        bias=0.0,
-        strength=0.5,
+    allwm = get_biased_loader(
+        0.0, 0.0, batch_size=128, verbose=False, split=0.05, img_path=IMAGE_PATH
     )
-    name = to_name(bias, strength, learnr)
-    if not (name in accuracies and accuracies[name]["train_accuracy"][2] > 80):
-        (name, result) = train_model_evaluate(
-            bias, strength, allwm, nowm, unbiased_ds, learnr
-        )
-        accuracies[name] = result
+    nowm = get_biased_loader(
+        0.0, 1.0, batch_size=128, verbose=False, split=0.05, img_path=IMAGE_PATH
+    )
+    unbiased_ds = BiasedDSpritesDataset(
+        verbose=False, bias=0.0, strength=0.5, img_path=IMAGE_PATH
+    )
+    for learnr in LEARNING_RATE:        
+        name = to_name(bias, strength, learnr)
+        if not (name in accuracies and accuracies[name]["train_accuracy"][2] > 80):
+            (name, result) = train_model_evaluate(
+                bias, strength, allwm, nowm, unbiased_ds, learnr
+            )
+            accuracies[name] = result
 
-    with open("parallel_accuracies.json", "w") as f:
-        json.dump(accuracies, f, indent=2)
+        with open("parallel_accuracies.json", "w") as f:
+            json.dump(accuracies, f, indent=2)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("script_parallel")
     parser.add_argument("bias", help="bias float", type=float)
     parser.add_argument("strength", help="strength float", type=float)
-    parser.add_argument("learnr", help="learning rate float", type=float)
     args = parser.parse_args()
-    compute_with_param(args.bias, args.strength, args.learnr) 
+    compute_with_param(args.bias, args.strength)

@@ -20,8 +20,8 @@ STEP_SIZE = 14943
 
 
 class GroundTruthMeasures:
-    def __init__(self, binary=False, img_path="../dsprites-dataset") -> None:
-        self.img_dir = f"{img_path}/images/"
+    def __init__(self, binary=False, img_path="../dsprites-dataset/") -> None:
+        self.img_dir = f"{img_path}images/"
         self.water_image = np.load("watermark.npy")
         self.binary = binary
         with open("labels.pickle", "rb") as f:

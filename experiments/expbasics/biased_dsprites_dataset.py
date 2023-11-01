@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 TRAINING_DATASET_LENGTH = 437280
 TEST_DATASET_LENGTH = 300000
 SEED = 37
+IMG_PATH_DEFAULT = "../dsprites-dataset/images/"
 
 
 class BiasedDSpritesDataset(Dataset):
@@ -19,13 +20,13 @@ class BiasedDSpritesDataset(Dataset):
         strength=0.0,
         verbose=False,
         length=None,
-        img_path="../dsprites-dataset",
+        img_path=IMG_PATH_DEFAULT,
     ):
         self.bias = bias
         self.strength = strength
         self.verbose = verbose
-        self.img_dir = f"{img_path}/images/" #{img_path}/
-        self.rng = np.random.default_rng() #seed=SEED
+        self.img_dir = img_path
+        self.rng = np.random.default_rng()  # seed=SEED
         self.water_image = np.load("watermark.npy")
         self.fixed_length = length
         with open("labels.pickle", "rb") as f:
@@ -109,7 +110,7 @@ class BiasedDSpritesDataset(Dataset):
         return (self.labels[index][1:], has_watermark)
 
 
-def get_all_datasets(batch_size=128):
+def get_all_datasets(batch_size=128, img_path=IMG_PATH_DEFAULT):
     BIAS_RANGES = [0.0, 0.5, 0.7, 0.9, 0.99, 1.0]  # np.linspace(0, 1, 5)
     STRENGTH_RANGES = [0.0, 0.1, 0.3, 0.6, 0.9, 0.99, 1.0]
     rand_gen = torch.Generator().manual_seed(SEED)
@@ -120,6 +121,7 @@ def get_all_datasets(batch_size=128):
                 verbose=False,
                 strength=s,
                 bias=b,
+                img_path=img_path
             )
             train_ds, test_ds = random_split(ds, [0.3, 0.7], generator=rand_gen)
             train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
@@ -129,14 +131,15 @@ def get_all_datasets(batch_size=128):
 
 
 def get_dataset(
-    bias, strength, batch_size=128, verbose=True
+    bias, strength, batch_size=128, verbose=True, img_path=IMG_PATH_DEFAULT
 ) -> Tuple[BiasedDSpritesDataset, DataLoader, BiasedDSpritesDataset, DataLoader]:
     rand_gen = torch.Generator().manual_seed(SEED)
-    ds = BiasedDSpritesDataset(verbose=verbose, strength=strength, bias=bias)
+    ds = BiasedDSpritesDataset(verbose=verbose, strength=strength, bias=bias, img_path=img_path)
     unbiased_ds = BiasedDSpritesDataset(
         verbose=False,
         bias=0.0,
         strength=0.5,
+        img_path=img_path
     )
     [train_ds, _] = random_split(ds, [0.3, 0.7], generator=rand_gen)
     [unb_ds, _] = random_split(unbiased_ds, [0.2, 0.8], generator=rand_gen)
@@ -145,12 +148,13 @@ def get_dataset(
     return ds, train_loader, unbiased_ds, test_loader
 
 
-def get_test_dataset(split=0.3, batch_size=128):
+def get_test_dataset(split=0.3, batch_size=128, img_path=IMG_PATH_DEFAULT):
     rand_gen = torch.Generator().manual_seed(SEED)
     unbiased_ds = BiasedDSpritesDataset(
         verbose=False,
         bias=0.0,
         strength=0.5,
+        img_path=img_path
     )
     [unb_short, unb_long] = random_split(
         unbiased_ds, [split, 1 - split], generator=rand_gen
@@ -159,8 +163,10 @@ def get_test_dataset(split=0.3, batch_size=128):
     return unb_short, unbiased_ds, test_loader
 
 
-def get_biased_loader(bias, strength, batch_size=128, verbose=True, split=0.3) -> DataLoader:
-    ds = BiasedDSpritesDataset(verbose=verbose, strength=strength, bias=bias)
+def get_biased_loader(
+    bias, strength, batch_size=128, verbose=True, split=0.3, img_path=IMG_PATH_DEFAULT
+) -> DataLoader:
+    ds = BiasedDSpritesDataset(verbose=verbose, strength=strength, bias=bias, img_path=img_path)
     [train_ds, test_ds] = random_split(ds, [split, 1 - split])
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
     return train_loader

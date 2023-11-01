@@ -7,7 +7,7 @@ from torch.optim import SGD, Adam
 from tqdm import tqdm
 from torch.autograd import Variable
 import torch.nn.functional as F
-from expbasics.biased_dsprites_dataset import get_dataset
+from .biased_dsprites_dataset import get_dataset
 
 SEED = 37
 EPOCHS = 4
@@ -124,9 +124,10 @@ def train_network(
     epochs=EPOCHS,
     learning_rate=LEARNING_RATE,
     optim=OPTIMIZER,
+    cuda_num=0,
 ):
     model = ShapeConvolutionalNeuralNetwork()
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = f"cuda:{cuda_num}" if torch.cuda.is_available() else "cpu"
     print(device)
 
     model = model.to(device)
@@ -159,13 +160,13 @@ def train_network(
         print(f"loss epoch: {avg_loss}")
         # save the model's state
         model_path = "model_{}".format(epoch)
-        if avg_loss < best_loss:
+        if avg_loss < best_loss and best_loss > 0.63:
             best_epoch = model_path
             best_loss = avg_loss
-        if avg_loss > 0.6:
+        if avg_loss > 0.63:
             print("resetting parameters")
             for layer in model.children():
-                if hasattr(layer, 'reset_parameters'):
+                if hasattr(layer, "reset_parameters"):
                     layer.reset_parameters()
         torch.save(model.state_dict(), model_path)
 
