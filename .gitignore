@@ -17,6 +17,7 @@ archive/
 
 experiments/crp-data
 experiments/heatmaps
+experiments/outputs/jobs
 
 
 # Byte-compiled / optimized / DLL files
