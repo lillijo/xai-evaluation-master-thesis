@@ -15,51 +15,23 @@ MOMENTUM = 0.45
 OPTIMIZER = "Adam"
 IMG_PATH_DEFAULT = "../dsprites-dataset/images/"
 
-
-class ShapeConvolutionalNeuralNetworkOld(nn.Module):
-    def __init__(self):
-        super(ShapeConvolutionalNeuralNetworkOld, self).__init__()
-        self.convolutional_layers = nn.Sequential(
-            nn.Conv2d(1, 6, kernel_size=3, stride=1, padding=0),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.ReLU(),
-            nn.Conv2d(6, 6, kernel_size=3, stride=1, padding=0),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.ReLU(),
-            nn.Conv2d(6, 6, kernel_size=3, stride=1, padding=0),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.ReLU(),
-        )
-        self.linear_layers = nn.Sequential(
-            nn.Linear(216, 6),
-            nn.ReLU(),
-            nn.Linear(6, 2),
-            nn.ReLU(),
-        )
-
-    def forward(self, x):
-        x = self.convolutional_layers(x)
-        x = x.view(x.size(0), -1)
-        x = self.linear_layers(x)
-        return x
-
-
 class ShapeConvolutionalNeuralNetwork(nn.Module):
     def __init__(self):
         super(ShapeConvolutionalNeuralNetwork, self).__init__()
         self.convolutional_layers = nn.Sequential(
-            nn.Conv2d(1, 4, kernel_size=5, stride=1, padding=0),
+            nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=0),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.ReLU(),
-            nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=0),
+            nn.Conv2d(8, 8, kernel_size=5, stride=1, padding=0),
             nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(8, 8, kernel_size=7, stride=1, padding=0),
             nn.ReLU(),
         )
         self.linear_layers = nn.Sequential(
-            nn.Linear(784, 6),
+            nn.Linear(392, 6),
             nn.ReLU(),
             nn.Linear(6, 2),
-            nn.ReLU(),
         )
 
     def forward(self, x):
@@ -164,11 +136,12 @@ def train_network(
         if avg_loss < best_loss and best_loss > 0.63:
             best_epoch = model_path
             best_loss = avg_loss
-        if avg_loss > 0.63:
+        if avg_loss > 0.63 and epoch < 2:
             print("resetting parameters")
-            for layer in model.children():
-                if hasattr(layer, "reset_parameters"):
-                    layer.reset_parameters()
+            for block in model.children():
+                for layer in block.children():
+                    if hasattr(layer, "reset_parameters"):
+                        layer.reset_parameters()
         torch.save(model.state_dict(), model_path)
 
     print(
