@@ -7,13 +7,13 @@ from torch.optim import SGD, Adam
 from tqdm import tqdm
 from torch.autograd import Variable
 import torch.nn.functional as F
-from .biased_dsprites_dataset import get_dataset
 
 SEED = 37
 EPOCHS = 4
 LEARNING_RATE = 0.0003
 MOMENTUM = 0.45
 OPTIMIZER = "Adam"
+IMG_PATH_DEFAULT = "../dsprites-dataset/images/"
 
 
 class ShapeConvolutionalNeuralNetworkOld(nn.Module):
@@ -70,7 +70,7 @@ class ShapeConvolutionalNeuralNetwork(nn.Module):
 
 
 def train_one_epoch(
-    batch_size, epoch_index, model, loss_fn, optimizer, training_loader
+    batch_size, epoch_index, model, loss_fn, optimizer, training_loader, disable
 ):
     running_loss = 0.0
     last_loss = 0.0
@@ -79,7 +79,7 @@ def train_one_epoch(
     # Here, we use enumerate(training_loader) instead of
     # iter(training_loader) so that we can track the batch
     # index and do some intra-epoch reporting
-    for i, data in (pbar := tqdm(enumerate(training_loader))):
+    for i, data in (pbar := tqdm(enumerate(training_loader), disable=disable)):
         # Every data instance is an input + label pair
         inputs, labels = data
         if torch.cuda.is_available():
@@ -125,6 +125,7 @@ def train_network(
     learning_rate=LEARNING_RATE,
     optim=OPTIMIZER,
     cuda_num=0,
+    disable=True,
 ):
     model = ShapeConvolutionalNeuralNetwork()
     device = f"cuda:{cuda_num}" if torch.cuda.is_available() else "cpu"
@@ -155,11 +156,11 @@ def train_network(
         # Make sure gradient tracking is on, and do a pass over the data
         model.train(True)
         avg_loss = train_one_epoch(
-            batch_size, epoch, model, loss_fn, optimizer, training_loader
+            batch_size, epoch, model, loss_fn, optimizer, training_loader, disable
         )
         print(f"loss epoch: {avg_loss}")
         # save the model's state
-        model_path = "model_{}".format(epoch)
+        model_path = f"model_{epoch}_{bias}"
         if avg_loss < best_loss and best_loss > 0.63:
             best_epoch = model_path
             best_loss = avg_loss
@@ -180,11 +181,11 @@ def train_network(
     return model
 
 
-def accuracy(model, loader):
+def accuracy(model, loader, disable=True):
     model.eval()
     correct = 0
     with torch.no_grad():
-        for item in tqdm(loader):
+        for item in tqdm(loader, disable=disable):
             data, target = Variable(item[0]), Variable(item[1])
             if torch.cuda.is_available():
                 data = data.cuda()
@@ -195,14 +196,14 @@ def accuracy(model, loader):
     return 100.0 * correct / len(loader.dataset)
 
 
-def accuracy_per_class(model, loader):
+def accuracy_per_class(model, loader, disable=True):
     model.eval()
     n_classes = 2
     correct = np.zeros(n_classes, dtype=np.int64)
     wrong = np.zeros(n_classes, dtype=np.int64)
     allcorrect = 0
     with torch.no_grad():
-        for item in tqdm(loader):
+        for item in tqdm(loader, disable=disable):
             data, target = Variable(item[0], requires_grad=False), Variable(
                 item[1], requires_grad=False
             )
@@ -220,17 +221,3 @@ def accuracy_per_class(model, loader):
     assert correct.sum() + wrong.sum() == len(loader.dataset)
     result = (100.0 * correct / (correct + wrong)).tolist()
     return result + [float(100.0 * allcorrect / len(loader.dataset))]
-
-
-def performance_analysis(model, bias, strength):
-    train_ds, train_loader, test_ds, test_loader = get_dataset(bias, strength)
-    acc_per_class = accuracy_per_class(model, test_loader)
-    acc = accuracy(model, test_loader)
-
-    def to_per(arr):
-        return ", ".join([f"{np.round(i, 3)}%" for i in arr])
-
-    print(
-        f"Biased test dataset accuracy per class: {to_per(acc_per_class)} total accuracy:  {to_per(acc)}% "
-    )
-    return acc, acc_per_class

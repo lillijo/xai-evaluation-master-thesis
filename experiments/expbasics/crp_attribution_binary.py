@@ -15,7 +15,7 @@ from crp.graph import trace_model_graph
 from crp.attribution import AttributionGraph
 from crp.helper import abs_norm
 
-from expbasics.biased_dsprites_dataset import BiasedDSpritesDataset
+from .biased_dsprites_dataset import BiasedDSpritesDataset
 
 
 def vis_simple(

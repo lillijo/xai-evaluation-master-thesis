@@ -14,8 +14,6 @@ from crp.visualization import FeatureVisualization
 from crp.graph import trace_model_graph
 from crp.attribution import AttributionGraph
 
-from expbasics.biased_dsprites_dataset import BiasedDSpritesDataset
-
 
 def vis_simple(
     data_batch, heatmaps, rf=False, alpha=1.0, vis_th=0.0, crop_th=0.0, kernel_size=9
@@ -39,7 +37,7 @@ class CRPAttribution:
         # device = "cuda:0" if torch.cuda.is_available() else "cpu"
         # canonizers = [SequentialMergeBatchNorm()]
         self.composite = EpsilonPlusFlat()
-        self.dataset: BiasedDSpritesDataset = dataset
+        self.dataset = dataset
         self.model = model
 
         self.cc = ChannelConcept()
@@ -202,7 +200,32 @@ class CRPAttribution:
             activs = relu(attr.activations["linear_layers.0"])
             relevances = activs
         else:
-            relevances = attr.relevances["linear_layers.0"][0]
+            relevances = self.cc.attribute(attr.relevances["linear_layers.0"][0], abs_norm=True) 
+            #attr.relevances["linear_layers.0"][0]
+        return relevances, pred, datum[1], watermark
+
+    def relevances2(self, index=None, activations=False):
+        if index is None:
+            index = np.random.randint(0, len(self.dataset))
+        datum = self.dataset[index]
+        img = datum[0]
+        _, watermark = self.dataset.get_item_info(index)
+        sample = img.view(1, 1, 64, 64)
+        sample.requires_grad = True
+        output = self.model(sample)
+        pred = output.data.max(1, keepdim=True)[1]
+        res = pred[0][0].tolist()
+        conditions = [{"y": [1]}]
+        attr = self.attribution(
+            sample, conditions, self.composite, record_layer=self.layer_names
+        )
+        if activations:
+            relu = torch.nn.ReLU()
+            activs = relu(attr.activations["linear_layers.0"])
+            relevances = activs
+        else:
+            relevances = self.cc.attribute(attr.relevances["linear_layers.0"][0], abs_norm=True) 
+            #attr.relevances["linear_layers.0"][0]
         return relevances, pred, datum[1], watermark
 
     def get_reference_scores(self, img, label, layer, neurons):

@@ -16,10 +16,10 @@ from tigramite.independence_tests.gsquared import Gsquared
 from tigramite.independence_tests.cmisymb import CMIsymb
 from tigramite.independence_tests.regressionCI import RegressionCI
 
-from expbasics.crp_attribution import CRPAttribution
-from expbasics.biased_dsprites_dataset import BiasedDSpritesDataset
-from expbasics.network import ShapeConvolutionalNeuralNetwork
-from expbasics.cmiknnmixed import CMIknnMixed
+from .crp_attribution import CRPAttribution
+from .biased_dsprites_dataset import BiasedDSpritesDataset
+from .network import ShapeConvolutionalNeuralNetwork
+from .cmiknnmixed import CMIknnMixed
 
 
 class CausalDiscovery:

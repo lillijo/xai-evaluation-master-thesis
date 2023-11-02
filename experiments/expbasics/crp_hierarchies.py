@@ -1,10 +1,8 @@
 import numpy as np
-from expbasics.crp_attribution_binary import CRPAttribution
-from expbasics.biased_dsprites_dataset import BiasedDSpritesDataset
 
 SAMPLE_SIZE = 100
 
-def sample_from_categories(ds: BiasedDSpritesDataset):
+def sample_from_categories(ds):
     indices = {0: {0: [], 1:[]},1: {0: [], 1:[]}}
     for i in range(SAMPLE_SIZE* 20):
         index = np.random.randint(0, len(ds))
@@ -14,7 +12,7 @@ def sample_from_categories(ds: BiasedDSpritesDataset):
     return indices   
 
 
-def average_hierarchies(crpattr: CRPAttribution, indices: dict, sample_size: int = SAMPLE_SIZE):
+def average_hierarchies(crpattr, indices: dict, sample_size: int = SAMPLE_SIZE):
     relevance_graphs = {
         0: {0: {}, 1: {}},
         1: {0: {}, 1: {}},
