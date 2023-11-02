@@ -141,9 +141,10 @@ def train_network(
             best_loss = avg_loss
         if avg_loss > 0.63:
             print("resetting parameters")
-            for layer in model.children():
-                if hasattr(layer, "reset_parameters"):
-                    layer.reset_parameters()
+            for block in model.children():
+                for layer in block.children():
+                    if hasattr(layer, "reset_parameters"):
+                        layer.reset_parameters()
         torch.save(model.state_dict(), model_path)
 
     print(
@@ -187,7 +188,7 @@ def train_model_with_bias(bias, lr):
     strength = 0.5
     batch_size = 128
     name = "outputs/test"
-    train_loader = get_biased_loader(bias, 0.5, batch_size=batch_size, verbose=True)
+    train_loader = get_biased_loader(bias, 0.5, batch_size=batch_size, verbose=True, split=0.1)
     model = train_network(
         train_loader,
         bias,

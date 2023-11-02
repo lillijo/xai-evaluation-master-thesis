@@ -6,10 +6,10 @@ from biased_dsprites_dataset import get_biased_loader, BiasedDSpritesDataset
 # from crp_attribution import CRPAttribution
 import argparse
 
-LEARNING_RATE = [0.009, 0.007, 0.005, 0.001]
+LEARNING_RATE = [0.0005, 0.001, 0.0015, 0.002]
 EPOCHS = 3
 BATCH_SIZE = 128
-NAME = "models/nmf"
+NAME = "models/newm"
 FV_NAME = "fv_model"
 IMAGE_PATH = "images/"
 
