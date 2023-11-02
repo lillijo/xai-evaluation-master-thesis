@@ -2,6 +2,7 @@ import numpy as np
 import json
 from network import train_network, accuracy_per_class
 from biased_dsprites_dataset import get_biased_loader, BiasedDSpritesDataset
+
 # from crp_attribution import CRPAttribution
 import argparse
 
@@ -22,18 +23,19 @@ def to_name(b, s, l):
 
 
 def train_model_evaluate(*args):
-    (bias, strength, allwm, nowm, unbiased_ds, lr) = args
+    (bias, strength, allwm, nowm, unbiased_ds, lr, load_model) = args
     res = {}
     name = to_name(bias, strength, lr)
-    print(name)
-    train_loader = get_biased_loader(bias, strength, batch_size=128, verbose=False)
+    train_loader = get_biased_loader(
+        bias, strength, batch_size=128, verbose=False, img_path=IMAGE_PATH
+    )
     model = train_network(
         train_loader,
         bias,
         strength,
         NAME,
         BATCH_SIZE,
-        load=False,
+        load=load_model,
         retrain=False,
         learning_rate=lr,
         epochs=EPOCHS,
@@ -65,16 +67,17 @@ def compute_with_param(bias, strength):
     unbiased_ds = BiasedDSpritesDataset(
         verbose=False, bias=0.0, strength=0.5, img_path=IMAGE_PATH
     )
-    for learnr in LEARNING_RATE:        
+    for learnr in LEARNING_RATE:
         name = to_name(bias, strength, learnr)
         if not (name in accuracies and accuracies[name]["train_accuracy"][2] > 80):
+            load_model = False if (name in accuracies) else True
             (name, result) = train_model_evaluate(
-                bias, strength, allwm, nowm, unbiased_ds, learnr
+                bias, strength, allwm, nowm, unbiased_ds, learnr, load_model
             )
+            print(f"(((({name}:{result}))))")
             accuracies[name] = result
-
-        with open("parallel_accuracies.json", "w") as f:
-            json.dump(accuracies, f, indent=2)
+        else:
+            print(f"(((({name}:{accuracies[name]}))))")
 
 
 if __name__ == "__main__":
