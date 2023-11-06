@@ -9,7 +9,7 @@ import argparse
 LEARNING_RATE = [0.0005, 0.001, 0.0015, 0.002]
 EPOCHS = 3
 BATCH_SIZE = 128
-NAME = "models/newm"
+NAME = "models/bigm"
 FV_NAME = "fv_model"
 IMAGE_PATH = "images/"
 

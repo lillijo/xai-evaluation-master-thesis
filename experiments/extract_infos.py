@@ -27,5 +27,5 @@ for f in onlyfiles:
             rest = a.replace(name.group(), "").replace("))))", "").replace("'", "\"")
             accuracies[rname] = json.loads(rest)
 
-with open("outputs/combined_accuracies.json", "w") as fd:
+with open("outputs/combined_accuracies2.json", "w") as fd:
     json.dump(accuracies, fd, indent=2)

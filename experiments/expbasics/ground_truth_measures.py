@@ -6,22 +6,20 @@ import torch
 import os
 import pickle
 
-from PIL import Image as im
-
 from zennit.composites import EpsilonPlusFlat
 from crp.concepts import ChannelConcept
 from crp.helper import get_layer_names, abs_norm
 from crp.attribution import CondAttribution
-from crp.image import imgify, plot_grid
-from tqdm import tqdm
+from crp.image import imgify
 
 MAX_INDEX = 491520
 STEP_SIZE = 14943
+LATSIZE = [2, 2, 6, 40, 32, 32]
 
 
 class GroundTruthMeasures:
-    def __init__(self, binary=False, img_path="../dsprites-dataset/") -> None:
-        self.img_dir = f"{img_path}images/"
+    def __init__(self, binary=False, img_path="../dsprites-dataset/images/") -> None:
+        self.img_dir = img_path
         self.water_image = np.load("watermark.npy")
         self.binary = binary
         with open("labels.pickle", "rb") as f:
@@ -79,7 +77,7 @@ class GroundTruthMeasures:
     def get_output(self, index, model, wm):
         image = self.load_image(index, wm)
         output = model(image)
-        return float(output.data[0])
+        return torch.nn.functional.softmax(output.data[0], dim=0)
 
     def prediction_flip(self, index, model):
         latents = self.index_to_latent(index)
@@ -126,9 +124,7 @@ class GroundTruthMeasures:
             pred_flip_all[k] = pred_flip_all[k] / count
         return pred_flip_all
 
-    def get_func(
-        self, attribution, composite, cc, layer_names, func_type, model
-    ):
+    def get_func(self, attribution, composite, cc, layer_names, func_type, model):
         if func_type == "bbox":
             mask = torch.zeros(64, 64)
             mask[52:, 0:17] = 1
@@ -253,7 +249,7 @@ class GroundTruthMeasures:
         )
         indices = range(0, MAX_INDEX, STEP_SIZE)
         all_inds = []
-        for i in tqdm(indices):
+        for i in indices:
             neur_flip = self.something_flip(i, apply_func)
             all_inds.append(neur_flip)
         blub = {}
@@ -266,7 +262,6 @@ class GroundTruthMeasures:
                         if neuron not in blub[latent]:
                             blub[latent][neuron] = 0.0
                         blub[latent][neuron] += item[latent][neuron]
-        # print(blub)
         return blub
 
     def ols_values(self, model):
@@ -287,26 +282,21 @@ class GroundTruthMeasures:
             if torch.cuda.is_available():
                 image = image.cuda()
             image.requires_grad = True
-            if self.binary:
-                pred = 0
-            else:
-                output = model(image)
-                pred = output.data.max(1, keepdim=True)[1]
-            attr = attribution(image, [{"y": [pred]}], composite, record_layer=layer_names)
+            attr = attribution(image, [{"y": [1]}], composite, record_layer=layer_names)
             rel_c = cc.attribute(
                 attr.relevances["linear_layers.0"], abs_norm=True
             )  #  activations
             # rel_c = abs_norm(rel_c)
             return rel_c[0].tolist()  # [float(rel_c[0][n]) for n in range(6)]
 
-        indices = range(0, MAX_INDEX, STEP_SIZE * 2)
+        indices = range(0, MAX_INDEX, STEP_SIZE)
         everything = []
-        for index in tqdm(indices):
+        for index in indices:
             latents = self.index_to_latent(index)
             original_latents = apply_func(index, False)
             with_wm = apply_func(index, True)
-            everything.append([0, 0, original_latents])
-            everything.append([0, 1, with_wm])
+            everything.append([0, 0, original_latents, True, index])
+            everything.append([0, 1, with_wm, False, index])
 
             for lat in range(1, self.latents_sizes.size):
                 lat_name = self.latents_names[lat]
@@ -317,9 +307,9 @@ class GroundTruthMeasures:
                         flip_latents[lat] = j
                         flip_index = self.latent_to_index(flip_latents)
                         flip_pred = apply_func(flip_index, False)
-                        everything.append([lat, j, flip_pred])
+                        everything.append([lat, j, flip_pred, False, index])
                     else:
-                        everything.append([lat, j, original_latents])
+                        everything.append([lat, j, original_latents, True, index])
         return everything
 
     def ordinary_least_squares(self, everything):
@@ -338,6 +328,26 @@ class GroundTruthMeasures:
                 results[latent].append(R_sq)
         return results
 
+    def mean_logit_change(self, everything):
+        indices = range(0, MAX_INDEX, STEP_SIZE)
+        index_results = np.zeros((len(indices), 6, 6))
+        for count, index in enumerate(indices):
+            vals_index = list(filter(lambda x: x[4] == index, everything))
+            for latent in range(6):
+                vals = list(filter(lambda x: x[0] == latent, vals_index))
+                original_v = list(filter(lambda x: x[3], vals))
+                changed_v = list(filter(lambda x: not x[3], vals))
+                o_neuron = np.array([x[2] for x in original_v])
+                c_neurons = np.array([x[2] for x in changed_v])
+                mean_change = 0
+                for o, other in enumerate(c_neurons):
+                    ndiff = np.abs(o_neuron[0] - other)
+                    mean_change += ndiff
+                mean_change = mean_change / len(c_neurons)
+                index_results[count][latent] = mean_change
+        results = np.sum(index_results, 0) / len(indices)
+        return results
+
     def ols_prediction_values(self, model):
         """
         * SAME FOR MODELS PREDICTION
@@ -345,12 +355,12 @@ class GroundTruthMeasures:
 
         indices = range(0, MAX_INDEX, STEP_SIZE)
         everything = []
-        for index in tqdm(indices):
+        for index in indices:
             latents = self.index_to_latent(index)
-            original_latents = self.get_output(index, model, False)
-            with_wm = self.get_output(index, model, True)
-            everything.append([0, 0, original_latents])
-            everything.append([0, 1, with_wm])
+            original_output = self.get_output(index, model, False)
+            with_wm_output = self.get_output(index, model, True)
+            everything.append([0, 0, original_output, True, index])
+            everything.append([0, 1, with_wm_output, False, index])
 
             for lat in range(1, self.latents_sizes.size):
                 lat_name = self.latents_names[lat]
@@ -361,9 +371,9 @@ class GroundTruthMeasures:
                         flip_latents[lat] = j
                         flip_index = self.latent_to_index(flip_latents)
                         flip_pred = self.get_output(flip_index, model, False)
-                        everything.append([lat, j, flip_pred])
+                        everything.append([lat, j, flip_pred, False, index])
                     else:
-                        everything.append([lat, j, original_latents])
+                        everything.append([lat, j, original_output, True, index])
         return everything
 
     def ordinary_least_squares_prediction(self, everything):
@@ -371,14 +381,37 @@ class GroundTruthMeasures:
         for latent in range(6):
             results.append([])
             vals = list(filter(lambda x: x[0] == latent, everything))
-            predict = [x[1] for x in vals]
-            actual = [x[2] for x in vals]
+            predict = torch.tensor([torch.tensor(x[1]) for x in vals])
+            actual = torch.tensor([x[2].max(0, keepdim=True).indices for x in vals])
             corr_matrix = np.corrcoef(actual, predict)
             corr = corr_matrix[0, 1]
             R_sq = corr**2
             if np.isnan(R_sq):
                 R_sq = 0.0
             results[latent].append(R_sq)
+        return results
+
+    def mean_logit_change_prediction(self, everything):
+        """
+        * same as for neurons but with output value
+        """
+        indices = range(0, MAX_INDEX, STEP_SIZE)
+        index_results = np.zeros((len(indices), 6))
+        for count, index in enumerate(indices):
+            vals_index = list(filter(lambda x: x[4] == index, everything))
+            for latent in range(6):
+                vals = list(filter(lambda x: x[0] == latent, vals_index))
+                original_v = list(filter(lambda x: x[3], vals))
+                changed_v = list(filter(lambda x: not x[3], vals))
+                o_neuron = [x[2] for x in original_v]
+                c_neurons = [x[2] for x in changed_v]
+                mean_change = 0
+                for other in c_neurons:
+                    ndiff = np.sum(np.abs(np.array(o_neuron[0] - other))) / 2
+                    mean_change += ndiff
+                mean_change = mean_change / (len(c_neurons))
+                index_results[count][latent] = mean_change
+        results = np.sum(index_results, 0) / len(indices)
         return results
 
     def heatmaps(self, model, bias, index):

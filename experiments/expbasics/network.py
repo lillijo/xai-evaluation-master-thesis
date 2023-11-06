@@ -101,7 +101,6 @@ def train_network(
 ):
     model = ShapeConvolutionalNeuralNetwork()
     device = f"cuda:{cuda_num}" if torch.cuda.is_available() else "cpu"
-    print(device)
 
     model = model.to(device)
     path = "{}_{}_{}_{}.pickle".format(
@@ -110,11 +109,13 @@ def train_network(
         str(strength).replace("0.", "s0i"),
         str(learning_rate).replace("0.", "l0i"),
     )
-    print(path)
     if load and os.path.exists(path):
         model.load_state_dict(torch.load(path, map_location=torch.device(device)))
         if not retrain:
             return model
+    if not disable:
+        print(device)
+        print(path)
     loss_fn = nn.CrossEntropyLoss()
     if optim == "Adam":
         optimizer = Adam(model.parameters(), lr=learning_rate)
