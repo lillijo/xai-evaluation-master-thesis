@@ -77,7 +77,8 @@ class GroundTruthMeasures:
     def get_output(self, index, model, wm):
         image = self.load_image(index, wm)
         output = model(image)
-        return torch.nn.functional.softmax(output.data[0], dim=0)
+        res = output.data[0] / (torch.abs(output.data[0]).sum(-1) + 1e-10)
+        return res
 
     def prediction_flip(self, index, model):
         latents = self.index_to_latent(index)

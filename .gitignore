@@ -20,6 +20,8 @@ experiments/heatmaps
 experiments/outputs/jobs
 experiments/model_*.*
 
+latex/thesis_latex_template/pics/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
