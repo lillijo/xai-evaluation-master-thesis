@@ -16,13 +16,13 @@ from sklearn.manifold import TSNE, Isomap, MDS, LocallyLinearEmbedding
 from sklearn.decomposition import PCA
 from sklearn.cluster import SpectralClustering, KMeans
 
-from expbasics.network_binary import train_network as train_network_binary
-from expbasics.network import train_network as train_network, accuracy_per_class
-from expbasics.biased_dsprites_dataset import get_test_dataset, get_biased_loader, BiasedDSpritesDataset
-from expbasics.crp_hierarchies import sample_from_categories
-from expbasics.network import train_network, accuracy_per_class
-from expbasics.ground_truth_measures import GroundTruthMeasures
-from expbasics.crp_attribution import CRPAttribution, vis_simple
+from .network_binary import train_network as train_network_binary
+from .network import train_network as train_network, accuracy_per_class
+from .biased_dsprites_dataset import get_test_dataset, get_biased_loader, BiasedDSpritesDataset
+from .crp_hierarchies import sample_from_categories
+from .network import train_network, accuracy_per_class
+from .ground_truth_measures import GroundTruthMeasures
+from .crp_attribution import CRPAttribution, vis_simple
 
 
 

@@ -127,8 +127,8 @@ def vis_nearest_neighbors(dataset, idx, file_name):
     grid = torch.stack(grid)
 
     grid = imgify(grid, grid=True)
-    os.makedirs("images", exist_ok=True)
-    grid.save(f"images/{file_name}.png")
+    os.makedirs("outputs", exist_ok=True)
+    grid.save(f"outputs/{file_name}.png")
 
 
 

@@ -41,17 +41,21 @@ def logit_change_evaluate(item):
         epochs=EPOCHS,
     )
     gm = GroundTruthMeasures(img_path=IMAGE_PATH)
-    # flipvalues = gm.ols_values(model)
-    # ols_vals = gm.ordinary_least_squares(flipvalues)
-    # mean_logit = gm.mean_logit_change(flipvalues)
+    """ flipvalues = gm.ols_values(model)
+    ols_vals = gm.ordinary_least_squares(flipvalues)
+    mean_logit = gm.mean_logit_change(flipvalues)
     flip_pred = gm.ols_prediction_values(model)
     ols_pred = gm.ordinary_least_squares_prediction(flip_pred)
     mean_logit_pred = gm.mean_logit_change_prediction(flip_pred)
 
-    # res["crp_ols"] = ols_vals
-    # res["crp_mean_logit_change"] = mean_logit.tolist()
+    res["crp_ols"] = ols_vals
+    res["crp_mean_logit_change"] = mean_logit.tolist()
     res["pred_ols"] = ols_pred
-    res["pred_mean_logit_change"] = mean_logit_pred.tolist()
+    res["pred_mean_logit_change"] = mean_logit_pred.tolist() """
+
+    # add change / new measure to compute here
+    pred_vals = gm.ols_prediction_values(model)
+    res["pred_flip"] = gm.prediction_flip_new(pred_vals).tolist()
     return res
 
 

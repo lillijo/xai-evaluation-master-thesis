@@ -415,6 +415,26 @@ class GroundTruthMeasures:
         results = np.sum(index_results, 0) / len(indices)
         return results
 
+    def prediction_flip_new(self, everything):
+        indices = range(0, MAX_INDEX, STEP_SIZE)
+        index_results = np.zeros((len(indices), 6))
+        for count, index in enumerate(indices):
+            vals_index = list(filter(lambda x: x[4] == index, everything))
+            for latent in range(6):
+                vals = list(filter(lambda x: x[0] == latent, vals_index))
+                original_v = list(filter(lambda x: x[3], vals))
+                changed_v = list(filter(lambda x: not x[3], vals))
+                og_prediction = [x[2].max(0, keepdim=True).indices for x in original_v]
+                ch_prediction = [x[2].max(0, keepdim=True).indices for x in changed_v]
+                num_changed = 0
+                for i in range(len(ch_prediction)):
+                    if ch_prediction[i][0] != og_prediction[0][0]:
+                        num_changed += 1
+                mean_change = num_changed / (len(ch_prediction))
+                index_results[count][latent] = mean_change
+        results = np.sum(index_results, 0) / len(indices)
+        return results
+
     def heatmaps(self, model, bias, index):
         """
         * Calculate heatmap for each neuron in each bias
