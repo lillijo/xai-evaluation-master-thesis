@@ -1,0 +1,49 @@
+\chapter{Introduction}\label{chapter:introduction}
+
+\begin{itemize}
+\color{red} 
+    \item (1-2 pages)
+    \item Context: make sure to link where your work fits in Problem: gap in knowledge, too expensive, too slow, a deficiency, superseded technology. Strategy: the way you will address the problem
+    \item Outline of the rest of the paper: "The remainder of the paper is organized as follows. In Section 2, we introduce ..Section 3 describes ... Finally, we describe future work in Section 5." (Note that Section is capitalized. Also, vary your expression between "section" being the subject of the sentence, as in "Section 2 discusses ..." and "In Section, we discuss ...".)
+    \item Avoid stock and cliche phrases such as "recent advances in XYZ" or anything alluding to the growth of the Internet. 
+    \item Be sure that the introduction lets the reader know what this paper is about, not just how important your general area of research is. Readers won't stick with you for three pages to find out what you are talking about.
+    \item The introduction must motivate your work by pinpointing the problem you are addressing and then give an overview of your approach and/or contributions (and perhaps even a general description of your results). In this way, the intro sets up my expectations for the rest of your paper -- it provides the context, and a preview.
+    \item Repeating the abstract in the introduction is a waste of space.
+\end{itemize}
+
+
+\todo{REFER MORE TO \textit{Are We Explaining The Data Or The Model?}}
+\section{Motivation and Context}
+The recent method of Concept-Relevance-Propagation (CRP) introduced in \cite{Achtibat2022} has been developed for a more fine-grained explanation of a neural networks decisions. Instead of producing one saliency map explaining the overall prediction output such as LRP \cite{Bach2015} does, each \textit{concept} in some hidden layer of the network gets assigned a conditional relevance and its own saliency map. In addition to the saliency maps, the relevance scores also act as a metric to maximize when searching representative samples for each of the concepts. According to the authors, through this more detailed explanation one can not only understand \textit{where} a model sees the most relevant features, but also \textit{what} features are relevant in this area. Their claim is, that the deeper layers of models represent concepts which are human-understandable and therefore aid in the explanation of what the model predicts. 
+
+Some works have criticized local attribution methods, to which LRP counts, for their class-insensitivity due to the lack of negative explanations as well as overall subpar performance in the \textit{limit of simplicity} i.e. for very small linear datasets. 
+In the following we will investigate whether the extension through the concept conditional saliency maps and relevance scores can alleviate some of the criticisms.
+
+Others call for more user-guided evaluation of explanation methods as the ultimate goal is to help humans understand and evaluate machine learning models. One example of a user study and accompanying benchmark dataset is \cite{Sixt2022}. Similar to our work they investigate how well users can quantify biases of a model, one of the most important applications of XAI methods. 
+
+There is still no consensus on the appropriate evaluation of back-propagation methods specifically and saliency methods in general. Most authors introducing new methods show explanations on examples from typical benchmark datasets and models. Usually ablation tests, in which singular neurons/channels are deactivated in descending order of attributed relevance, give some confidence that the features identified as important indeed have some relationship with the prediction. However it is unclear whether the explanation methods sensitivity to e.g. biases in the dataset is in accordance with the actual models sensitivity. 
+
+Therefore we will extend previous work on evaluating the explanation methods fidelity in the presence of data biases and Clever-Hans features. Due to limited resources a user study like \cite{Sixt2022} is not possible in our case. Instead we intend to develop a metric to quantify the coupling between the models prediction performance to the concept relevances as an artificially introduced bias gets stronger. To test this metric we propose a simple artificial benchmarking dataset based on the existing disentangling dataset \textit{dsprites} \cite{dsprites17}. To some of the images we add a watermark based on a structural causal model (SCM) similar to how we expect the causal relationships in real-world watermark examples to be. Neither does the watermark itself cause the label, nor the label the watermark. Instead, a third, unknown confounder has an effect on both the presence of the watermark and the shape shown in the image. The confounding variable termed the \textit{generator} is mixed with other random variables as described in \cite{Clark2023}. Here, the generator is the signal and the other \textit{causal factors} of the two variables the noise, so a better term than 'signal-to-noise' ratio might be 'spurious-to-core' ratio.
+(The terms 'spurious' and 'core' features are taken from \cite{Singla2022}.) 
+
+Knowing the generating factors of these benchmark images, showing either rectangles or ellipses in different sizes, rotations and positions helps to quantify the ground-truth feature importance of not only the feature to be predicted but expectedly irrelevant features (as a baseline) as well as the Clever-Hans feature. 
+
+With the aim of evaluating fidelity in the presence of a spuriously correlated feature, a zoo of models is trained with varying signal-to-noise ratios of the watermark feature. Ground-truth biasedness is calculated for each model and each feature as shown in \cref{fig:tesfigure}. The models coupling with the core feature shape suffers and with the watermark feature increases as the spurious-to-core ratio rises. 
+For a preliminary test the total relevance of the pixels within a small bounding box around the watermark are compared to the total relevance of the rest of the image, using the saliency map produced as a global summary and equivalent to what LRP would produce. 
+
+If CRP indeed produces an accurate explanation, more concepts should assign higher relevance to the bias feature the stronger the bias impacts the prediction of the model. It is important to note, that the model might accurately predict based on the real feature even though the bias is strong, when there are enough counterexamples. \Cref{fig:tesfigure} shows the non-linear interaction between prediction accuracy and spurious-to-core ratio.
+Now the question is, whether CRP can correctly identify this non-linear relationship or whether CRPs attribution to the spurious feature will more closely follow its actual presence in the data. 
+In other words: Does CRP learn the causal effect of the spurious feature on the model or just the causal effect within the data? Our goal is to quantify the effect that CRP actually has on human understanding. So even if the overall importance of the watermark can be either denied or affirmed, the numeric importance might not be the same as what a user can see and find through heatmaps, relevance hierarchies and relevance maximization image sets. Therefore it is necessary to develop methods which quantify human understanding of biasedness?  
+
+\section{Strategy}
+\todo{refine strategy based on what i actually did}
+\begin{itemize}
+    \item use very simple artificial disentangling benchmarking dataset DSPRITES
+    \item add artificial watermark to artificial benchmark... because we need ground truth
+    \item create dataset with biased and with unbiased watermark distribution
+    \item train very small convolutional neural network on recognizing shapes
+    \item evaluate CRP on neural network trained on biased and unbiased dataset
+\end{itemize}
+
+\section{Outline}
+To further motivate this approach I will in the following summarize previous work on causal XAI, evaluation of XAI and local attribution methods in \cref{chapter:related_work}. Then I will lay down the theoretical framework of structural causal models and the used XAI method and evaluation in \cref{chapter:background}. \Cref{chapter:method} introduces the benchmark inspired by causal models and the convolutional neural network model. It also describes the methods used to establish ground-truth \textit{biasedness} of the models as well as of their explanations. Finally the performances are compared in \cref{chapter:results} and discussed in \cref{chapter:conclusion}.

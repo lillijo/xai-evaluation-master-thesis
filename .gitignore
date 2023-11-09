@@ -21,6 +21,14 @@ experiments/outputs/jobs
 experiments/model_*.*
 
 latex/thesis_latex_template/pics/
+latex/thesis_latex_template/*.aux
+latex/thesis_latex_template/*.bbl
+latex/thesis_latex_template/*.lot
+latex/thesis_latex_template/*.out
+latex/thesis_latex_template/*.toc
+latex/thesis_latex_template/*.gz
+latex/thesis_latex_template/*.blg
+latex/thesis_latex_template/*.lof
 
 
 # Byte-compiled / optimized / DLL files

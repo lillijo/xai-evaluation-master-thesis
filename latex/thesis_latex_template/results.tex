@@ -1,0 +1,40 @@
+\chapter{Results}\label{chapter:results}
+
+{ \color{red} 
+\begin{itemize}
+    \item (1/3 of thesis)
+    \item whatever you have done, you must comment it, compare it to other systems, evaluate it
+    \item usually, adequate graphs help to show the benefits of your approach 
+    \item caution: each result/graph must be discussed! what’s the reason for this peak or why have you observed this effect
+\end{itemize}
+ }
+
+\begin{enumerate}
+    \item ground-truth feature importance: mean logit change for output, R2-score,  prediction flip 
+    \item baseline explanation feature importance - thats what we compare to e.g. watermark bounding-box importance for summary heatmap
+    \item special concept explanations feature importance 
+    \item Test method on more complex dataset e.g. CLEVR-XAI
+    \item compare CRP to other XAI methods?
+\end{enumerate}
+
+
+\section{Experiments} 
+\begin{itemize}
+    \item what have I tried out with the different methods? 
+    \item what works and what doesn't
+    \item plot for each experiment/possible method?
+    \begin{itemize}
+        \item watermark bounding box average relevance for different subgroups, 
+        \\ somehow get difference
+        \item variance of latent factors in relevance maximization image set - low variance means it encodes the concept
+        \item naive: total relevance for watermark image region
+        \item total activation + relevance of neuron given just watermark image
+        \item one idea: take masked/bounding box approach again for neurons individual heatmaps
+        \item nmf idea: somehow try to reduce the latent space to Watermark/Shape axis and measure variance in either direction
+        \item centroids idea: use random DR algorithm and calculate ratio of centroid distances (needs latent factors again)
+        \item causal idea??? somehow measure causal effect? - the other things are kind of causal or?
+    \end{itemize}
+\end{itemize}
+
+\section{Discussion}
+

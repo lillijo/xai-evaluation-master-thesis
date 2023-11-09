@@ -1,0 +1,53 @@
+\subsection*{Abstract}
+\begin{itemize}
+    \color{red}
+    \item The abstract must not contain references, as it may be used without the main article. It is acceptable, although not common, to identify work by author, abbreviation or RFC number. (For example, "Our algorithm is based upon the work by Smith and Wesson.")
+    \item Avoid use of "in this paper" in the abstract. What other paper would you be talking about here?
+    \item Avoid general motivation in the abstract. You do not have to justify the importance of the Internet or explain what QoS is.
+    \item Highlight not just the problem, but also the principal results. Many people read abstracts and then decide whether to bother with the rest of the paper.
+    \item Since the abstract will be used by search engines, be sure that terms that identify your work are found there. In particular, the name of any protocol or system developed and the general area ("quality of service", "protocol verification", "service creation environment") should be contained in the abstract.
+    \item Avoid equations and math. Exceptions: Your paper proposes E = m c 2.
+\end{itemize}
+
+\subsubsection{Motivation}
+\begin{itemize}
+    \item explainable AI shows great progress in visualizing how neural networks see/decide
+    \item however there have been many criticisms and some argue that the XAI methods don't show what is actually seen by the NN and rely more on hyperparameters or the data itself.
+    \item For example, it is known that some attribution methods do not react well to constant vector shifts in the data which do not affect prediction.
+    \item it is especially unclear how the network deals with causal constructs: is there a difference between how it displays cause and effect, can it find important interactions between 2 variables or find spurious correlations?
+    \item we want to identify how the ground truth biasedness of a dataset interacts with the biasedness of the model and the biasedness of the explanation
+    \item for general attribution methods it has been shown that heatmaps can be misleading. If the spurious feature has any correlation with the core feature, it will have importance assigned. Often, the spurious feature comes as a watermark which is easy to identify. Consequently its importance can be overestimated when looking at a general heatmap of an image.
+    \item Looking at individual concepts with their relevances and specific heatmaps has the potential to identify which of the features (core or spurious) is actually most relevant.
+\end{itemize}
+
+\subsubsection{Problem Statement}
+\begin{itemize}
+    \item investigate the example of CRP, a recent method which takes the popular Layer-Wise Relevance Propagation to the next level, by producing conditional attributions for neurons or sets of neurons coined "concepts"
+    \item find out, whether the heatmaps or relevances produced by this algorithm have a connection either to the causal ground truth of data or the "causal pathways" in the NN
+\end{itemize}
+
+\subsubsection{Approach}
+\begin{itemize}
+    \item for validation purposes very simple disentangling dataset DSPRITES
+    \item introduce "causal" biases into dataset, by adding small watermark not uniformly to certain images
+    \item use a very small neural network, which seems to learn the bias strongly (check for accuracy)
+    \item as preliminary experiment check, if the bias is strongly visible in the data: if the heatmaps/crp hierarchies produced on average for the watermarked/unwatermarked subsets differ strongly
+    \item \textit{do causality lol}
+\end{itemize}
+
+\subsubsection{Results}
+\begin{itemize}
+    \item does CRP succeed in identifying the true biasedness of the model
+    \item what do we want to explain
+    \item does this result generalize for other attribution methods, data, SCMs?
+\end{itemize}
+
+\subsubsection{Conclusions}
+\begin{itemize}
+    \item found a new benchmark measure to combat the critique about the robustness and fidelity of especially concept-based methods.
+    \item from that new method a way to enrich or improve those methods arises
+    \item it is important to look at explanations in a more causal light because that is what they are ought do be doing
+    \item what else needs to be done especially
+\end{itemize}
+
+\cleardoublepage

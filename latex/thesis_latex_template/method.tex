@@ -1,0 +1,100 @@
+\chapter{Methods}\label{chapter:method}
+
+{ \color{red} 
+\begin{itemize}
+    \item (1/3 of thesis)
+    \item start with a theoretical approach, describe the developed system/algorithm/method from a high-level point of view,
+    \item go ahead in presenting your developments in more detail
+\end{itemize}
+ }
+
+
+\begin{enumerate}
+    \item Benchmark dataset dsprites
+    \item adaptation with watermark and spurious-to-core feature ratio as an SCM
+    \item training X models with different ratio, cutoff and learning rate on cluster
+    \item computing \textit{ground-truth feature importance} of core, spurious and unbiased features: mean logit change for output, R2-score,  prediction flip 
+    \item baseline(?) score how much importance is generally assigned to spurious feature (bounding box?)
+    \item special score for how much importance CRP assigns to concepts encoding spurious feature
+    \item causal effect estimation? or something like that
+\end{enumerate}
+
+
+
+
+\section{Causal Benchmark DSPRITES}
+\begin{itemize}
+    \item Benchmark dataset dsprites
+    \item adaptation with watermark and spurious-to-core feature ratio as an SCM
+    \item causal effect stuff: see \cref{fig:possible_scms}
+    \begin{itemize}
+        \item have latent factors - can intervene on each factor extensively
+        \item for model we can also assume SCM??? all connected neurons are causally connected
+        \item in given example prediction has shape AND watermark as causal ancestors
+        \item but in real world example spurious feature is only selection bias?
+        \item need to find good causal covering for what i am doing here
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}
+    \centering
+    \includegraphics[height=\textheight]{pics/different_possible_scms.png}
+    \caption{go more into detail about why and which SCM and what to expect from 'real' data}
+    \label{fig:possible_scms}
+\end{figure}
+
+\section{Should I include Model SCM experiments i did?} \todo{should i include model scm stuff and sttribution graphs etc?}
+
+\section{CNN Model Zoo}
+\begin{itemize}
+    \item architecture of the model with reasoning 
+    \item training split? 
+    \item showing some examples of heatmaps and maxrel images for different bias strength
+    \item how many models with which different features are trained
+    \item accuracies for models plot
+\end{itemize}
+
+\section{Ground-Truth Biasedness}
+\begin{itemize}
+    \item Prediction Flip
+    \item R2 score
+    \item mean logit change
+    \item non-linearity: This can also be explained information-theoretically \todo{explanation for non-linear biasedness - information-theoretically}
+\end{itemize}
+
+\section{Baseline Biasedness Measure}
+\begin{itemize}
+    \item Find a way to measure how well a single heatmap can show the bias
+    \item e.g.: watermark mask importance bilder mit wm general heatmap, total relevance inside mask for:
+    \item A: attribution mit wm, wenn ellipse und conditioned on y:[1]
+    \item B: attribution mit wm, wenn rect    und conditioned on y:[0]
+    \item C: attribution ohne wm, wenn ellipse und conditioned on y:[1]
+    \item D: attribution ohne wm, wenn rect    und conditioned on y:[0]
+    \item (A - B) + (D - C)
+\end{itemize}
+
+\section{Concepts Biasedness Measures}
+\begin{itemize}
+    \item should take into account that there are multiple concepts
+    \item one could be important and not assign strong relevance to watermark
+    \item the other could be unimportant and assign strong relevance to watermark
+    \item \textit{ground truth} idea is to again take the mean logit change for each single neuron or summed together somehow
+    \item we want to be able to identify \textit{spurious} concept and \textit{core} concept automatically, so it is not a good idea to have the latent factors given
+    \item one idea: take masked/bounding box approach again for neurons individual heatmaps
+    \item nmf idea: somehow try to reduce the latent space to Watermark/Shape axis and measure variance in either direction
+    \item centroids idea: use random DR algorithm and calculate ratio of centroid distances (needs latent factors again)
+    \item causal idea??? somehow measure causal effect? - the other things are kind of causal or?
+\end{itemize}
+
+\todo{make sure to not refer to results section too much. rather leave info out if it cannot explained well without looking at the results}
+
+LRP biasedness score sanity check:
+
+This sanity test shows that while LRP assigns strong relevance to the watermark, it fails in correctly identifying the lack of a watermark as the main reason to predict for the negative class (rectangle). Superficially this confirms the criticism of missing negative relevance \cite{Sixt2020}. It is however not clear if the advantage of not cancelling out importances outweighs this factor for more complex data and applications.  \todo{confirm class-invariance for heatmaps}
+
+\section{Setup}
+\label{section:setup} 
+\begin{itemize}
+    \item computed on personal dell xps 13 with cpu
+    \item and on cluster \todo{cluster specs}
+\end{itemize}

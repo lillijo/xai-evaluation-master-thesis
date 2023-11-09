@@ -1,0 +1,51 @@
+\chapter{Background}\label{chapter:background}
+
+{ \color{red} 
+\begin{enumerate}
+    \item Introduction to XAI in general
+    \item Evaluation of XAI methods in general
+    \item Structural Causal Models and causal framework
+\end{enumerate}
+ }
+ \todo{write background}
+
+
+\section{Concept Relevance Propagation}
+\begin{itemize}
+    \item brief explanation of LRP and Deep Taylor Decomposition
+    \item backpropagation rules etc? \todo{understand all rules etc of LRP/CRP}
+    \item theoretical idea of Concept Relevance Propagation and what it seeks to improve
+    \item some examples of usage:
+    \begin{itemize}
+        \item relevance scores for \textit{concepts} (=neurons)
+        \item relevance maximization images
+        \item conditioning on single concepts/ neurons ...? 
+        \item attribution graph 
+    \end{itemize}
+    \item recent criticism of LRP / local attribution methods
+\end{itemize}
+
+ 
+\section{Evaluation of Explanations}
+\begin{itemize}
+    \item differentiate between numerical evaluation and evaluation through user studies
+    \item make clear: human understanding is the ultimate goal, so user studies are the gold standard (but often not well done)
+    \item in response to \cite{Sixt2020}
+    \item examples of often used evaluations for local attribution methods and concept-based methods:
+    \begin{itemize}
+        \item feature ablation and related methods
+        \item TCAVs \cite{Kim2018} with benchmark feature set (hard and often not applicable)
+        \item clevr-xai? \cite{Arras2022}
+        
+    \end{itemize}
+\end{itemize}
+
+
+\section{Causal Framework}
+\begin{itemize}
+    \item Explain Structural Causal Models
+    \item Short introduction to causal effects? 
+    \item AI / neural networks in general do not care about causation and work through finding useful correlations
+    \item none-the-less the better we get at identifying spurious features the more causal methods might apply? 
+    \item causal methods have been hardly used for evaluation of XAI, this is easier as we do not expect the model to learn causal things but we assume the model itself is part of an SCM
+\end{itemize}
