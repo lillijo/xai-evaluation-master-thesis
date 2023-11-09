@@ -235,6 +235,16 @@ class CRPAttribution:
         )
         rel_c = self.cc.attribute(attr.relevances[layer], abs_norm=True)  #  activations
         return [rel_c[0][i] for i in neurons]
+    
+    def attribute_image(self, img):
+        sample = img.view(1, 1, 64, 64)
+        sample.requires_grad = True
+        conditions = [{"y": [1]}]
+        attr = self.attribution(
+            sample, conditions, self.composite, record_layer=self.layer_names
+        )
+        relevances = self.cc.attribute(attr.relevances["linear_layers.0"][0], abs_norm=True) 
+        return relevances
 
     def make_relevance_graph(self, index):
         names = {

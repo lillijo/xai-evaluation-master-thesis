@@ -32,7 +32,8 @@ def _compute_cavs(activations, step_size, data_indices):
 
     # merge batch size to the spatial dimension and take every step_size
     activations = activations.transpose(1, 0).reshape(num_channels, -1)
-    data_indices = data_indices.repeat_interleave(spat_size)
+    if spat_size > 1:
+        data_indices = data_indices.repeat_interleave(spat_size)
 
     # Iterate over the spatial dimension
     for i in range(num_steps):
@@ -88,7 +89,7 @@ def nmf(cavs, n_components):
     compute non-negative matrix factorization on the cavs and return the basis vectors
     """
     
-    model = NMF(n_components=n_components, verbose=True)
+    model = NMF(n_components=n_components,max_iter=400, verbose=False)
     W = model.fit_transform(cavs)
     H = model.components_
 
@@ -105,8 +106,8 @@ def nearest_neighbors(H, cavs, idx, n_neighbors, mode="dot"):
         scores = torch.matmul(H, cavs.T)
     elif mode == "cosine":
         scores = torch.matmul(H, cavs.T) / (torch.norm(H, dim=1).view(-1, 1) * torch.norm(cavs, dim=1).view(1, -1) + 1e-10)
-    #elif mode == "euclidean":
-    #    scores = torch.cdist(H, cavs.T, p=2)
+    elif mode == "euclidean":
+        scores = torch.cdist(H, cavs, p=2)
     else:
         raise ValueError("mode must be one of dot, cosine or euclidean")
 
