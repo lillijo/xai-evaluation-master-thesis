@@ -200,8 +200,10 @@ class CRPAttribution:
             activs = relu(attr.activations["linear_layers.0"])
             relevances = activs
         else:
-            relevances = self.cc.attribute(attr.relevances["linear_layers.0"][0], abs_norm=True) 
-            #attr.relevances["linear_layers.0"][0]
+            relevances = self.cc.attribute(
+                attr.relevances["linear_layers.0"][0], abs_norm=True
+            )
+            # attr.relevances["linear_layers.0"][0]
         return relevances, pred, datum[1], watermark
 
     def relevances2(self, index=None, activations=False):
@@ -224,8 +226,10 @@ class CRPAttribution:
             activs = relu(attr.activations["linear_layers.0"])
             relevances = activs
         else:
-            relevances = self.cc.attribute(attr.relevances["linear_layers.0"][0], abs_norm=True) 
-            #attr.relevances["linear_layers.0"][0]
+            relevances = self.cc.attribute(
+                attr.relevances["linear_layers.0"][0], abs_norm=True
+            )
+            # attr.relevances["linear_layers.0"][0]
         return relevances, pred, datum[1], watermark
 
     def get_reference_scores(self, img, label, layer, neurons):
@@ -235,7 +239,7 @@ class CRPAttribution:
         )
         rel_c = self.cc.attribute(attr.relevances[layer], abs_norm=True)  #  activations
         return [rel_c[0][i] for i in neurons]
-    
+
     def attribute_image(self, img):
         sample = img.view(1, 1, 64, 64)
         sample.requires_grad = True
@@ -243,7 +247,9 @@ class CRPAttribution:
         attr = self.attribution(
             sample, conditions, self.composite, record_layer=self.layer_names
         )
-        relevances = self.cc.attribute(attr.relevances["linear_layers.0"][0], abs_norm=True) 
+        relevances = self.cc.attribute(
+            attr.relevances["linear_layers.0"][0], abs_norm=True
+        )
         return relevances
 
     def make_relevance_graph(self, index):
@@ -346,7 +352,6 @@ class CRPAttribution:
         sample.requires_grad = True
         output = self.model(sample)
         pred = int(output.data.max(1)[1][0])
-
         conditions = [{"y": [pred]}]  # pred label
         attr = self.attribution(
             sample,
@@ -356,6 +361,29 @@ class CRPAttribution:
             init_rel=1,
         )
         return attr.heatmap
+
+    def cav_heatmap(self, index, layer, cav):
+        img, label = self.dataset[index]
+        sample = img.view(1, 1, 64, 64)
+        sample.requires_grad = True
+        output = self.model(sample)
+        pred = int(output.data.max(1)[1][0])
+        heatmap = torch.zeros(sample.shape)
+        conditions = [
+            {"y": [pred], layer: [i]} for i in self.layer_id_map[layer]
+        ]  # pred label
+        for neuron, attr in enumerate(
+            self.attribution.generate(
+                sample,
+                conditions,
+                self.composite,
+                record_layer=self.layer_names,
+                batch_size=1,
+                verbose=False,
+            )
+        ):
+            heatmap += attr.heatmap * cav[neuron]
+        return abs_norm(heatmap)
 
     def watermark_concept_importances(self, indices, test_ds):
         neuron_map = {
