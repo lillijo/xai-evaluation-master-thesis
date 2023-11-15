@@ -1,40 +1,76 @@
-\chapter{Results}\label{chapter:results}
+\chapter{Experimental Results}\label{chapter:results}
 
-{ \color{red} 
+{ \color{red}
+10-20 pages 
+
+    \begin{itemize}
+        \item (1/3 of thesis)
+        \item whatever you have done, you must comment it, compare it to other systems, evaluate it
+        \item usually, adequate graphs help to show the benefits of your approach
+        \item caution: each result/graph must be discussed! what's the reason for this peak or why have you observed this effect
+    \end{itemize}
+}
+
+
+\section{Experiments}
 \begin{itemize}
-    \item (1/3 of thesis)
-    \item whatever you have done, you must comment it, compare it to other systems, evaluate it
-    \item usually, adequate graphs help to show the benefits of your approach 
-    \item caution: each result/graph must be discussed! what’s the reason for this peak or why have you observed this effect
-\end{itemize}
- }
-
-\begin{enumerate}
-    \item ground-truth feature importance: mean logit change for output, R2-score,  prediction flip 
+    \item what have I tried out with the different methods?
+    \item list in concise order the possible measures
+    \item ground-truth feature importance: mean logit change for output, R2-score,  prediction flip
     \item baseline explanation feature importance - thats what we compare to e.g. watermark bounding-box importance for summary heatmap
-    \item special concept explanations feature importance 
+    \item special concept explanations feature importance
+    \item how are the experiments set up, how do i make sure they are all well comparable
+    \item to which other baseline could my measures be compared to?
+\end{itemize}
+
+\section{Results}
+lots of plots!
+\begin{itemize}
+    \item what have I tried out with the different methods?
+    \item what works and what doesn't
+    \item plot for each experiment/possible method?
+          \begin{itemize}
+              \item watermark bounding box average relevance for different subgroups, somehow get difference
+              \item variance of latent factors in relevance maximization image set - low variance means it encodes the concept
+              \item naive: total relevance for watermark image region
+              \item total activation + relevance of neuron given just watermark image
+              \item one idea: take masked/bounding box approach again for neurons individual heatmaps
+              \item nmf idea: somehow try to reduce the latent space to Watermark/Shape axis and measure variance in either direction
+              \item centroids idea: use random DR algorithm and calculate ratio of centroid distances (needs latent factors again)
+              \item causal idea??? somehow measure causal effect? - the other things are kind of causal or?
+          \end{itemize}
+\end{itemize}
+
+
+
+\section{Evaluation}
+\begin{itemize}
+    \item evaluation of evaluation criteria:
+    \begin{itemize}
+        \item takes into consideration the whole latent space spanned by the concepts
+        \item orients itself on known human cognition, user studies in this field would suggest this??? 
+        \item performs similar to baseline watermark bounding box importance? 
+        \item ...? \todo{define success criteria of finding a good measure}
+    \end{itemize}
+    \item which measure is the best according to those criteria
+    \item which measure is the closest to ground truth
+    \item which is the furthest from ground truth
+    \item does measure find \textit{more information} than CRP itself and could possibly be used as a method on top of CRP for disentanglement/ spurious-core relation explanation?
+    \item 
+\end{itemize}
+
+\section{Verification on Other Well-Known Benchmarks}
+\todo{should i do this? which benchmarks, how to setup causal model for them etc. }
+\begin{enumerate}
     \item Test method on more complex dataset e.g. CLEVR-XAI
     \item compare CRP to other XAI methods?
 \end{enumerate}
 
-
-\section{Experiments} 
-\begin{itemize}
-    \item what have I tried out with the different methods? 
-    \item what works and what doesn't
-    \item plot for each experiment/possible method?
-    \begin{itemize}
-        \item watermark bounding box average relevance for different subgroups, 
-        \\ somehow get difference
-        \item variance of latent factors in relevance maximization image set - low variance means it encodes the concept
-        \item naive: total relevance for watermark image region
-        \item total activation + relevance of neuron given just watermark image
-        \item one idea: take masked/bounding box approach again for neurons individual heatmaps
-        \item nmf idea: somehow try to reduce the latent space to Watermark/Shape axis and measure variance in either direction
-        \item centroids idea: use random DR algorithm and calculate ratio of centroid distances (needs latent factors again)
-        \item causal idea??? somehow measure causal effect? - the other things are kind of causal or?
-    \end{itemize}
-\end{itemize}
-
 \section{Discussion}
-
+\begin{itemize}
+    \item do measures work
+    \item what does causality help us with
+    \item is CRP better for constant vector shift stuff or does it still suffer from it?
+    \item can the application of those measures further explain/inform the explanation?
+    \item what failed miserably
+\end{itemize}

@@ -23,6 +23,18 @@ Others call for more user-guided evaluation of explanation methods as the ultima
 
 There is still no consensus on the appropriate evaluation of back-propagation methods specifically and saliency methods in general. Most authors introducing new methods show explanations on examples from typical benchmark datasets and models. Usually ablation tests, in which singular neurons/channels are deactivated in descending order of attributed relevance, give some confidence that the features identified as important indeed have some relationship with the prediction. However it is unclear whether the explanation methods sensitivity to e.g. biases in the dataset is in accordance with the actual models sensitivity. 
 
+\todo{Motivation Example of why finding biases is one of the most important tasks for XAI}
+\begin{itemize}
+    \item it is super important the explanation method has high fidelity when identifying and quantifying biases a model has learned
+    \item data is always biased, we want to find the bias
+    \item but often the model can learn the \textit{true} features of a distribution although it has strong \textit{spurious} features 
+    \item \cite{Achtibat2022} has shown this with watermark example and also somewhat with dog snout example
+    \item need a good example though
+    \item thesis: data is always biased, it is basically impossible to get completely unbiased data in such quantities. especially because sometimes we are not even able to identify the biases as we humans are prone to them too
+    \item so in accoradance to \textit{fair AI} it seems impossible to aim for \textit{completely unbiased} models, as they would need to have all knowable and unknowable knowledge of the universe to not predict 'out-of-distribution' 
+    \item instead we should identify a measure of biasedness which tells us how strongly a spurious feature is used and then depending on the use case a threshold for this can be defined.
+\end{itemize}
+
 Therefore we will extend previous work on evaluating the explanation methods fidelity in the presence of data biases and Clever-Hans features. Due to limited resources a user study like \cite{Sixt2022} is not possible in our case. Instead we intend to develop a metric to quantify the coupling between the models prediction performance to the concept relevances as an artificially introduced bias gets stronger. To test this metric we propose a simple artificial benchmarking dataset based on the existing disentangling dataset \textit{dsprites} \cite{dsprites17}. To some of the images we add a watermark based on a structural causal model (SCM) similar to how we expect the causal relationships in real-world watermark examples to be. Neither does the watermark itself cause the label, nor the label the watermark. Instead, a third, unknown confounder has an effect on both the presence of the watermark and the shape shown in the image. The confounding variable termed the \textit{generator} is mixed with other random variables as described in \cite{Clark2023}. Here, the generator is the signal and the other \textit{causal factors} of the two variables the noise, so a better term than 'signal-to-noise' ratio might be 'spurious-to-core' ratio.
 (The terms 'spurious' and 'core' features are taken from \cite{Singla2022}.) 
 

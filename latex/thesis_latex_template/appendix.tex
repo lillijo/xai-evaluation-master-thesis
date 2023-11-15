@@ -1,17 +1,43 @@
 \chapter{Appendix}\label{chapter:Appendix}
 
-\section{Test Figure}
+
+\section{Additional Details to LRP rules and implementation best practices}
 \begin{figure}[ht]
 	\centering
 	\label{fig:tesfigure}
 	\includegraphics[width=\textwidth]{pics/test.png}
-    \caption[Test Figure]{This is a test figure}
+	\caption[Test Figure]{This is a test figure}
 \end{figure}
 
-\section{Test Figure 2}
+\section{Preliminary Experiments}
+\subsection{Plots}
 \begin{figure}[ht]
 	\centering
 	\label{fig:blafigure}
 	\includegraphics[width=\textwidth]{pics/test.png}
-    \caption[Test Figure 2]{This is a test figure}
+	\caption[Test Figure 2]{This is a test figure}
 \end{figure}
+\subsection{Causal Discovery on Neural Network Models Idea and Implementation?}
+
+
+\section{Details on Model Architecture?}
+
+\begin{lstlisting}{Python}
+	self.convolutional_layers = nn.Sequential(
+		nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=0),
+		nn.MaxPool2d(kernel_size=2, stride=2),
+		nn.ReLU(),
+		nn.Conv2d(8, 8, kernel_size=5, stride=1, padding=0),
+		nn.MaxPool2d(kernel_size=2, stride=2),
+		nn.ReLU(),
+		nn.Conv2d(8, 8, kernel_size=7, stride=1, padding=0),
+		nn.ReLU(),
+	)
+	self.linear_layers = nn.Sequential(
+		nn.Linear(392, 6),
+		nn.ReLU(),
+		nn.Linear(6, 2),
+	)
+\end{lstlisting}
+
+\section{Further Plots Groud Truth}

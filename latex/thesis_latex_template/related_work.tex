@@ -2,7 +2,10 @@
 \chapter{Related Work}\label{chapter:related_work}
 
 
-{\color{red} make a distinction between methods/papers that discuss similar approaches and methods/concepts used in this thesis}
+{\color{red} 
+about 4-6 pages
+
+make a distinction between methods/papers that discuss similar approaches and methods/concepts used in this thesis}
 
 \begin{enumerate}
       \item Back-Propagation/Saliency/Attribution/Local methods name them all
@@ -18,53 +21,70 @@
 \end{enumerate}
 
 
-\subsection{XAI in general}
+\section{The Field of Explainable Artificial Intelligence}
 
+\todo{General Map of the field, embedding CRP}
+
+\begin{enumerate}
+      \item XAI is needed for AI because of black box other approach is making AI not black box
+      \item generally divided into local and global methods
+      \item name a few popular global methods
+      \item local methods that rely on attribution/ saliency maps (gradientXinput, integrated gradients, LRP, ???)
+      \item CRP is based on LRP, so in principle it is a loal attribution method.
+            However the authors argue that it could be a \textit{glocal} method because it can be used to summarize the workings of the model over many samples
+\end{enumerate}
+
+General Overview papers to cite
 \begin{itemize}
       \item focus on post-hoc explanations + theoretical foundations, test algorithms \cite{Samek2021}
-      \item creates new dataset (human-supervised) to detect core vs spurious features \cite{Singla2022}
+      \item need some more \todo{overview papers and map of XAI papers}
 \end{itemize}
 
-\subsection{Layerwise Relevance Propagation}
-{\color{red} approach used in the thesis, tell which rules of LRP are used}
+\section{Layerwise Relevance Propagation (LRP)}
+ {\color{red} what has LRP been used for already, in which context to set CRP}
 
 \begin{itemize}
       \item LRP first paper \cite{Bach2015}
-      \item overview of propagation rules \cite{Montavon2019}
       \item general XAI \cite{Samek2021}
+      \item mention that it has been getting a mathematical background with Deep Taylor Decomposition  \cite{Montavon2017}
       \item LRP in practice \cite{Kohlbrenner2020}
       \item disentangle representations, similar to PCA: Principal Relevant Component Analysis - uses LRP \cite{Chormai2022}
       \item LRP is also good at pruning... idea/intuition: if you can "prune" certain neurons, their causal effect must be none or extremely small \cite{Yeom2019}
+      \item recent criticism of Sixt here? (deep taylor decomposition fails, when only positive relevance taken into account, matrix falls to rank 1 \cite{Sixt2022})
 \end{itemize}
 
-\subsection{Deep Taylor Decomposition}
-{\color{red} maybe just mention shortly how it is related to LRP (with rules) and which limitations have been studied e.g. by Sixt and Landgraf. Think again whether deep taylor decomposition has any more ties with causality???}
-
-\begin{itemize}
-      \item theoretical explanation to how LRP/DTD works...? \cite{Montavon2017}
-      \item deep taylor decomposition fails, when only positive relevance taken into account, matrix falls to rank 1 \cite{Sixt2022}
-\end{itemize}
-
-\subsection{Concept Relevance Propagation (CRP)}
-{\color{red} Only state when and where it has been described developed. refer to background section for theory and definition}
-
+\section{Concept Relevance Propagation (CRP)}
+which papers have been published on this
 \begin{itemize}
       \item from where to what... CRP main paper \cite{Achtibat2022}
       \item reveal to revise: whole framework for XAI using CRP as one of the methods for concept/bias discovery \cite{Pahde2023}
       \item using CRP to identify and unlearn bias 'Right Reason Class Artifact Compensation (RR-ClArC)' \cite{Dreyer2023a}
+      \item newest summary paper \cite{Achtibat2023}
 \end{itemize}
 
-\subsection{Evaluation of Back-Propagation XAI Methods}
-{\color{red} important to note, as 'causal' perspective could add another evaluation method to corpus}
+\section{Evaluation of XAI Methods}
+
+\todo{more general what evaluation methods exist, which apply to CRP etc.}
+
+
+\subsection{Benchmarking Back-Propagation Methods}
 
 \begin{itemize}
+      \item differentiate between numerical evaluation and evaluation through user studies
+      \item examples of often used evaluations for local attribution methods and concept-based methods:
+            \begin{itemize}
+                  \item feature ablation and related methods
+                  \item TCAVs \cite{Kim2018} with benchmark feature set (hard and often not applicable)
+                  \item clevr-xai? \cite{Arras2022}
+            \end{itemize}
       \item clever XAI artificial benchmark dataset \cite{Arras2022}
       \item NetDissect dataset with concept-segmented images \cite{Bau2017}
       \item also other concept/neuron dissection by same authors, similar idea to CRP \cite{Bau2020}
+      \item creates new dataset (human-supervised) to detect core vs spurious features \cite{Singla2022}
 \end{itemize}
-
-\subsection{Criticism of Back-Propagation XAI Methods}
 {\color{red} outline which problems CRP solves well, draw connections between unsolved criticism and causal perspective}
+
+\subsection{Recent Critique of Saliency Maps}
 
 \begin{itemize}
       \item explanations are independent of later layers (no negative relevance) \cite{Sixt2020}
@@ -76,21 +96,6 @@
       \item pattern attribution reference point works (direction of variation in data, determined by covariances) \cite{Kindermans2019}
 \end{itemize}
 
-\subsection{Causal Discovery for XAI}
-{\color{red} which other methods/approaches/papers are there that broadly connect explainable AI and causality }
-
-\begin{itemize}
-      \item generally, mostly about counterfactuals: \cite{Moraffah2020a}
-      \item causal attribution, similar to LRP but more "causally" neural networks as SCMs \cite{Chattopadhyay2019}
-      \item causal concept effects (edges in mnist) \cite{Goyal2019}
-      \item causal in most general sense:independent/disjoint mechanism analysis \cite{Leemann2023} \cite{Leemann2022}
-      \item causal binary concepts \cite{Tran2022}
-      \item basic framework/idea of interpreting NN as skeleton of SCM and using some transformation to quantify effect:\cite{Narendra2018}
-\end{itemize}
-
-
-
-\section{Critique on Saliency Maps Summary}
 \begin{enumerate}
       \item \cite{Sixt2022a}: evaluation of heatmaps/saliency methods not enough based on actual user studies and human performance / explanation quality
             \\ task: look at explanation and rate, weather each feature is relevant or irrelevant
@@ -110,4 +115,25 @@
       \item \cite{Chattopadhyay2019}: build SCM over last linear layer before output and attribute because of sensitivity to constant shifts as shown by Kindermans
             \\ task: treat Model as SCM and calculate interventional expectations and average causal effect
 \end{enumerate}
+
+\subsection{Causality Research on Evaluation and Benchmarking of XAI}
+{\color{red} which other methods/approaches/papers are there that broadly connect explainable AI and causality }
+\begin{itemize}
+      \item general map of causality and XAI mixups
+      \item counterfactual stuff
+      \item seeing model as scm stuff \cite{Chattopadhyay2019}
+      \item representation learning
+      \item overview of \cite{Schoelkopf2019}
+\end{itemize}
+
+\begin{itemize}
+      \item generally, mostly about counterfactuals: \cite{Moraffah2020a}
+      \item causal attribution, similar to LRP but more "causally" neural networks as SCMs \cite{Chattopadhyay2019}
+      \item causal concept effects (edges in mnist) \cite{Goyal2019}
+      \item causal in most general sense:independent/disjoint mechanism analysis \cite{Leemann2023} \cite{Leemann2022}
+      \item causal binary concepts \cite{Tran2022}
+      \item basic framework/idea of interpreting NN as skeleton of SCM and using some transformation to quantify effect:\cite{Narendra2018}
+\end{itemize}
+
+
 

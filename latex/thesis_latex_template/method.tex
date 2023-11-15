@@ -1,19 +1,22 @@
 \chapter{Methods}\label{chapter:method}
 
-{ \color{red} 
-\begin{itemize}
-    \item (1/3 of thesis)
-    \item start with a theoretical approach, describe the developed system/algorithm/method from a high-level point of view,
-    \item go ahead in presenting your developments in more detail
-\end{itemize}
- }
+{ \color{red}
+
+about 10-30 pages (rather more I guess)
+
+    \begin{itemize}
+        \item (1/3 of thesis)
+        \item start with a theoretical approach, describe the developed system/algorithm/method from a high-level point of view,
+        \item go ahead in presenting your developments in more detail
+    \end{itemize}
+}
 
 
 \begin{enumerate}
     \item Benchmark dataset dsprites
     \item adaptation with watermark and spurious-to-core feature ratio as an SCM
     \item training X models with different ratio, cutoff and learning rate on cluster
-    \item computing \textit{ground-truth feature importance} of core, spurious and unbiased features: mean logit change for output, R2-score,  prediction flip 
+    \item computing \textit{ground-truth feature importance} of core, spurious and unbiased features: mean logit change for output, R2-score,  prediction flip
     \item baseline(?) score how much importance is generally assigned to spurious feature (bounding box?)
     \item special score for how much importance CRP assigns to concepts encoding spurious feature
     \item causal effect estimation? or something like that
@@ -22,48 +25,120 @@
 
 
 
-\section{Causal Benchmark DSPRITES}
+\section{Causal Benchmark DSPRITES-WM}
+\todo{find good name for adapted benchmark dataset}
+
+\subsection{DSPRITES}
+
 \begin{itemize}
-    \item Benchmark dataset dsprites
+    \item why do we need another dataset for benchmarking watermark bias??
+    \item (we don't but its nice to have)
+    \item some other benchmarks that deal with similar questions are...
+    \item existing benchmark dataset dsprites \cite{dsprites17}
+    \item explain latent factors and why we need them
+\end{itemize}
+
+\subsection{Causal Model}
+
+
+\begin{itemize}
+    \item how I add watermark?
     \item adaptation with watermark and spurious-to-core feature ratio as an SCM
     \item causal effect stuff: see \cref{fig:possible_scms}
-    \begin{itemize}
-        \item have latent factors - can intervene on each factor extensively
-        \item for model we can also assume SCM??? all connected neurons are causally connected
-        \item in given example prediction has shape AND watermark as causal ancestors
-        \item but in real world example spurious feature is only selection bias?
-        \item need to find good causal covering for what i am doing here
-    \end{itemize}
+          \begin{itemize}
+              \item have latent factors - can intervene on each factor extensively
+              \item for model we can also assume SCM??? all connected neurons are causally connected
+              \item in given example prediction has shape AND watermark as causal ancestors
+              \item but in real world example spurious feature is only selection bias?
+              \item need to find good causal covering for what i am doing here
+          \end{itemize}
+    \item why the hell does this make any sense whatsoever??? \todo{why the hell dsprites-wm}
 \end{itemize}
 
 \begin{figure}
     \centering
-    \includegraphics[height=\textheight]{pics/different_possible_scms.png}
+    \includegraphics[height=0.9\textheight]{pics/different_possible_scms.png}
     \caption{go more into detail about why and which SCM and what to expect from 'real' data}
     \label{fig:possible_scms}
 \end{figure}
 
-\section{Should I include Model SCM experiments i did?} \todo{should i include model scm stuff and sttribution graphs etc?}
-
 \section{CNN Model Zoo}
+\subsection{Model Architecture}
 \begin{itemize}
-    \item architecture of the model with reasoning 
-    \item training split? 
-    \item showing some examples of heatmaps and maxrel images for different bias strength
-    \item how many models with which different features are trained
-    \item accuracies for models plot
+    \item architecture of the model with reasoning
+    \item size and dimensionality of model has been chosen with eye-ball / trial-and-error method (4 conv was too bad, more than 8 was too redundant or often empty)
+    \item maybe show little example of what purely linear model can achieve?
 \end{itemize}
 
-\section{Ground-Truth Biasedness}
+\subsection{Hyperparameter Choice}
 \begin{itemize}
-    \item Prediction Flip
-    \item R2 score
-    \item mean logit change
+    \item optimize hyperparameters over all possible biases
+    \item interesting observation: learning rate has different optimal values depending on bias strength
+    \item important to note that it has been shown that often explanation depends on hyperparameters causally \cite{Karimi2023}.
+    \item therefore do not change hyperparameters
+\end{itemize}
+
+\subsection{Training and Accuracy}
+\begin{itemize}
+    \item training split?
+    \item how many models with which different features are trained
+    \item showing some examples of heatmaps and maxrel images for different bias strength
+    \item accuracies for all models plot
+\end{itemize}
+
+\subsection{Computational Setup}
+\label{section:setup}
+\begin{itemize}
+    \item computed on personal dell xps 13 with cpu
+    \item and on cluster \todo{cluster specs}
+    \item how long did training all models take?
+\end{itemize}
+
+\section{Preliminary (Causal) Experiments} \todo{should i include model scm stuff and attribution graphs etc?}
+\begin{itemize}
+    \item explain and show idea of a causal model for the whole network
+    \item explain why it didnt work (too high, because linear correlation)
+    \item attribution graph as a causal model???
+    \item ideas and experiments with relevance maximization
+    \item something more along the lines of intervening on hyperparameters? \cite{Karimi2023}
+\end{itemize}
+
+\section{Establishing a Ground-Truth of Biasedness}
+\begin{itemize}
     \item non-linearity: This can also be explained information-theoretically \todo{explanation for non-linear biasedness - information-theoretically}
 \end{itemize}
 
-\section{Baseline Biasedness Measure}
+\subsection{Accuracy for Subgroups}
 \begin{itemize}
+    \item is the most 'ground' ground-truth measure of biasedness
+    \item is also somehow related to the others??? \todo{how is accuracy related to prediction flip etc.}
+    \item not as exact as mean logit change etc. ?
+\end{itemize}
+
+\subsection{Prediction Flip, R2 Score and Mean Logit Change}
+\begin{itemize}
+    \item prediction flip and r2 score are different sides of same coin
+    \item mean logit change is more exact, as sometimes prediction stays the same but gets less confident (logits change a bit in that direction)
+    \item mean logit change shall be used as ground truth of \textit{biasedness}
+\end{itemize}
+
+\subsection{Interpreting Mean Logit Change as Causal Intervention}
+\begin{itemize}
+    \item it is basically the causal effect of intervening on a latent factor on the models output
+    \item theoretically the interventio must have exactly the same causal effect on the explanation as on the mean logit change??? 
+\end{itemize}
+
+\section{Measuring Biasedness for Heatmaps}
+\begin{itemize}
+    \item this is a more general approach of measuring the biasedness of a saliency methods explanation
+    \item good about it: humans look at the heatmaps and only see whether the watermark is colored or not to identify its importance. 
+    \item problem: humans have a hard time estimating the overall importance of concepts/features if they have varying spatial extend, see \cite{Achtibat2022} about noses and fur of dog
+    \item so if watermark is even just a little bit red, it will be important to humans
+    \item even bigger problem: NN do not disentangle concepts strictly. therefore the concepts found could always encode watermark and shape feature at the same time. this effect is strongly visible in our benchmark 
+    \item question: how much is the result explained by the spurious feature?
+    \item will be taken as the baseline. all other saliency based / local attribution methods can be benchmarked with this too
+    \item does not take into account the splitting up into an relevance of single neurons
+    \item but can in principle also be applied to each neuron/concept individually
     \item Find a way to measure how well a single heatmap can show the bias
     \item e.g.: watermark mask importance bilder mit wm general heatmap, total relevance inside mask for:
     \item A: attribution mit wm, wenn ellipse und conditioned on y:[1]
@@ -71,6 +146,10 @@
     \item C: attribution ohne wm, wenn ellipse und conditioned on y:[1]
     \item D: attribution ohne wm, wenn rect    und conditioned on y:[0]
     \item (A - B) + (D - C)
+    \item \textbf{LRP biasedness score sanity check:} 
+    This sanity test shows that while LRP assigns strong relevance to the watermark, it fails in correctly identifying the lack of a watermark as the main reason to predict for the negative class (rectangle). Superficially this confirms the criticism of missing negative relevance \cite{Sixt2020}. It is however not clear if the advantage of not cancelling out importances outweighs this factor for more complex data and applications.  \todo{confirm class-invariance for heatmaps}
+
+    
 \end{itemize}
 
 \section{Concepts Biasedness Measures}
@@ -88,13 +167,3 @@
 
 \todo{make sure to not refer to results section too much. rather leave info out if it cannot explained well without looking at the results}
 
-LRP biasedness score sanity check:
-
-This sanity test shows that while LRP assigns strong relevance to the watermark, it fails in correctly identifying the lack of a watermark as the main reason to predict for the negative class (rectangle). Superficially this confirms the criticism of missing negative relevance \cite{Sixt2020}. It is however not clear if the advantage of not cancelling out importances outweighs this factor for more complex data and applications.  \todo{confirm class-invariance for heatmaps}
-
-\section{Setup}
-\label{section:setup} 
-\begin{itemize}
-    \item computed on personal dell xps 13 with cpu
-    \item and on cluster \todo{cluster specs}
-\end{itemize}
