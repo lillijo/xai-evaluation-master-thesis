@@ -17,4 +17,4 @@ ulimit -s 204800
 
 # Execute serial programs, e.g.
 # run_one_experiment run_test
-python3 -u run_one_experiment.py $1 $2
+python3 -u run_one_experiment.py $1

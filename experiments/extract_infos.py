@@ -7,7 +7,7 @@ tester = "best loss:  0.6931474804878235  last loss:  0.6931474804878235  best e
 mypath = "outputs/jobs"
 onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
 
-namereg = re.compile(r"(\(\(\(\()([b.sl0-9_-]*)(:)")
+namereg = re.compile(r"(\(\(\(\()([b.i0-9_-]*)(:)")
 
 accuracies = {}
 
@@ -27,5 +27,5 @@ for f in onlyfiles:
             rest = a.replace(name.group(), "").replace("))))", "").replace("'", "\"")
             accuracies[rname] = json.loads(rest)
 
-with open("outputs/combined_accuracies2.json", "w") as fd:
+with open("outputs/noisy_accuracies.json", "w") as fd:
     json.dump(accuracies, fd, indent=2)

@@ -18,10 +18,10 @@ from sklearn.cluster import SpectralClustering, KMeans
 
 from .network_binary import train_network as train_network_binary
 from .network import train_network as train_network, accuracy_per_class
-from .biased_dsprites_dataset import (
+from .biased_noisy_dataset import (
     get_test_dataset,
     get_biased_loader,
-    BiasedDSpritesDataset,
+    BiasedNoisyDataset,
 )
 from .crp_hierarchies import sample_from_categories
 from .network import train_network, accuracy_per_class
@@ -29,11 +29,18 @@ from .ground_truth_measures import GroundTruthMeasures
 from .crp_attribution import CRPAttribution, vis_simple
 
 
+# from zennit.canonizers import SequentialMergeBatchNorm
+from zennit.composites import EpsilonPlusFlat
+from crp.concepts import ChannelConcept
+from crp.helper import get_layer_names
+from crp.attribution import CondAttribution
+
+
 def get_model_etc(bias):
     STRENGTH = 0.5
     BATCH_SIZE = 128
     LR = 0.001
-    NAME = "../clustermodels/bigm"
+    NAME = "../clustermodels/noisy"
 
     train_loader = get_biased_loader(bias, 0.5, batch_size=BATCH_SIZE, verbose=False)
     model = train_network(
@@ -52,7 +59,7 @@ def get_model_etc(bias):
     gm = GroundTruthMeasures()
     crp_attribution = CRPAttribution(model, unbiased_ds, "nmf", STRENGTH, bias)
 
-    return model, gm, crp_attribution, unbiased_ds
+    return model, gm, crp_attribution, unbiased_ds, test_loader
 
 
 def get_dr_methods():
@@ -100,3 +107,55 @@ def get_centroids(dr_res, watermarks, predictions, labels):
             d = np.logical_and(watermarks == wm, labels == lab)
             centroids[lab + 2 * wm] = np.mean(dr_res[d], axis=0)
     return centroids
+
+
+def get_attribution_function(model, heatmap=True, batch_size=128, activations=False):
+    composite = EpsilonPlusFlat()
+    model = model
+    cc = ChannelConcept()
+    layer_names = get_layer_names(model, [torch.nn.Conv2d, torch.nn.Linear])
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    tdev = torch.device(device)
+    attribution = CondAttribution(model, no_param_grad=True, device=tdev)
+    def select_max(pred):
+        softmax = torch.nn.Softmax(dim=-1)
+        id = softmax(pred).argmax(-1).item()
+        print(f"wrt. class {id}")
+        mask = torch.zeros_like(pred)
+        mask[0, id] = pred[0, id]
+        # print(mask, mask.shape)
+        return mask
+
+    def attribution_fn(x):
+        x.requires_grad = True
+        allatrrs = torch.zeros((batch_size, 6))
+        for i, img in enumerate(x):
+            attr = attribution(img.view(1, 1, 64, 64), [{"y": [1]}], composite, record_layer=layer_names,init_rel=select_max)
+            if activations:
+                rel_c = cc.attribute(attr.activations["linear_layers.0"], abs_norm=True)
+            else:
+                rel_c = cc.attribute(attr.relevances["linear_layers.0"], abs_norm=True)
+            allatrrs[i] = rel_c
+        return allatrrs
+
+    def attribution_fn_heatmap(x):
+        x.requires_grad = True
+        heatmap = torch.zeros((batch_size, 6, 64, 64))
+        conditions = [{"y": [1], "linear_layers.0": [i]} for i in range(6)]
+        for i, img in enumerate(x):
+            for neuron, attr in enumerate(
+                attribution.generate(
+                    img.view(1, 1, 64, 64),
+                    conditions,
+                    composite,
+                    record_layer=layer_names,
+                    batch_size=1,
+                    verbose=False,
+                )
+            ):
+                heatmap[i,neuron] = attr.heatmap
+        return heatmap
+
+    if heatmap:
+        return attribution_fn_heatmap
+    return attribution_fn
