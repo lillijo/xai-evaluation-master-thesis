@@ -26,7 +26,7 @@ class BiasedNoisyDataset(Dataset):
         self.strength = strength
         self.verbose = verbose
         self.img_dir = img_path
-        self.rng = np.random.default_rng()  # seed=SEED
+        self.rng = np.random.default_rng(SEED)  # seed=SEED
         self.water_image = np.load("watermark.npy")
         self.fixed_length = length
         with open("labels.pickle", "rb") as f:

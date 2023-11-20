@@ -36,7 +36,7 @@ from crp.helper import get_layer_names
 from crp.attribution import CondAttribution
 
 
-def get_model_etc(bias):
+def get_model_etc(bias, num_it=0):
     STRENGTH = 0.5
     BATCH_SIZE = 128
     LR = 0.001
@@ -53,11 +53,12 @@ def get_model_etc(bias):
         retrain=False,
         learning_rate=LR,
         epochs=3,
+        num_it=num_it,
     )
 
     unb_short, unbiased_ds, test_loader = get_test_dataset(split=0.1)
     gm = GroundTruthMeasures()
-    crp_attribution = CRPAttribution(model, unbiased_ds, "nmf", STRENGTH, bias)
+    crp_attribution = CRPAttribution(model, unbiased_ds, "noisy", STRENGTH, bias)
 
     return model, gm, crp_attribution, unbiased_ds, test_loader
 
@@ -117,22 +118,28 @@ def get_attribution_function(model, heatmap=True, batch_size=128, activations=Fa
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     tdev = torch.device(device)
     attribution = CondAttribution(model, no_param_grad=True, device=tdev)
+
     def select_max(pred):
         softmax = torch.nn.Softmax(dim=-1)
         id = softmax(pred).argmax(-1).item()
-        print(f"wrt. class {id}")
         mask = torch.zeros_like(pred)
         mask[0, id] = pred[0, id]
-        # print(mask, mask.shape)
         return mask
+    relu = torch.nn.ReLU()
 
     def attribution_fn(x):
         x.requires_grad = True
         allatrrs = torch.zeros((batch_size, 6))
         for i, img in enumerate(x):
-            attr = attribution(img.view(1, 1, 64, 64), [{"y": [1]}], composite, record_layer=layer_names,init_rel=select_max)
+            attr = attribution(
+                img.view(1, 1, 64, 64),
+                [{"y": [1]}],
+                composite,
+                record_layer=layer_names,
+                init_rel=select_max,
+            )
             if activations:
-                rel_c = cc.attribute(attr.activations["linear_layers.0"], abs_norm=True)
+                rel_c = cc.attribute(relu(attr.activations["linear_layers.0"]), abs_norm=True)
             else:
                 rel_c = cc.attribute(attr.relevances["linear_layers.0"], abs_norm=True)
             allatrrs[i] = rel_c
@@ -153,9 +160,25 @@ def get_attribution_function(model, heatmap=True, batch_size=128, activations=Fa
                     verbose=False,
                 )
             ):
-                heatmap[i,neuron] = attr.heatmap
+                heatmap[i, neuron] = attr.heatmap
         return heatmap
 
     if heatmap:
         return attribution_fn_heatmap
     return attribution_fn
+
+
+def get_cavs(model, unbiased_ds, activations=False):
+    MAX_INDEX = 491520
+    STEP_SIZE = 1000
+    single_attr = get_attribution_function(
+        model, heatmap=False, batch_size=1, activations=activations
+    )
+
+    idx = np.array(list(range(0, MAX_INDEX, STEP_SIZE)))
+    cavs = torch.zeros((len(idx), 6))
+    for count, index in enumerate(idx):
+        x, _ = unbiased_ds[index]
+        res = single_attr(x).detach().contiguous()
+        cavs[count] = res
+    return idx, cavs

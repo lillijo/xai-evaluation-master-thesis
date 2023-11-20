@@ -352,15 +352,14 @@ class CRPAttribution:
         sample.requires_grad = True
         output = self.model(sample)
         pred = int(output.data.max(1)[1][0])
-        conditions = [{"y": [pred]}]  # pred label
+        conditions = [{"y": [1]}]  # pred label
         attr = self.attribution(
             sample,
             conditions,
             self.composite,
             record_layer=self.layer_names,
-            init_rel=1,
         )
-        return attr.heatmap
+        return attr.heatmap, pred
 
     def cav_heatmap(self, index, layer, cav):
         img, label = self.dataset[index]

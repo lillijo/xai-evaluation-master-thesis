@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-BIASES = np.round(np.linspace(0, 1, 11), 3) # 101
+BIASES = np.round(np.linspace(0.8, 1, 21), 3) # 101
 
 
 def compute_all():
