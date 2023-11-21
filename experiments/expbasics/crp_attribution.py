@@ -352,7 +352,7 @@ class CRPAttribution:
         sample.requires_grad = True
         output = self.model(sample)
         pred = int(output.data.max(1)[1][0])
-        conditions = [{"y": [1]}]  # pred label
+        conditions = [{"y": [label]}]  # pred label
         attr = self.attribution(
             sample,
             conditions,

@@ -133,12 +133,13 @@ def data_iterations(path, biascut=-1, num_it=4):
     with open(path, "r") as f:
         analysis_data = json.load(f)
         alldata = sorted(analysis_data.values(), key=lambda x: x["bias"])
+        biases = [a["bias"] for a in alldata]
         datas = [
             list(filter(lambda x: x["num_it"] == n and x["bias"] > biascut, alldata))
             for n in range(num_it)
         ]
         filtbiases = [a["bias"] for a in datas[0]]
-    return datas, filtbiases
+    return datas, filtbiases, biases
 
 
 def ground_truth_plot(datas, filtbiases, factor, m_type="mean_logit_change"):
