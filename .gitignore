@@ -21,6 +21,7 @@ experiments/outputs/jobs
 experiments/outputs/imgs
 experiments/outputs/*.png
 experiments/outputs/*.txt
+experiments/outputs/*.json
 *.pt
 experiments/model_*.*
 
