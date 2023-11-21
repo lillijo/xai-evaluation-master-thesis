@@ -64,9 +64,9 @@ class BiasedNoisyDataset(Dataset):
         TOTAL = len(self.labels)
         ITEM_L = len(self.labels) // 3
 
-        generator = self.rng.normal(0.5, 0.3, TOTAL)
-        s = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.3, TOTAL)
-        w = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.3, TOTAL)
+        generator = self.rng.uniform(0, 1, TOTAL)
+        s = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL)
+        w = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL)
         shape = s <= 0.5
         watermark = w > self.strength
         shape_r = np.asarray(shape == True).nonzero()
@@ -77,6 +77,13 @@ class BiasedNoisyDataset(Dataset):
         wms[:ITEM_L] = wms_r
         wms[ITEM_L:] = wms_e
 
+        rand = np.random.choice([0, 1], TOTAL)
+        self.offset_y = rand * np.random.randint(-58, 3, TOTAL) + (
+            (1 - rand) * (-58 + np.random.choice([0, 1], TOTAL) * 60)
+        )
+        self.offset_x = rand * (-4 + np.random.choice([0, 1], TOTAL) * 55) + (
+            (1 - rand) * np.random.randint(-4, 52, TOTAL)
+        )
         self.watermarks = wms
 
         if self.verbose:
@@ -101,7 +108,8 @@ class BiasedNoisyDataset(Dataset):
         image = np.load(img_path, mmap_mode="r")
         image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
         if self.watermarks[index]:
-            image[self.water_image] = 1.0
+            offset_water_image = self.water_image + np.array([[0], [self.offset_y[index]], [self.offset_x[index]]])
+            image[offset_water_image] = 1.0
         image = image + self.rng.normal(0.0, 0.05, (64, 64))
         min_val = image.min()
         if min_val < 0:

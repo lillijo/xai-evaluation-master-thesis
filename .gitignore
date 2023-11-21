@@ -20,6 +20,7 @@ experiments/heatmaps
 experiments/outputs/jobs
 experiments/outputs/imgs
 experiments/outputs/*.png
+experiments/outputs/*.txt
 *.pt
 experiments/model_*.*
 

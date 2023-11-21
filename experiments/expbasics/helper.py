@@ -40,7 +40,7 @@ def get_model_etc(bias, num_it=0):
     STRENGTH = 0.5
     BATCH_SIZE = 128
     LR = 0.001
-    NAME = "../clustermodels/noisy"
+    NAME = "../clustermodels/noise_pos"
 
     train_loader = get_biased_loader(bias, 0.5, batch_size=BATCH_SIZE, verbose=False)
     model = train_network(
