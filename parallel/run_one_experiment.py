@@ -10,14 +10,14 @@ LEARNING_RATE = 0.001
 STRENGTH = 0.5
 EPOCHS = 3
 BATCH_SIZE = 128
-NAME = "models/noisy"
+NAME = "models/noise_pos"
 FV_NAME = "fv_model"
 IMAGE_PATH = "images/"
 
 
 def to_name(b, i):
     return "b{}-i{}".format(
-        str(round(b, 2)).replace("0.", "0_"),
+        str(round(b, 2)).replace(".", "_"),
         str(i),
     )
 

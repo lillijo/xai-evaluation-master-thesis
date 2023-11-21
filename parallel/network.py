@@ -105,7 +105,7 @@ def train_network(
     model = model.to(device)
     path = "{}_{}_{}.pickle".format(
         name,
-        str(bias).replace("0.", "b0i"),
+        str(bias).replace("0.", "b0i").replace("1.", "b1i"),
         str(num_it),
     )
     if load and os.path.exists(path):
