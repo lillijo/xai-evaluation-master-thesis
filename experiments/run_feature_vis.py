@@ -52,13 +52,13 @@ def make_feature_vis(item, test_loader, test_ds):
     cc = ChannelConcept()
     composite = EpsilonPlusFlat()
     fv = FeatureVisualization(attribution, test_ds, {LAYER_NAME: cc}, path=path)
-    saved_files = fv.run(composite, 0, len(test_ds), 128, 2048, on_device=tdev)
+    fv.run(composite, 0, len(test_ds), 128, 2048, on_device=tdev)
 
     return (name, path)
 
 
 def compute_with_param(bias):
-    with open("parallel_accuracies.json", "r") as f:
+    with open("outputs/noise_pos_accuracies.json", "r") as f:
         accuracies = json.load(f)
     ds = BiasedNoisyDataset(
         verbose=False, strength=STRENGTH, bias=0.0, img_path=IMAGE_PATH
@@ -72,9 +72,25 @@ def compute_with_param(bias):
         (name, path) = make_feature_vis(accuracies[name], test_loader, test_ds)
         print(f"(((({name}:{path}))))")
 
+def compute_all():
+    with open("outputs/old_accs.json", "r") as f:
+        accuracies = json.load(f)
+    ds = BiasedNoisyDataset(
+        verbose=False, strength=STRENGTH, bias=0.0, img_path=IMAGE_PATH
+    )
+    split = 0.05
+    [train_ds, test_ds] = random_split(ds, [1 - split, split])
+    print(len(test_ds))
+    test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=True)
+    for name in accuracies.keys():
+        if not (name in accuracies and accuracies[name]["train_accuracy"][2] > 80):
+            (name, path) = make_feature_vis(accuracies[name], test_loader, test_ds)
+            print(f"(((({name}:{path}))))")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("script_parallel")
+    """ parser = argparse.ArgumentParser("script_parallel")
     parser.add_argument("bias", help="bias float", type=float)
     args = parser.parse_args()
-    compute_with_param(args.bias)
+    compute_with_param(args.bias) """
+    compute_all()
+    

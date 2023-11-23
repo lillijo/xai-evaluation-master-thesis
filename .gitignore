@@ -4,11 +4,7 @@
 zennit-crp/
 dsprites-dataset/
 clevr-xai/
-model_0
-model_1
-model_2
-model_3
-model_4
+model_*
 clustermodels/
 models/
 .vscode/
@@ -17,11 +13,7 @@ archive/
 
 experiments/crp-data
 experiments/heatmaps
-experiments/outputs/jobs
-experiments/outputs/imgs
-experiments/outputs/*.png
-experiments/outputs/*.txt
-experiments/outputs/*.json
+experiments/outputs/*
 *.pt
 experiments/model_*.*
 

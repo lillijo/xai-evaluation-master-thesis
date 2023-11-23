@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import os
+import matplotlib as mpl
+from matplotlib import pyplot as plt
 
 from crp.image import vis_opaque_img, plot_grid
 
@@ -32,7 +34,7 @@ def vis_relevances(
 
 
 class CRPAttribution:
-    def __init__(self, model, dataset, name, strength, bias):
+    def __init__(self, model, dataset, name, model_name):
         # Feature Visualization:
         # device = "cuda:0" if torch.cuda.is_available() else "cpu"
         # canonizers = [SequentialMergeBatchNorm()]
@@ -48,7 +50,7 @@ class CRPAttribution:
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.tdev = torch.device(self.device)
         self.attribution = CondAttribution(model, no_param_grad=True, device=self.tdev)
-        path = f'crp-data/{name}_{str(bias).replace("0.", "")}_{str(strength).replace("0.", "")}_fv'
+        path = f"crp-data/{name}_{model_name}_fv"
         self.fv_path = path
         self.cache = ImageCache(path=path + "-cache")
         self.fv = FeatureVisualization(
@@ -111,12 +113,10 @@ class CRPAttribution:
         )
 
     def relevance_for_image(self, label, image):
-        all_refs = {}
-        all_refs["sample"] = torch.ones((6, 64, 64))
-        all_refs["sample"][:] = image
-        vmin = 1
-        vmax = -1
-        for l in self.layer_id_map.keys():
+        image.requires_grad = True
+        lenl = len(self.layer_id_map.keys())
+        images = torch.zeros((lenl, 8, 64, 64))
+        for li, l in enumerate(self.layer_id_map.keys()):
             conditions = [{"y": [label], l: [i]} for i in self.layer_id_map[l]]
             attr = self.attribution(
                 image,
@@ -125,20 +125,38 @@ class CRPAttribution:
                 record_layer=self.layer_names,
                 init_rel=1,
             )
-            vmin = min(vmin, attr.heatmap.min())
-            vmax = max(vmax, attr.heatmap.max())
-            all_refs[f"{l[:4]}_{l[-1]}"] = torch.zeros((6, 64, 64))
             for h in range(attr.heatmap.shape[0]):
-                all_refs[f"{l[:4]}_{l[-1]}"][h] = attr.heatmap[h]
-        print(vmin, vmax)
-        plot_grid(
-            all_refs,
-            figsize=(6, 6),
-            padding=False,
-            vmax=vmax,
-            vmin=vmin,
-            symmetric=True,
+                images[li, h] = attr.heatmap[h]
+        fig, axs = plt.subplots(
+            lenl, 8, figsize=(10, 8), gridspec_kw={"wspace": 0.1, "hspace": 0}
         )
+        fig.set_facecolor("#2BC4D9")
+        fig.set_alpha(0.0)
+        for il, l in enumerate(self.layer_id_map.keys()):
+            for n in range(8):
+                axs[il, n].xaxis.set_visible(False)
+                axs[il, n].yaxis.set_visible(False)
+                if n < len(self.layer_id_map[l]):
+                    axs[il, n].set_title(f"n:{n}")
+                    maxv = max(float(images[il, n].max()), 0.001)
+                    minv = min(float(images[il, n].min()), -0.001)
+                    center = 0.0
+                    divnorm = mpl.colors.TwoSlopeNorm(
+                        vmin=minv, vcenter=center, vmax=maxv
+                    )
+                    axs[il, n].imshow(images[il, n], cmap="bwr", norm=divnorm)
+                else:
+                    axs[il, n].axis("off")
+            axs[il, 0].yaxis.set_visible(True)
+            axs[il, 0].set_yticks([])
+            axs[il, 0].set_ylabel(f"{l[:4]}_{l[-1]}")
+        image.requires_grad = False
+        axs[lenl - 1, 5].axis("on")
+        print("here")
+        lab = ["rectangle", "ellipse"]
+        axs[lenl - 1, 5].set_title(f"original, predicted: {lab[label]}")
+        axs[lenl - 1, 5].imshow(image[0, 0], cmap="bwr")
+        return fig
 
     def image_info(self, index=None, verbose=False):
         if index is None:
@@ -352,7 +370,7 @@ class CRPAttribution:
         sample.requires_grad = True
         output = self.model(sample)
         pred = int(output.data.max(1)[1][0])
-        conditions = [{"y": [label]}]  # pred label
+        conditions = [{"y": [pred]}]  # pred label
         attr = self.attribution(
             sample,
             conditions,

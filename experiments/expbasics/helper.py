@@ -36,6 +36,13 @@ from crp.helper import get_layer_names
 from crp.attribution import CondAttribution
 
 
+def to_name(b, i):
+    return "b{}-i{}".format(
+        str(round(b, 2)).replace(".", "_"),
+        str(i),
+    )
+
+
 def get_model_etc(bias, num_it=0):
     STRENGTH = 0.5
     BATCH_SIZE = 128
@@ -58,7 +65,7 @@ def get_model_etc(bias, num_it=0):
 
     unb_short, unbiased_ds, test_loader = get_test_dataset(split=0.1)
     gm = GroundTruthMeasures()
-    crp_attribution = CRPAttribution(model, unbiased_ds, "noisy", STRENGTH, bias)
+    crp_attribution = CRPAttribution(model, unbiased_ds, "noise_pos", to_name(bias, num_it))
 
     return model, gm, crp_attribution, unbiased_ds, test_loader
 

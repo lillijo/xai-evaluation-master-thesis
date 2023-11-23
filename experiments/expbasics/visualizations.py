@@ -1,8 +1,10 @@
 import numpy as np
+import matplotlib
 from matplotlib import pyplot as plt
-import matplotlib as mpl
 import pickle
 import json
+import torch
+from PIL import Image
 
 METHOD = 2
 
@@ -20,7 +22,7 @@ def visualize_dr(
     centroids = np.zeros((8, 2))
     counts = np.zeros((8), dtype=int)
 
-    colors = mpl.cm.gist_ncar(np.linspace(0, 1, 9))  # type: ignore # gist_ncar
+    colors = matplotlib.cm.gist_ncar(np.linspace(0, 1, 9))  # type: ignore # gist_ncar
 
     def ft(lab, wm, pred):
         d = np.logical_and(watermarks == wm, labels == lab)
@@ -139,11 +141,11 @@ def data_iterations(path, biascut=-1, num_it=4):
             for n in range(num_it)
         ]
         filtbiases = [a["bias"] for a in datas[0]]
-    return datas, filtbiases, biases
+    return datas, filtbiases, biases, alldata
 
 
 def ground_truth_plot(datas, filtbiases, factor, m_type="mean_logit_change"):
-    colors = mpl.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
+    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     lrindex = 0
     lrs = [1, 2, 3, 4]  # [0.0005, 0.001, 0.0015, 0.002]
@@ -273,3 +275,175 @@ def ground_truth_plot(datas, filtbiases, factor, m_type="mean_logit_change"):
         fig.savefig(f"outputs/imgs/{file_name}.png")
 
     plot_linear_layer(datas, filtbiases, factor)
+
+
+def plot_accuracies(path):
+    datas, filtbiases, biases, alldata = data_iterations(path)
+    rcol = ["#fa9fb5", "#f768a1", "#c51b8a", "#7a0177"]
+    ecol = ["#addd8e", "#78c679", "#31a354", "#006837"]
+    """ plt.plot(biases, [a["train_accuracy"][0] for a in  alldata], c=rcol[0], label="training accuracy rectangle", linestyle=(0,(4,3)))
+    plt.plot(biases, [a["all_wm_accuracy"][0] for a in  alldata], c=rcol[2], label="all watermark rectangle", linestyle="dashed")
+    plt.plot(biases, [a["no_wm_accuracy"][0] for a in  alldata], c=rcol[3], label="no watermark rectangle", linestyle="dotted")
+    plt.plot(biases, [a["train_accuracy"][1] for a in  alldata], c=ecol[0], label="training accuracy ellipse", linestyle=(0,(5,3)))
+    plt.plot(biases, [a["all_wm_accuracy"][1] for a in  alldata], c=ecol[2], label="all watermark ellipse", linestyle="dashed")
+    plt.plot(biases, [a["no_wm_accuracy"][1] for a in  alldata], c=ecol[3], label="no watermark ellipse", linestyle=(0,(1,1))) """
+    plt.plot(
+        biases,
+        [a["train_accuracy"][2] for a in alldata],
+        c=ecol[1],
+        label="training accuracy  all",
+        linestyle=(0, (1, 1)),
+    )
+    bads = list(filter(lambda x: x["train_accuracy"][2] < 80, [a for a in alldata]))
+    print(len(bads), bads)
+    plt.legend(loc="lower left", bbox_to_anchor=(1, 0))
+    plt.ylabel("Accuracy")
+    plt.xlabel("Bias")
+
+
+def plot_fancy_distribution():
+    from collections import Counter
+    from expbasics.biased_noisy_dataset import BiasedNoisyDataset
+
+    fig = plt.figure()
+    fig.set_facecolor("#2BC4D9")
+    fig.set_alpha(0.0)
+    ax = fig.add_subplot(111)
+    ax.set_facecolor("#2BC4D9")
+    ax.set_alpha(0.0)
+    TOTAL = 1000
+    BIAS = 0.75
+    STRENGTH = 0.5
+
+    dataset = BiasedNoisyDataset(BIAS, STRENGTH, False)
+
+    generator = dataset.rng.uniform(0, 1, TOTAL)
+    s = dataset.bias * generator + (1 - dataset.bias) * dataset.rng.uniform(0, 1, TOTAL)
+    w = dataset.bias * generator + (1 - dataset.bias) * dataset.rng.uniform(0, 1, TOTAL)
+    print(
+        {
+            0: Counter(dataset.watermarks[np.where(dataset.labels[:, 1] == 0)]),
+            1: Counter(dataset.watermarks[np.where(dataset.labels[:, 1] == 1)]),
+        }
+    )
+    plt.scatter(s, w, color="#C8D672", s=16)
+    plt.ylabel(
+        "watermark",
+    )
+    plt.xlabel("shape")
+
+    ax.tick_params(axis="y", direction="in", pad=-22)
+    ax.tick_params(axis="x", direction="in", pad=-15)
+    ax.yaxis.set_ticks([0.2, 0.4, 0.6, 0.8, 1.0])
+    ax.xaxis.set_ticks(list(np.arange(0.0, 1.1, 0.1)))
+    plt.text(
+        0.05,
+        0.75 - dataset.strength,
+        "rectangle\nno watermark",
+        size=12,
+    )
+    plt.text(
+        0.05,
+        dataset.strength + 0.25,
+        "rectangle\nwith watermark",
+        size=12,
+    )
+    plt.text(0.05, dataset.strength + 0.02, "strength", size=12)
+    plt.text(
+        0.6,
+        0.75 - dataset.strength,
+        "ellipse \nno watermark",
+        size=12,
+    )
+    plt.text(
+        0.6,
+        dataset.strength + 0.25,
+        "ellipse\nwith watermark",
+        size=12,
+    )
+    plt.text(
+        0.45,
+        1.0,
+        "a = 0.75",
+        c="red",
+        size=12,
+        fontweight="bold",
+    )
+    plt.text(
+        0.39,
+        0.42,
+        "1 - a",
+        c="red",
+        size=12,
+        fontweight="bold",
+        bbox={"fc": "#C8D672", "alpha": 0.8, "ec": "#C8D672"},
+    )
+    plt.plot([0.5, 0.5], [0.05, 1], c="#000", linewidth=1)
+    plt.plot([0, 1], [dataset.strength, dataset.strength], c="#000", linewidth=1)
+    plt.plot([0.45, 0.3], [0.25, 0.5], c="red", linewidth=5)
+
+
+def fancy_attributions(unbiased_ds, crp_attribution):
+    ind = 413950
+    img = torch.zeros(8, 64, 64)
+    preds = torch.zeros(4, dtype=torch.int8)
+    img[0] = unbiased_ds[ind][0][0]
+    img[1], preds[0] = crp_attribution.heatmap(ind)
+
+    ind = 312020
+    img[2] = unbiased_ds[ind][0][0]
+    img[3], preds[1] = crp_attribution.heatmap(ind)
+
+    ind = 12955
+    img[4] = unbiased_ds[ind][0][0]
+    img[5], preds[3] = crp_attribution.heatmap(ind)
+
+    ind = 200000
+    img[6] = unbiased_ds[ind][0][0]
+    img[7], preds[2] = crp_attribution.heatmap(ind)
+
+    # imgify(img, grid=(4,2), symmetric=True, resize=500)
+    # imgify(img[[0,2,4,6]], grid=(1,4), symmetric=True, resize=500)
+    # plot_grid({str(BIAS):img[[0,2,4,6]]}, symmetric=True,cmap_dim=1,cmap="Greys", resize=500)
+
+    fig, axs = plt.subplots(2, 4, figsize=(10, 5), gridspec_kw={"wspace": 0.1, "hspace": 0})
+    fig.set_facecolor("#2BC4D9")
+    fig.set_alpha(0.0)
+    c = 0
+    for i in range(0, 8):
+        axs[c % 2, c // 2].xaxis.set_visible(False)
+        axs[c % 2, c // 2].yaxis.set_visible(False)
+        cmap = matplotlib.cm.Greys if i % 2 == 0 else matplotlib.cm.bwr # type: ignore
+        maxv = img[i].max()
+        minv = float(img[i].min())
+        center = 0.5 if i % 2 == 0 else 0.0
+        if i % 2 == 0:
+            axs[c % 2, c // 2].set_title(f"pred: {int(preds[i // 2])}")
+        divnorm = matplotlib.colors.TwoSlopeNorm(vmin=minv, vcenter=center, vmax=maxv)
+        # img[i] = divnorm(img[i])
+        axs[c % 2, c // 2].imshow(img[i], cmap=cmap, norm=divnorm)
+        c += 1
+
+def my_plot_grid(images, rows, cols):
+    fig, axs = plt.subplots(
+            rows, cols, figsize=(rows, cols), gridspec_kw={"wspace": 0.1, "hspace": 0}
+        )
+    fig.set_facecolor("#2BC4D9")
+    fig.set_alpha(0.0)
+    for il in range(rows):
+        for n in range(cols):
+            axs[il, n].xaxis.set_visible(False)
+            axs[il, n].yaxis.set_visible(False)
+            if torch.any(images[il, n] != 0):
+                maxv = max(float(images[il, n].max()), 0.001)
+                minv = min(float(images[il, n].min()), -0.001)
+                center = 0.0
+                divnorm = matplotlib.colors.TwoSlopeNorm(
+                    vmin=minv, vcenter=center, vmax=maxv
+                )
+                axs[il, n].imshow(images[il, n], cmap="bwr", norm=divnorm)
+            else:
+                axs[il, n].axis("off")
+    #return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    #Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
+    return Image.frombytes('RGB', fig.canvas.get_width_height(),fig.canvas.tostring_rgb())
