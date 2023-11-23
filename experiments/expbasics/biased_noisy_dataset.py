@@ -6,6 +6,7 @@ import pickle
 from collections import Counter
 from typing import Tuple
 from matplotlib import pyplot as plt
+from expbasics.visualizations import plot_fancy_distribution
 
 TRAINING_DATASET_LENGTH = 437280
 TEST_DATASET_LENGTH = 300000
@@ -26,7 +27,7 @@ class BiasedNoisyDataset(Dataset):
         self.strength = strength
         self.verbose = verbose
         self.img_dir = img_path
-        self.rng = np.random.default_rng(SEED)  # seed=SEED
+        self.rng = np.random.default_rng(seed=SEED)  # seed=SEED
         self.water_image = np.load("watermark.npy")
         self.fixed_length = length
         with open("labels.pickle", "rb") as f:
@@ -87,21 +88,7 @@ class BiasedNoisyDataset(Dataset):
         self.watermarks = wms
 
         if self.verbose:
-            print(
-                {
-                    0: Counter(self.watermarks[np.where(self.labels[:, 1] == 0)]),
-                    1: Counter(self.watermarks[np.where(self.labels[:, 1] == 1)]),
-                }
-            )
-            plt.scatter(s, w)
-            plt.ylabel("watermark")
-            plt.xlabel("shape")
-            plt.text(0.02, 0.9 - self.strength, "rectangle, no watermark")
-            plt.text(0.02, self.strength + 0.1, "rectangle, with watermark")
-            plt.text(0.6, 0.9 - self.strength, "ellipse, no watermark")
-            plt.text(0.6, self.strength + 0.1, "ellipse, with watermark")
-            plt.plot([0.5, 0.5], [0, 1], c="green")
-            plt.plot([0, 1], [self.strength, self.strength], c="red")
+            plot_fancy_distribution(self, s,w)
 
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
