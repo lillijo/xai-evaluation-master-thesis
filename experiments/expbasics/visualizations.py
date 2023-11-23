@@ -7,6 +7,7 @@ import torch
 from PIL import Image
 
 METHOD = 2
+FACECOL = "#2BC4D9"
 
 
 def visualize_dr(
@@ -144,18 +145,29 @@ def data_iterations(path, biascut=-1, num_it=4):
     return datas, filtbiases, biases, alldata
 
 
-def ground_truth_plot(datas, filtbiases, factor, m_type="mean_logit_change"):
+def sum_it(datas, func):
+    return [
+        sum([func(datas[i][j]) / len(datas) for i in range(len(datas))])
+        for j in range(len(datas[0]))
+    ]
+
+
+def ground_truth_plot(path, factor, m_type="mean_logit_change"):
+    datas, filtbiases, biases, alldata = data_iterations(path)
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     lrindex = 0
-    lrs = [1, 2, 3, 4]  # [0.0005, 0.001, 0.0015, 0.002]
+    lrs = [i + 1 for i in range(len(datas))]  # [0.0005, 0.001, 0.0015, 0.002]
     lr = lrs[lrindex]
+    its = len(lrs)
 
     def plot_linear_layer(datas, filtbiases, factor=0):
         fig, axs = plt.subplots(
-            4, 5, figsize=(20, 12), gridspec_kw={"wspace": 0.1, "hspace": 0.1}
+            4, its + 1, figsize=(20, 12), gridspec_kw={"wspace": 0.1, "hspace": 0.1}
         )
-        for l in range(4):
+
+        fig.set_facecolor(FACECOL)
+        for l in range(its):
             allneurons = np.array([a[f"crp_{m_type}"][factor] for a in datas[l]])
             sums = np.sum(allneurons, 0)
             summed_neurons = np.sum(allneurons, 1) / 6
@@ -170,7 +182,7 @@ def ground_truth_plot(datas, filtbiases, factor, m_type="mean_logit_change"):
             for i in range(6):
                 n = orders[i]
                 label = f"{latents_names[factor]} {m_type} neuron {i}" if l == 0 else ""
-                axs[0, l].set_title(f"learning rate {lrs[l]}")
+                axs[0, l].set_title(f"iteration {lrs[l]}")
                 axs[3, l].set_xlabel("bias a")
                 axs[0, l].scatter(
                     filtbiases,
@@ -191,21 +203,22 @@ def ground_truth_plot(datas, filtbiases, factor, m_type="mean_logit_change"):
                                     for a in range(4)
                                 ]
                             )
-                            / 4
+                            / its
                             for x in range(len(datas[0]))
                         ]
                     )
-                    axs[0, 4].scatter(
+                    axs[0, its].scatter(
                         filtbiases,
                         sum_per_neuron,
                         color=colors[i],
                         alpha=0.3,
                     )
+                    for p in range(its):
+                        axs[p, l].set_ylim([0, 1])
                 else:
-                    axs[0, l].yaxis.set_visible(False)
-                    axs[1, l].yaxis.set_visible(False)
-                    axs[2, l].yaxis.set_visible(False)
-                    axs[3, l].yaxis.set_visible(False)
+                    for p in range(its):
+                        axs[p, l].yaxis.set_visible(False)
+                        axs[p, l].set_ylim([0, 1])
             axs[1, l].scatter(
                 filtbiases,
                 summed_neurons,
@@ -225,19 +238,11 @@ def ground_truth_plot(datas, filtbiases, factor, m_type="mean_logit_change"):
                 label=f"{latents_names[factor]} prediction flip" if l == 0 else "",
             )
 
-        summed_neurons = [
-            np.sum([datas[a][i][f"crp_{m_type}"][factor] for a in range(4)]) / 24
-            for i in range(len(datas[0]))
-        ]
-        summed_prediction = [
-            np.sum([datas[a][i][f"pred_{m_type}"][factor] for a in range(4)]) / 4
-            for i in range(len(datas[0]))
-        ]
-        prediction_flips = [
-            np.sum([datas[a][i]["pred_flip"][factor] for a in range(4)]) / 4
-            for i in range(len(datas[0]))
-        ]
-        axs[0, 4].set_title("summed over learning rates")
+        summed_neurons = sum_it(datas, lambda x: sum(x[f"crp_{m_type}"][factor]))
+        summed_prediction = sum_it(datas, lambda x: x[f"pred_{m_type}"][factor])
+        prediction_flips = sum_it(datas, lambda x: x[f"pred_flip"][factor])
+
+        axs[0, 4].set_title("summed over iterations")
         axs[0, 0].set_ylabel("each neuron")
         axs[1, 0].set_ylabel("summed over neurons")
         axs[2, 0].set_ylabel(f"prediction {m_type}")
@@ -270,7 +275,7 @@ def ground_truth_plot(datas, filtbiases, factor, m_type="mean_logit_change"):
             alpha=0.5,
         )
         fig.legend(bbox_to_anchor=(1.1, 0.8))
-        fig.suptitle(f"{latents_names[factor]} {m_type} over learning rates")
+        fig.suptitle(f"{latents_names[factor]} {m_type} over iterations")
         file_name = f"{factor}_{m_type}"
         fig.savefig(f"outputs/imgs/{file_name}.png")
 
@@ -281,52 +286,136 @@ def plot_accuracies(path):
     datas, filtbiases, biases, alldata = data_iterations(path)
     rcol = ["#fa9fb5", "#f768a1", "#c51b8a", "#7a0177"]
     ecol = ["#addd8e", "#78c679", "#31a354", "#006837"]
-    """ plt.plot(biases, [a["train_accuracy"][0] for a in  alldata], c=rcol[0], label="training accuracy rectangle", linestyle=(0,(4,3)))
-    plt.plot(biases, [a["all_wm_accuracy"][0] for a in  alldata], c=rcol[2], label="all watermark rectangle", linestyle="dashed")
-    plt.plot(biases, [a["no_wm_accuracy"][0] for a in  alldata], c=rcol[3], label="no watermark rectangle", linestyle="dotted")
-    plt.plot(biases, [a["train_accuracy"][1] for a in  alldata], c=ecol[0], label="training accuracy ellipse", linestyle=(0,(5,3)))
-    plt.plot(biases, [a["all_wm_accuracy"][1] for a in  alldata], c=ecol[2], label="all watermark ellipse", linestyle="dashed")
-    plt.plot(biases, [a["no_wm_accuracy"][1] for a in  alldata], c=ecol[3], label="no watermark ellipse", linestyle=(0,(1,1))) """
+    fig = plt.figure(figsize=(8, 5))
+    fig.set_facecolor(FACECOL)
+    plt.ylim([0, 100])
     plt.plot(
-        biases,
-        [a["train_accuracy"][2] for a in alldata],
-        c=ecol[1],
-        label="training accuracy  all",
+        filtbiases,
+        sum_it(datas, lambda x: x["train_accuracy"][0]),
+        c=rcol[0],
+        label="unbiased rectangles",
+        linestyle=(0, (4, 3)),
+    )
+    plt.plot(
+        filtbiases,
+        sum_it(datas, lambda x: x["all_wm_accuracy"][0]),
+        c=rcol[2],
+        label="only rectangles with watermark",
+        linestyle="dashed",
+    )
+    """ plt.plot(
+        filtbiases,
+        sum_it(datas, lambda x: x["no_wm_accuracy"][0]),
+        c=rcol[3],
+        label="no watermark rectangle",
+        linestyle="dotted",
+    ) """
+    plt.plot(
+        filtbiases,
+        sum_it(datas, lambda x: x["train_accuracy"][1]),
+        c=ecol[0],
+        label="unbiased ellipses",
+        linestyle=(0, (5, 3)),
+    )
+    """ plt.plot(
+        filtbiases,
+        sum_it(datas, lambda x: x["all_wm_accuracy"][1]),
+        c=ecol[2],
+        label="all watermark ellipse",
+        linestyle="dashed",
+    ) """
+    plt.plot(
+        filtbiases,
+        sum_it(datas, lambda x: x["no_wm_accuracy"][1]),
+        c=ecol[3],
+        label="only ellipses without watermark",
         linestyle=(0, (1, 1)),
     )
-    bads = list(filter(lambda x: x["train_accuracy"][2] < 80, [a for a in alldata]))
-    print(len(bads), bads)
+    plt.plot(
+        filtbiases,
+        sum_it(datas, lambda x: x["train_accuracy"][2]),
+        c="#000",
+        label="training accuracy all",
+        linestyle=(0, (1, 1)),
+    )
+    bads = [
+        [a["num_it"], a["bias"]]
+        for a in list(filter(lambda x: x["train_accuracy"][2] < 90, alldata))
+    ]
+    print("accuracy below 90%: ", len(bads))
+    if len(bads) > 0:
+        print("bad biases: ", bads)
     plt.legend(loc="lower left", bbox_to_anchor=(1, 0))
     plt.ylabel("Accuracy")
     plt.xlabel("Bias")
 
 
-def plot_fancy_distribution():
+def plot_pred_flip(path, m_type="flip"):
+    titles = {
+        "flip": ["Percentage of flipped", "Prediction Flip Score"],
+        "mean_logit_change": ["Mean Logit Difference * 100", "Mean Logit Change Score"],
+        "ols": ["Correlation Coefficient * 100", "R2 Score"],
+    }
+    datas, filtbiases, biases, alldata = data_iterations(path)
+    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
+    latents_names, latents_sizes, latents_bases = get_lat_names()
+    fig = plt.figure(figsize=(8, 6))
+    fig.set_facecolor(FACECOL)
+    colind = [0, 3, 5, 2, 7, 1]
+    for f in [1, 0, 2, 3, 4, 5]:
+        lat_data = [
+            np.sum([datas[a][i][f"pred_{m_type}"][f] for a in range(4)]) / 0.04
+            for i in range(len(datas[0]))
+        ]
+        plt.scatter(
+            filtbiases,
+            lat_data,
+            color=colors[colind[f]],
+            label=latents_names[f],
+            alpha=0.5,
+            s=20,
+            marker="s",  # type: ignore
+        )
+        for l in range(4):
+            lat_data = [a[f"pred_{m_type}"][f] * 100 for a in datas[l]]
+            plt.scatter(filtbiases, lat_data, color=colors[colind[f]], s=3, alpha=0.5)
+    plt.legend(loc="upper left")
+    plt.ylabel(titles[m_type][0])
+    plt.xlabel("Bias")
+    plt.title(titles[m_type][1])
+    plt.legend(bbox_to_anchor=(0.3, 0.7))
+
+
+def plot_fancy_distribution(dataset=None, s=[], w=[]):
     from collections import Counter
     from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 
-    fig = plt.figure()
-    fig.set_facecolor("#2BC4D9")
+    fig = plt.figure(figsize=(5, 5))
+    fig.set_facecolor(FACECOL)
     fig.set_alpha(0.0)
     ax = fig.add_subplot(111)
-    ax.set_facecolor("#2BC4D9")
+    ax.set_facecolor(FACECOL)
     ax.set_alpha(0.0)
     TOTAL = 1000
-    BIAS = 0.75
-    STRENGTH = 0.5
+    if dataset is None:
+        bias = 0.75
+        strength = 0.5
+        dataset = BiasedNoisyDataset(bias, strength, False)
 
-    dataset = BiasedNoisyDataset(BIAS, STRENGTH, False)
-
-    generator = dataset.rng.uniform(0, 1, TOTAL)
-    s = dataset.bias * generator + (1 - dataset.bias) * dataset.rng.uniform(0, 1, TOTAL)
-    w = dataset.bias * generator + (1 - dataset.bias) * dataset.rng.uniform(0, 1, TOTAL)
+        generator = dataset.rng.uniform(0, 1, TOTAL)
+        s = dataset.bias * generator + (1 - dataset.bias) * dataset.rng.uniform(
+            0, 1, TOTAL
+        )
+        w = dataset.bias * generator + (1 - dataset.bias) * dataset.rng.uniform(
+            0, 1, TOTAL
+        )
     print(
         {
             0: Counter(dataset.watermarks[np.where(dataset.labels[:, 1] == 0)]),
             1: Counter(dataset.watermarks[np.where(dataset.labels[:, 1] == 1)]),
         }
     )
-    plt.scatter(s, w, color="#C8D672", s=16)
+    plt.scatter(s[:TOTAL], w[:TOTAL], color="#C8D672", s=16)
     plt.ylabel(
         "watermark",
     )
@@ -338,49 +427,56 @@ def plot_fancy_distribution():
     ax.xaxis.set_ticks(list(np.arange(0.0, 1.1, 0.1)))
     plt.text(
         0.05,
-        0.75 - dataset.strength,
+        0.65 - dataset.strength,
         "rectangle\nno watermark",
         size=12,
     )
     plt.text(
         0.05,
-        dataset.strength + 0.25,
+        dataset.strength + 0.35,
         "rectangle\nwith watermark",
         size=12,
     )
     plt.text(0.05, dataset.strength + 0.02, "strength", size=12)
     plt.text(
         0.6,
-        0.75 - dataset.strength,
+        0.65 - dataset.strength,
         "ellipse \nno watermark",
         size=12,
     )
     plt.text(
         0.6,
-        dataset.strength + 0.25,
+        dataset.strength + 0.35,
         "ellipse\nwith watermark",
         size=12,
     )
     plt.text(
         0.45,
         1.0,
-        "a = 0.75",
+        f"a = {dataset.bias}",
         c="red",
         size=12,
         fontweight="bold",
     )
+    plt.plot([0.5, 0.5], [0.05, 1], c="#000", linewidth=1)
+    plt.plot([0, 1], [dataset.strength, dataset.strength], c="#000", linewidth=1)
+
     plt.text(
-        0.39,
-        0.42,
+        0.55,
+        0.52,
         "1 - a",
         c="red",
         size=12,
         fontweight="bold",
         bbox={"fc": "#C8D672", "alpha": 0.8, "ec": "#C8D672"},
     )
-    plt.plot([0.5, 0.5], [0.05, 1], c="#000", linewidth=1)
-    plt.plot([0, 1], [dataset.strength, dataset.strength], c="#000", linewidth=1)
-    plt.plot([0.45, 0.3], [0.25, 0.5], c="red", linewidth=5)
+    plt.plot(
+        [0.5 - (1 - dataset.bias) * 0.5, 0.5 + (1 - dataset.bias) * 0.5],
+        [0.5 + (1 - dataset.bias) * 0.5, 0.5 - (1 - dataset.bias) * 0.5],
+        c="red",
+        linewidth=5,
+        alpha=0.8,
+    )
 
 
 def fancy_attributions(unbiased_ds, crp_attribution):
@@ -406,14 +502,16 @@ def fancy_attributions(unbiased_ds, crp_attribution):
     # imgify(img[[0,2,4,6]], grid=(1,4), symmetric=True, resize=500)
     # plot_grid({str(BIAS):img[[0,2,4,6]]}, symmetric=True,cmap_dim=1,cmap="Greys", resize=500)
 
-    fig, axs = plt.subplots(2, 4, figsize=(10, 5), gridspec_kw={"wspace": 0.1, "hspace": 0})
-    fig.set_facecolor("#2BC4D9")
+    fig, axs = plt.subplots(
+        2, 4, figsize=(10, 5), gridspec_kw={"wspace": 0.1, "hspace": 0}
+    )
+    fig.set_facecolor(FACECOL)
     fig.set_alpha(0.0)
     c = 0
     for i in range(0, 8):
         axs[c % 2, c // 2].xaxis.set_visible(False)
         axs[c % 2, c // 2].yaxis.set_visible(False)
-        cmap = matplotlib.cm.Greys if i % 2 == 0 else matplotlib.cm.bwr # type: ignore
+        cmap = matplotlib.cm.Greys if i % 2 == 0 else matplotlib.cm.bwr  # type: ignore
         maxv = img[i].max()
         minv = float(img[i].min())
         center = 0.5 if i % 2 == 0 else 0.0
@@ -424,11 +522,12 @@ def fancy_attributions(unbiased_ds, crp_attribution):
         axs[c % 2, c // 2].imshow(img[i], cmap=cmap, norm=divnorm)
         c += 1
 
+
 def my_plot_grid(images, rows, cols):
     fig, axs = plt.subplots(
-            rows, cols, figsize=(rows, cols), gridspec_kw={"wspace": 0.1, "hspace": 0}
-        )
-    fig.set_facecolor("#2BC4D9")
+        rows, cols, figsize=(rows, cols), gridspec_kw={"wspace": 0.1, "hspace": 0}
+    )
+    fig.set_facecolor(FACECOL)
     fig.set_alpha(0.0)
     for il in range(rows):
         for n in range(cols):
@@ -444,6 +543,5 @@ def my_plot_grid(images, rows, cols):
                 axs[il, n].imshow(images[il, n], cmap="bwr", norm=divnorm)
             else:
                 axs[il, n].axis("off")
-    #return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-    #Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
-    return Image.frombytes('RGB', fig.canvas.get_width_height(),fig.canvas.tostring_rgb())
+    # return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    # Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
