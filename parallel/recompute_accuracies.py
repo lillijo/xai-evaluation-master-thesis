@@ -12,8 +12,6 @@ IMAGE_PATH = "images/"  # "../dsprites-dataset/images/"
 
 
 def recompute_accs(allwm, nowm, item):
-    if "crp_ols" in item:
-        return item
     res = item
     bias = item["bias"]
     strength = item["strength"]
@@ -35,6 +33,7 @@ def recompute_accs(allwm, nowm, item):
         num_it=num_it,
     )
     res["train_accuracy"] = list(accuracy_per_class(model, test_loader))
+    print(res["train_accuracy"])
     res["all_wm_accuracy"] = list(accuracy_per_class(model, allwm))
     res["no_wm_accuracy"] = list(accuracy_per_class(model, nowm))
 
@@ -50,12 +49,12 @@ def compute_with_param():
     )
     with open("parallel_accuracies.json", "r") as f:
         accuracies = json.load(f)
-    for name, item in tqdm(accuracies.items()):
-        result = recompute_accs(allwm, nowm, item)
-        accuracies[name] = result
+        for name, item in tqdm(accuracies.items()):
+            result = recompute_accs(allwm, nowm, item)
+            accuracies[name] = result
 
-    with open("parallel_accuracies.json", "w") as f:
-        json.dump(accuracies, f, indent=2)
+        with open("recompute_accuracies.json", "w") as f:
+            json.dump(accuracies, f, indent=2)
 
 
 if __name__ == "__main__":
