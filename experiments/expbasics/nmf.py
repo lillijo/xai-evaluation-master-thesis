@@ -5,7 +5,7 @@ from sklearn.decomposition import NMF
 from tqdm import tqdm
 from crp.image import imgify
 
-from network import ShapeConvolutionalNeuralNetwork
+from expbasics.network import ShapeConvolutionalNeuralNetwork
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

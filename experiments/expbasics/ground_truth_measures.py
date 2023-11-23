@@ -80,51 +80,6 @@ class GroundTruthMeasures:
         res = output.data[0] / (torch.abs(output.data[0]).sum(-1) + 1e-10)
         return res
 
-    def prediction_flip(self, index, model):
-        latents = self.index_to_latent(index)
-        pred_flip = {}
-        pred_flip["label"] = latents[1]
-        pred_flip["pred"] = self.get_prediction(index, model, False)
-        wm = self.get_prediction(index, model, True)
-        if pred_flip["pred"] != wm:
-            pred_flip["watermark"] = 1
-        else:
-            pred_flip["watermark"] = 0
-        for lat in range(1, self.latents_sizes.size):
-            lat_name = self.latents_names[lat]
-            pred_flip[lat_name] = 0
-            len_latent = 2 if lat_name == "shape" else self.latents_sizes[lat]
-            for j in range(len_latent):
-                if j != latents[lat]:
-                    flip_latents = copy.deepcopy(latents)
-                    flip_latents[lat] = j
-                    flip_index = self.latent_to_index(flip_latents)
-                    flip_pred = self.get_prediction(flip_index, model, False)
-                    if flip_pred != pred_flip["pred"]:
-                        pred_flip[lat_name] += 1
-            pred_flip[lat_name] = pred_flip[lat_name] / (len_latent - 1)
-        return pred_flip
-
-    def compute_multiple_flips(self, model):
-        count = 0
-        pred_flip_all = {
-            "watermark": 0.0,
-            "shape": 0.0,
-            "scale": 0.0,
-            "orientation": 0.0,
-            "posX": 0.0,
-            "posY": 0.0,
-        }
-
-        for i in range(0, MAX_INDEX, STEP_SIZE):
-            pred_flip = self.prediction_flip(i, model)
-            count += 1
-            for k in pred_flip_all.keys():
-                pred_flip_all[k] += pred_flip[k]
-        for k in pred_flip_all.keys():
-            pred_flip_all[k] = pred_flip_all[k] / count
-        return pred_flip_all
-
     def get_func(self, attribution, composite, cc, layer_names, func_type, model):
         if func_type == "bbox":
             mask = torch.zeros(64, 64)
@@ -415,7 +370,7 @@ class GroundTruthMeasures:
         results = np.sum(index_results, 0) / len(indices)
         return results
 
-    def prediction_flip_new(self, everything):
+    def prediction_flip(self, everything):
         indices = range(0, MAX_INDEX, STEP_SIZE)
         index_results = np.zeros((len(indices), 6))
         for count, index in enumerate(indices):
