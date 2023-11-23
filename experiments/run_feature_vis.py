@@ -20,7 +20,9 @@ NAME = "../clustermodels/noise_pos"  # models/noise_pos
 FV_NAME = "noise_pos"
 IMAGE_PATH = "../dsprites-dataset/images/"  # "images/"
 LAYER_NAME = "linear_layers.0"
-
+BIASES = list(np.round(np.linspace(0.0, 0.4, 4), 3)) + list(
+    np.round(np.linspace(0.5, 1, 51), 3)
+)
 
 def to_name(b, i):
     return "b{}-i{}".format(
@@ -68,6 +70,21 @@ def compute_with_param(bias):
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=True)
 
     for num_it in range(4):
+        name = to_name(bias, num_it)
+        (name, path) = make_feature_vis(accuracies[name], test_loader, test_ds)
+        print(f"(((({name}:{path}))))")
+
+def compute_iteration(num_it):
+    with open("outputs/noise_pos_accuracies.json", "r") as f:
+        accuracies = json.load(f)
+    ds = BiasedNoisyDataset(
+        verbose=False, strength=STRENGTH, bias=0.0, img_path=IMAGE_PATH
+    )
+    split = 0.05
+    [train_ds, test_ds] = random_split(ds, [1 - split, split])
+    test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=True)
+
+    for bias in BIASES:
         name = to_name(bias, num_it)
         (name, path) = make_feature_vis(accuracies[name], test_loader, test_ds)
         print(f"(((({name}:{path}))))")
