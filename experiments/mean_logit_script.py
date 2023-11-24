@@ -14,8 +14,8 @@ IMAGE_PATH = "../dsprites-dataset/images/"  # "images/"
 
 
 def logit_change_evaluate(item):
-    if "crp_ols" in item:
-        return item
+    """ if "crp_ols" in item:
+        return item """
     res = item
     bias = item["bias"]
     strength = item["strength"]
@@ -56,14 +56,19 @@ def logit_change_evaluate(item):
 
 
 def compute_with_param():
-    with open("outputs/noise_pos_accuracies.json", "r") as f:
+    with open("outputs/recompute_accuracies.json", "r") as f:
         accuracies = json.load(f)
+    with open("outputs/noise_pos_accuracies.json", "r") as f:
+        old_accuracies = json.load(f)
     for name, item in tqdm(accuracies.items()):
-        result = logit_change_evaluate(item)
-        accuracies[name] = result
+        old_acc = old_accuracies[name]["train_accuracy"][2]
+        new_acc = accuracies[name]["train_accuracy"][2]
+        if abs(old_acc - new_acc) > 1.2:
+            result = logit_change_evaluate(item)
+            accuracies[name] = result
 
-        with open("outputs/noise_pos_accuracies.json", "w") as f:
-            json.dump(accuracies, f, indent=2)
+            with open("outputs/noise_pos_accuracies.json", "w") as f:
+                json.dump(accuracies, f, indent=2)
 
 
 if __name__ == "__main__":

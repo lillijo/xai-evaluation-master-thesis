@@ -10,7 +10,7 @@ from expbasics.visualizations import plot_fancy_distribution
 
 TRAINING_DATASET_LENGTH = 437280
 TEST_DATASET_LENGTH = 300000
-SEED = 37
+SEED = 431
 IMG_PATH_DEFAULT = "../dsprites-dataset/images/"
 
 

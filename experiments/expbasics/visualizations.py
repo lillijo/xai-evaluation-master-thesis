@@ -282,7 +282,7 @@ def ground_truth_plot(path, factor, m_type="mean_logit_change"):
     plot_linear_layer(datas, filtbiases, factor)
 
 
-def plot_accuracies(path):
+def plot_accuracies(path, treshold=90):
     datas, filtbiases, biases, alldata = data_iterations(path)
     rcol = ["#fa9fb5", "#f768a1", "#c51b8a", "#7a0177"]
     ecol = ["#addd8e", "#78c679", "#31a354", "#006837"]
@@ -339,10 +339,10 @@ def plot_accuracies(path):
         linestyle=(0, (1, 1)),
     )
     bads = [
-        [a["num_it"], a["bias"]]
-        for a in list(filter(lambda x: x["train_accuracy"][2] < 90, alldata))
+        [a["num_it"], a["bias"], a["train_accuracy"][2]]
+        for a in list(filter(lambda x: x["train_accuracy"][2] < treshold, alldata))
     ]
-    print("accuracy below 90%: ", len(bads))
+    print(f"accuracy below {treshold}%: {len(bads)}")
     if len(bads) > 0:
         print("bad biases: ", bads)
     plt.legend(loc="lower left", bbox_to_anchor=(1, 0))
@@ -545,3 +545,4 @@ def my_plot_grid(images, rows, cols):
                 axs[il, n].axis("off")
     # return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     # Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
+

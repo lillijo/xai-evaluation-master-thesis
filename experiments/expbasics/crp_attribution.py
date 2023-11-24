@@ -309,6 +309,71 @@ class CRPAttribution:
         ]
         return node_labels, edges
 
+    def all_heatmaps(self, image, label, target):
+        image.requires_grad = True
+        images = {}
+        for li, l in enumerate(self.layer_id_map.keys()):
+            conditions = [{"y": [label], l: [i]} for i in self.layer_id_map[l]]
+            attr = self.attribution(
+                image,
+                conditions,
+                self.composite,
+                record_layer=self.layer_names,
+                init_rel=1,
+            )
+            for h in range(attr.heatmap.shape[0]):
+                heatmap = attr.heatmap[h]
+                maxv = max(float(heatmap.max()), 0.0001)
+                minv = min(float(heatmap.min()), -0.0001)
+                center = 0.0
+                divnorm = mpl.colors.TwoSlopeNorm(vmin=minv, vcenter=center, vmax=maxv)
+                images[f"{l}_{h}"] = [heatmap, divnorm]
+        images["original"] = [
+            image[0, 0].detach().numpy(),
+            f"prediction: {label} label: {target}",
+        ]
+        return images
+
+    def complete_relevance_graph(self, index):
+        img, target = self.dataset[index]
+        sample = img.view(1, 1, 64, 64)
+        sample.requires_grad = True
+        output = self.model(sample)
+        pred = int(output.data.max(1)[1][0])
+        images = self.all_heatmaps(sample, pred, target)
+        graph = trace_model_graph(self.model, sample, self.layer_names)
+        attgraph = AttributionGraph(self.attribution, graph, self.layer_map)  # type: ignore
+        nodes, connections = attgraph(
+            sample=sample,
+            composite=self.composite,
+            concept_id=pred,
+            layer_name="linear_layers.2",
+            width=[6, 2, 2, 2],
+            abs_norm=True,
+            verbose=False,
+            batch_size=1,
+        )
+        edges = {}
+        used_nodes = set()
+        in_counts = {f"{i[0]}": 0 for i in nodes}
+        for i in connections.keys():
+            name = f"{i[0]}_{i[1]}"
+            edges[name] = {}     
+            in_counts[i[0]] += 1
+            for j in connections[i]:
+                if j[2] != 0 and (i[0] == "linear_layers.2" or name in used_nodes):
+                    used_nodes.add(name)
+                    j_name = f"{j[0]}_{j[1]}"
+                    used_nodes.add(j_name)
+                    edges[name][j_name] = j[2]
+        for source in edges.keys():
+            for target in edges[source].keys():
+                if in_counts[source[:-2]] > 0:
+                    edges[source][target] = edges[source][target] / in_counts[source[:-2]]
+
+        node_labels = list(used_nodes)
+        return node_labels, edges, images
+
     def watermark_importance(self, index):
         img, label = self.dataset[index]
         sample = img.view(1, 1, 64, 64)
