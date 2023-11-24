@@ -2,10 +2,10 @@
 \chapter{Related Work}\label{chapter:related_work}
 
 
-{\color{red} 
-about 4-6 pages
+{\color{red}
+      about 4-6 pages
 
-make a distinction between methods/papers that discuss similar approaches and methods/concepts used in this thesis}
+      make a distinction between methods/papers that discuss similar approaches and methods/concepts used in this thesis}
 
 \begin{enumerate}
       \item Back-Propagation/Saliency/Attribution/Local methods name them all
@@ -67,7 +67,10 @@ which papers have been published on this
 \todo{more general what evaluation methods exist, which apply to CRP etc.}
 
 
-\subsection{Benchmarking Back-Propagation Methods}
+\subsection{Evaluating Back-Propagation Methods}
+
+The research on quantification and evaluation of XAI methods has increased with their rising popularity. Recently, a plethora of benchmarks and theoretical analyses have examined the fidelity, especially of feature importance methods, to the model they are trying to explain. Evaluations commonly used by authors of new XAI methods include feature ablation and data randomization (e.g. pixel flipping) \todo{cite}. . Additionally, more complex benchmarks \cite{Kim2018, Arras2022, Bau2017, Singla2022} which are often human-supervised aim at comparing XAI outputs to human-understandable concepts. 
+
 
 \begin{itemize}
       \item differentiate between numerical evaluation and evaluation through user studies
@@ -84,11 +87,18 @@ which papers have been published on this
 \end{itemize}
 {\color{red} outline which problems CRP solves well, draw connections between unsolved criticism and causal perspective}
 
-\subsection{Recent Critique of Saliency Maps}
+\subsubsection{Recent Critique of Saliency Maps}
+
+Although a general lack of dependence between explanations and their model \cite{Adebayo2018,Karimi2023} has so far only been studied for less complex attribution methods, current research still draws a less than ideal picture of XAI's fidelity.
+Kindermans et. al. \cite{Kindermans2019} show that a constant vector shift on the input data, which is not affecting the performance of the model, can lead to misleading explanations. \cite{Sixt2020} finds the class insensitivity of some back-propagation methods to be due to their improper use of negative relevance.
+While authors of new methods often underline their results with user studies \todo{cite}, Sixt et. al. \cite{Sixt2022a} among others \todo{cite} show that XAI methods do not necessarily increase humans skill at identifying relevant features.
+
+Constructing a test which is neither too simple and therefore too far away from realistic application scenarios nor not quantifiable empirically due to its \textit{human} component or unidentifiable ground truth, poses a challenge which \cite{Clark2023} tries to tackle. This benchmark is based on recent analysis \cite{Wilming2023} of suppressor variables, which can be for example the background color of an image, that are used by the model without having an association to the core features to normalize the image and improve the prediction. 
+They introduce a generation process for mixing the suppressor and real features which serves as inspiraiton for the structural causal model applied here. 
 
 \begin{itemize}
       \item explanations are independent of later layers (no negative relevance) \cite{Sixt2020}
-      \item suppressor variable "in practice, XAI methods do not distinguish whether a feature is a confounder or a suppressor, which can lead to misunderstandings about a model’s performance and interpretation"
+      \item suppressor variable "in practice, XAI methods do not distinguish whether a feature is a confounder or a suppressor, which can lead to misunderstandings about a model's performance and interpretation"
       \item kinda stupid, because nueral network also does not make a difference between suppressors and confounders \cite{Wilming2023}
       \item the (un-)reliability of saliency methods: should fulfill 'input invariance'
       \item saliency method mirrors sensitivity of model with respect to transformations of the input
@@ -116,7 +126,9 @@ which papers have been published on this
             \\ task: treat Model as SCM and calculate interventional expectations and average causal effect
 \end{enumerate}
 
-\subsection{Causality Research on Evaluation and Benchmarking of XAI}
+\subsubsection{Causality Research on Evaluation and Benchmarking of XAI}
+The link an explanation and its model should have, has come under the causal lense both for developing new XAI methods and their evaluation  \todo{cite}. Counterfactual explanations 
+
 {\color{red} which other methods/approaches/papers are there that broadly connect explainable AI and causality }
 \begin{itemize}
       \item general map of causality and XAI mixups
