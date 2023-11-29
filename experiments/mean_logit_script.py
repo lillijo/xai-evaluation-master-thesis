@@ -10,7 +10,7 @@ EPOCHS = 3
 BATCH_SIZE = 128
 NAME = "../clustermodels/noise_pos"  # "models/bigm"
 IMAGE_PATH = "../dsprites-dataset/images/"  # "images/"
-
+LAYER_NAME = "convolutional_layers.6"
 
 
 def logit_change_evaluate(item):
@@ -39,7 +39,7 @@ def logit_change_evaluate(item):
 
     # add change / new measure to compute here
     gm = GroundTruthMeasures(img_path=IMAGE_PATH)
-    flipvalues = gm.ols_values(model)
+    flipvalues = gm.ols_values(model, LAYER_NAME)
     ols_vals = gm.ordinary_least_squares(flipvalues)
     mean_logit = gm.mean_logit_change(flipvalues)
     flip_pred = gm.ols_prediction_values(model)
@@ -56,19 +56,14 @@ def logit_change_evaluate(item):
 
 
 def compute_with_param():
-    with open("outputs/recompute_accuracies.json", "r") as f:
-        accuracies = json.load(f)
     with open("outputs/noise_pos_accuracies.json", "r") as f:
-        old_accuracies = json.load(f)
+        accuracies = json.load(f)
     for name, item in tqdm(accuracies.items()):
-        old_acc = old_accuracies[name]["train_accuracy"][2]
-        new_acc = accuracies[name]["train_accuracy"][2]
-        if abs(old_acc - new_acc) > 1.2:
-            result = logit_change_evaluate(item)
-            accuracies[name] = result
+        result = logit_change_evaluate(item)
+        accuracies[name] = result
 
-            with open("outputs/noise_pos_accuracies.json", "w") as f:
-                json.dump(accuracies, f, indent=2)
+        with open("outputs/conv_ground_truth.json", "w") as f:
+            json.dump(accuracies, f, indent=2)
 
 
 if __name__ == "__main__":

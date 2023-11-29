@@ -5,6 +5,8 @@ import pickle
 import json
 import torch
 from PIL import Image
+import matplotlib.gridspec as gridspec
+import math
 
 METHOD = 2
 FACECOL = "#2BC4D9"
@@ -546,3 +548,27 @@ def my_plot_grid(images, rows, cols):
     # return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     # Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
 
+
+def plot_nmfs(cav_images, num_neighbors, n_basis):
+    fig = plt.figure(figsize=(16, 4))
+    subfigs = fig.subfigures(1, n_basis, wspace=0.0, hspace=0.0)
+    fig.set_facecolor(FACECOL)
+    fig.set_alpha(0.0)
+    grids = math.floor(math.sqrt(num_neighbors))
+    for outerind, subfig in enumerate(subfigs.flat):
+        subfig.suptitle(f"CAV {outerind}")
+        subfig.set_facecolor(FACECOL)
+        inner = subfig.subplots(grids, grids)
+        for innerind, ax in enumerate(inner.flat):
+            ax.set_xticks([])
+            ax.set_yticks([])
+            if torch.any(cav_images[outerind, innerind] != 0):
+                maxv = max(float(cav_images[outerind, innerind].max()), 0.001)
+                minv = min(float(cav_images[outerind, innerind].min()), -0.001)
+                center = 0.0
+                divnorm = matplotlib.colors.TwoSlopeNorm(
+                    vmin=minv, vcenter=center, vmax=maxv
+                )
+                ax.imshow(cav_images[outerind, innerind], cmap="bwr", norm=divnorm)
+            else:
+                ax.axis("off")

@@ -16,7 +16,6 @@ from sklearn.manifold import TSNE, Isomap, MDS, LocallyLinearEmbedding
 from sklearn.decomposition import PCA
 from sklearn.cluster import SpectralClustering, KMeans
 
-from .network_binary import train_network as train_network_binary
 from .network import train_network as train_network, accuracy_per_class
 from .biased_noisy_dataset import (
     get_test_dataset,

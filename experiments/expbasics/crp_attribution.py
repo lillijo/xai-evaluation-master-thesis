@@ -88,7 +88,7 @@ class CRPAttribution:
         return saved_files
 
     def make_all_relevances(self, cond_layer, neurons):
-        no_ref_samples = 5
+        no_ref_samples = 8
         all_refs = {}
         for i in neurons:
             targets, rel = self.fv.compute_stats(
@@ -101,8 +101,8 @@ class CRPAttribution:
                 "relevance",
                 (0, no_ref_samples),
                 composite=self.composite,
-                rf=True,
-                plot_fn=vis_simple,
+                # rf=True,
+                # plot_fn=vis_simple,
             )
             all_refs[f"{i}:{targets}"] = ref_c[f"{i}:{targets}"]
         plot_grid(
@@ -358,7 +358,7 @@ class CRPAttribution:
         in_counts = {f"{i[0]}": 0 for i in nodes}
         for i in connections.keys():
             name = f"{i[0]}_{i[1]}"
-            edges[name] = {}     
+            edges[name] = {}
             in_counts[i[0]] += 1
             for j in connections[i]:
                 if j[2] != 0 and (i[0] == "linear_layers.2" or name in used_nodes):
@@ -369,7 +369,9 @@ class CRPAttribution:
         for source in edges.keys():
             for target in edges[source].keys():
                 if in_counts[source[:-2]] > 0:
-                    edges[source][target] = edges[source][target] / in_counts[source[:-2]]
+                    edges[source][target] = (
+                        edges[source][target] / in_counts[source[:-2]]
+                    )
 
         node_labels = list(used_nodes)
         return node_labels, edges, images
@@ -444,7 +446,7 @@ class CRPAttribution:
         )
         return attr.heatmap, pred
 
-    def cav_heatmap(self, index, layer, cav):
+    def old_cav_heatmap(self, index, layer, cav):
         img, label = self.dataset[index]
         sample = img.view(1, 1, 64, 64)
         sample.requires_grad = True
@@ -466,6 +468,33 @@ class CRPAttribution:
         ):
             heatmap += attr.heatmap * cav[neuron]
         return abs_norm(heatmap)
+
+    def cav_heatmap(self, index, layer_name, cav):
+        self.model.eval()
+
+        def hook(module, input, output):
+            module.activations = output
+
+        for name, layer in self.model.named_modules():
+            if name == layer_name:
+                layer.register_forward_hook(hook)
+                break
+        img, label = self.dataset[index]
+        sample = img.view(1, 1, 64, 64)
+        sample.requires_grad = True
+        self.model(sample)
+        act = layer.activations.detach().cpu().clamp(min=0)
+        cav_s = torch.zeros(1,8,7,7)
+        for i in range(cav.shape[0]):
+            cav_s[0,i] = cav[i]
+        attr = self.attribution(
+            sample,
+            [{}],
+            self.composite,
+            start_layer=layer_name,
+            init_rel=act * cav_s
+        )
+        return attr.heatmap
 
     def watermark_concept_importances(self, indices, test_ds):
         neuron_map = {

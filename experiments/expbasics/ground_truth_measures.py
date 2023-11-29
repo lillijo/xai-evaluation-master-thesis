@@ -220,7 +220,7 @@ class GroundTruthMeasures:
                         blub[latent][neuron] += item[latent][neuron]
         return blub
 
-    def ols_values(self, model):
+    def ols_values(self, model, layer_name="linear_layers.0"):
         """
         * For the R2 score, we fitted an ordinary least squares from the factors' deltas
         * to the deltas of the model's logits and then report the coefficient of determination.
@@ -233,17 +233,66 @@ class GroundTruthMeasures:
         attribution = CondAttribution(model, no_param_grad=True, device=tdev)
         layer_names = get_layer_names(model, [torch.nn.Conv2d, torch.nn.Linear])
 
-        def apply_func(index, wm):
+        def alt_apply_func(index, wm):
             image = self.load_image(index, wm)
             if torch.cuda.is_available():
                 image = image.cuda()
             image.requires_grad = True
             attr = attribution(image, [{"y": [1]}], composite, record_layer=layer_names)
             rel_c = cc.attribute(
-                attr.relevances["linear_layers.0"], abs_norm=True
+                attr.relevances[layer_name], abs_norm=True
             )  #  activations
             # rel_c = abs_norm(rel_c)
             return rel_c[0].tolist()  # [float(rel_c[0][n]) for n in range(6)]
+
+        def ident(pred):
+            return pred
+
+        model.eval()
+
+        """ def hook(module, input, output):
+            module.activations = output
+
+        for name, layer in model.named_modules():
+            if name == layer_name:
+                layer.register_forward_hook(hook)
+                break """
+
+        def alt_2_apply_func(index, wm):
+            image = self.load_image(index, wm)
+            if torch.cuda.is_available():
+                image = image.cuda()
+            image.requires_grad = True
+            attr = attribution(
+                image, [{layer_name: [i]} for i in range(8)], composite, init_rel=ident
+            )
+            rel_c = [
+                cc.attribute(attr.relevances[layer_name][i])  # , abs_norm=True
+                for i in range(8)
+            ]  #  activations
+            if index == 0:
+                print(
+                    attr.heatmap.shape,
+                    attr.relevances[layer_name].shape,
+                    attr.activations[layer_name].shape,
+                    rel_c,
+                )
+            return rel_c[0].tolist()
+
+        def apply_func(index, wm):
+            image = self.load_image(index, wm)
+            if torch.cuda.is_available():
+                image = image.cuda()
+            image.requires_grad = True
+            #model(image)
+            #act = layer.activations.detach().cpu().clamp(min=0)
+            attr = attribution(
+                image, [{}], composite, start_layer=layer_name#, init_rel=act
+            )
+            rel_c = cc.attribute(
+                attr.relevances[layer_name]
+            )  # , abs_norm=True  #  activations
+            return rel_c[0].tolist()
 
         indices = range(0, MAX_INDEX, STEP_SIZE)
         everything = []
@@ -270,9 +319,10 @@ class GroundTruthMeasures:
 
     def ordinary_least_squares(self, everything):
         results = []
+        n_neur = len(everything[0][2])
         for latent in range(6):
             results.append([])
-            for neuron in range(6):
+            for neuron in range(n_neur):
                 vals = list(filter(lambda x: x[0] == latent, everything))
                 predict = [x[1] for x in vals]
                 actual = [x[2][neuron] for x in vals]
@@ -286,7 +336,8 @@ class GroundTruthMeasures:
 
     def mean_logit_change(self, everything):
         indices = range(0, MAX_INDEX, STEP_SIZE)
-        index_results = np.zeros((len(indices), 6, 6))
+        n_neur = len(everything[0][2])
+        index_results = np.zeros((len(indices), 6, n_neur))
         for count, index in enumerate(indices):
             vals_index = list(filter(lambda x: x[4] == index, everything))
             for latent in range(6):

@@ -19,7 +19,7 @@ BATCH_SIZE = 128
 NAME = "../clustermodels/noise_pos"  # models/noise_pos
 FV_NAME = "noise_pos"
 IMAGE_PATH = "../dsprites-dataset/images/"  # "images/"
-LAYER_NAME = "linear_layers.0"
+LAYER_NAME = "convolutional_layers.6"
 BIASES = list(np.round(np.linspace(0.0, 0.4, 4), 3)) + list(
     np.round(np.linspace(0.5, 1, 51), 3)
 )
@@ -90,19 +90,20 @@ def compute_iteration(num_it):
         print(f"(((({name}:{path}))))")
 
 def compute_all():
-    with open("outputs/old_accs.json", "r") as f:
+    with open("outputs/noise_pos_accuracies.json", "r") as f:
         accuracies = json.load(f)
     ds = BiasedNoisyDataset(
         verbose=False, strength=STRENGTH, bias=0.0, img_path=IMAGE_PATH
     )
-    split = 0.05
+    split = 0.03
     [train_ds, test_ds] = random_split(ds, [1 - split, split])
     print(len(test_ds))
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=True)
     for name in accuracies.keys():
-        if not (name in accuracies and accuracies[name]["train_accuracy"][2] > 80):
-            (name, path) = make_feature_vis(accuracies[name], test_loader, test_ds)
-            print(f"(((({name}:{path}))))")
+        (name, path) = make_feature_vis(accuracies[name], test_loader, test_ds)
+        accuracies[name]["fv_conv"] = path
+        with open("outputs/noise_pos_accuracies.json", "w") as f:
+                json.dump(accuracies, f, indent=2)
 
 if __name__ == "__main__":
     """ parser = argparse.ArgumentParser("script_parallel")
