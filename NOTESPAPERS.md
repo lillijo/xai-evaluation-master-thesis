@@ -1032,6 +1032,10 @@ all current research fields:
 - relevance conservation property (the total relevance is constrained to be preserved from one layer to another, and the total node relevance must be the equal to the sum of all relevance messages incoming to this node and also equal to the sum of all relevance messages that are outgoing to the same node)
 - more constraints, e.g. if node i has higher activation it should receive larger fraction of relevance score
 - OR _first order Taylor approximation_:
+**new read:**
+- for bag of words methods and multilayered neural networks
+- expect output of method to be >= 0
+
 
 ## Instance-wise Causal Feature Selection for Model Interpretation
 
