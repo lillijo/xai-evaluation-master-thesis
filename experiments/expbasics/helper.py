@@ -64,7 +64,9 @@ def get_model_etc(bias, num_it=0):
 
     unb_short, unbiased_ds, test_loader = get_test_dataset(split=0.1)
     gm = GroundTruthMeasures()
-    crp_attribution = CRPAttribution(model, unbiased_ds, "noise_pos", to_name(bias, num_it))
+    crp_attribution = CRPAttribution(
+        model, unbiased_ds, "noise_pos", to_name(bias, num_it)
+    )
 
     return model, gm, crp_attribution, unbiased_ds, test_loader
 
@@ -81,9 +83,12 @@ def get_dr_methods():
     return methods, m_names
 
 
-def get_attributions(model, activations, gm, crp_attribution):
+def get_attributions(
+    model, activations, gm, crp_attribution, layer_name="linear_layers.0"
+):
     n_samples = 1000
-    vector = torch.zeros((n_samples, 6))
+    vlen = len(crp_attribution.layer_id_map[layer_name])
+    vector = torch.zeros((n_samples, vlen))
     # activationvector = torch.zeros((n_samples, 6))
     predictions = []
     labels = []
@@ -94,7 +99,7 @@ def get_attributions(model, activations, gm, crp_attribution):
         img = gm.load_image(img_idx, False)
         # layer_features = model2(img)
         att, predict, label, wm = crp_attribution.relevances2(
-            img_idx, activations=activations
+            img_idx, activations=activations, layer_name=layer_name
         )
         predictions.append(int(predict))
         labels.append(label)
@@ -131,6 +136,7 @@ def get_attribution_function(model, heatmap=True, batch_size=128, activations=Fa
         mask = torch.zeros_like(pred)
         mask[0, id] = pred[0, id]
         return mask
+
     relu = torch.nn.ReLU()
 
     def attribution_fn(x):
@@ -145,7 +151,9 @@ def get_attribution_function(model, heatmap=True, batch_size=128, activations=Fa
                 init_rel=select_max,
             )
             if activations:
-                rel_c = cc.attribute(relu(attr.activations["linear_layers.0"]), abs_norm=True)
+                rel_c = cc.attribute(
+                    relu(attr.activations["linear_layers.0"]), abs_norm=True
+                )
             else:
                 rel_c = cc.attribute(attr.relevances["linear_layers.0"], abs_norm=True)
             allatrrs[i] = rel_c
