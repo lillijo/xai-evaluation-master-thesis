@@ -19,6 +19,23 @@
   url           = {https://aclanthology.org/D17-1042},
 }
 
+@InProceedings{Rong2022,
+  author    = {Rong, Yao and Leemann, Tobias and Borisov, Vadim and Kasneci, Gjergji and Kasneci, Enkelejda},
+  title     = {A Consistent and Efficient Evaluation Strategy for Attribution Methods},
+  booktitle = {Proceedings of the 39th International Conference on Machine Learning},
+  year      = {2022},
+  editor    = {Chaudhuri, Kamalika and Jegelka, Stefanie and Song, Le and Szepesvari, Csaba and Niu, Gang and Sabato, Sivan},
+  volume    = {162},
+  series    = {Proceedings of Machine Learning Research},
+  pages     = {18770--18795},
+  month     = {17--23 Jul},
+  publisher = {PMLR},
+  abstract  = {With a variety of local feature attribution methods being proposed in recent years, follow-up work suggested several evaluation strategies. To assess the attribution quality across different attribution techniques, the most popular among these evaluation strategies in the image domain use pixel perturbations. However, recent advances discovered that different evaluation strategies produce conflicting rankings of attribution methods and can be prohibitively expensive to compute. In this work, we present an information-theoretic analysis of evaluation strategies based on pixel perturbations. Our findings reveal that the results are strongly affected by information leakage through the shape of the removed pixels as opposed to their actual values. Using our theoretical insights, we propose a novel evaluation framework termed Remove and Debias (ROAD) which offers two contributions: First, it mitigates the impact of the confounders, which entails higher consistency among evaluation strategies. Second, ROAD does not require the computationally expensive retraining step and saves up to 99% in computational costs compared to the state-of-the-art. We release our source code at https://github.com/tleemann/road_evaluation.},
+  file      = {:Rong2022 - A Consistent and Efficient Evaluation Strategy for Attribution Methods.pdf:PDF;rong22a.pdf:https\://proceedings.mlr.press/v162/rong22a/rong22a.pdf:PDF},
+  keywords  = {rank5},
+  url       = {https://proceedings.mlr.press/v162/rong22a.html},
+}
+
 @Article{Klemm2012,
   author        = {Konstantin Klemm and M. {\'{A}}ngeles Serrano and V{\'{\i}}ctor M. Egu{\'{\i}}luz and Maxi San Miguel},
   title         = {A measure of individual role in collective dynamics},
@@ -305,6 +322,16 @@ significantly reducing execution time in dense graphs},
   groups        = {Recommended},
   keywords      = {rank1},
   url           = {https://arxiv.org/abs/2211.02763},
+}
+
+@Misc{Yang2019,
+  author        = {Mengjiao Yang and Been Kim},
+  title         = {Benchmarking Attribution Methods with Relative Feature Importance},
+  year          = {2019},
+  archiveprefix = {arXiv},
+  eprint        = {1907.09701},
+  file          = {:1907.09701.pdf:PDF},
+  primaryclass  = {cs.LG},
 }
 
 @Misc{Gerstenberger2022,
@@ -1141,10 +1168,12 @@ A novel causal discovery method for estimating nonlinear interdependency network
 }
 
 @Misc{dsprites17,
-  author       = {Loic Matthey and Irina Higgins and Demis Hassabis and Alexander Lerchner},
-  title        = {dSprites: Disentanglement testing Sprites dataset},
-  howpublished = {https://github.com/deepmind/dsprites-dataset/},
-  year         = {2017},
+  author        = {Loic Matthey and Irina Higgins and Demis Hassabis and Alexander Lerchner},
+  title         = {dSprites: Disentanglement testing Sprites dataset},
+  howpublished  = {https://github.com/deepmind/dsprites-dataset/},
+  year          = {2017},
+  __markedentry = {[lilli:1]},
+  keywords      = {rank5},
 }
 
 @InProceedings{Vowels2021,
@@ -1206,6 +1235,7 @@ A novel causal discovery method for estimating nonlinear interdependency network
   number   = {11},
   pages    = {2660-2673},
   doi      = {10.1109/TNNLS.2016.2599820},
+  file     = {:Samek2017a - Evaluating the Visualization of What a Deep Neural Network Has Learned.pdf:PDF},
   groups   = {relevant},
   keywords = {rank4},
 }
@@ -1338,6 +1368,15 @@ A novel causal discovery method for estimating nonlinear interdependency network
   file          = {:None2016 - Fast Greedy Search (FGES) Algorithm for Continuous Variables.pdf:PDF},
   groups        = {relevant},
   keywords      = {rank2},
+}
+
+@Article{Olah2017,
+  author  = {Olah, Chris and Mordvintsev, Alexander and Schubert, Ludwig},
+  title   = {Feature Visualization},
+  journal = {Distill},
+  year    = {2017},
+  note    = {https://distill.pub/2017/feature-visualization},
+  doi     = {10.23915/distill.00007},
 }
 
 @InProceedings{Bommer2023,
@@ -1905,6 +1944,23 @@ A novel causal discovery method for estimating nonlinear interdependency network
   url       = {https://proceedings.mlr.press/v202/dominguez-olmedo23a.html},
 }
 
+@InProceedings{Traeuble2021,
+  author    = {Tr{\"a}uble, Frederik and Creager, Elliot and Kilbertus, Niki and Locatello, Francesco and Dittadi, Andrea and Goyal, Anirudh and Sch{\"o}lkopf, Bernhard and Bauer, Stefan},
+  title     = {On Disentangled Representations Learned from Correlated Data},
+  booktitle = {Proceedings of the 38th International Conference on Machine Learning},
+  year      = {2021},
+  editor    = {Meila, Marina and Zhang, Tong},
+  volume    = {139},
+  series    = {Proceedings of Machine Learning Research},
+  pages     = {10401--10412},
+  month     = {18--24 Jul},
+  publisher = {PMLR},
+  abstract  = {The focus of disentanglement approaches has been on identifying independent factors of variation in data. However, the causal variables underlying real-world observations are often not statistically independent. In this work, we bridge the gap to real-world scenarios by analyzing the behavior of the most prominent disentanglement approaches on correlated data in a large-scale empirical study (including 4260 models). We show and quantify that systematically induced correlations in the dataset are being learned and reflected in the latent representations, which has implications for downstream applications of disentanglement such as fairness. We also demonstrate how to resolve these latent correlations, either using weak supervision during training or by post-hoc correcting a pre-trained model with a small number of labels.},
+  file      = {:Traeuble2021 - On Disentangled Representations Learned from Correlated Data.pdf:PDF;trauble21a.pdf:http\://proceedings.mlr.press/v139/trauble21a/trauble21a.pdf:PDF},
+  keywords  = {rank5},
+  url       = {https://proceedings.mlr.press/v139/trauble21a.html},
+}
+
 @Article{Bach2015,
   author        = {Bach, Sebastian AND Binder, Alexander AND Montavon, Grégoire AND Klauschen, Frederick AND Müller, Klaus-Robert AND Samek, Wojciech},
   title         = {On Pixel-Wise Explanations for Non-Linear Classifier Decisions by Layer-Wise Relevance Propagation},
@@ -2290,6 +2346,17 @@ tive Greedy Equivalence Search (SGES), which is an im-},
   keywords      = {rank1},
 }
 
+@Article{Hohman2020,
+  author  = {Hohman, Fred and Park, Haekyu and Robinson, Caleb and Polo Chau, Duen Horng},
+  title   = {Summit: Scaling Deep Learning Interpretability by Visualizing Activation and Attribution Summarizations},
+  journal = {IEEE Transactions on Visualization and Computer Graphics},
+  year    = {2020},
+  volume  = {26},
+  number  = {1},
+  pages   = {1096-1106},
+  doi     = {10.1109/TVCG.2019.2934659},
+}
+
 @Misc{Tibau2018,
   author       = {Xavier-Andoni Tibau and Christian Requena-Mesa and Christian Reimers and Joachim Denzler and Veronika Eyring and Markus Reichstein and Jakob Runge},
   title        = {SupernoVAE: Using deep learning to find spatio-temporal dynamics in Earth system data},
@@ -2561,6 +2628,17 @@ at the intersection of both communities},
   url        = {https://arxiv.org/abs/2006.12632},
 }
 
+@Misc{Rong2023,
+  author        = {Yao Rong and Tobias Leemann and Thai-trang Nguyen and Lisa Fiedler and Peizhu Qian and Vaibhav Unhelkar and Tina Seidel and Gjergji Kasneci and Enkelejda Kasneci},
+  title         = {Towards Human-centered Explainable AI: A Survey of User Studies for Model Explanations},
+  year          = {2023},
+  archiveprefix = {arXiv},
+  eprint        = {2210.11584},
+  file          = {:Rong2023 - Towards Human-centered Explainable AI_ A Survey of User Studies for Model Explanations.pdf:PDF},
+  keywords      = {rank5},
+  primaryclass  = {cs.AI},
+}
+
 @Article{Reimers2021b,
   author        = {Christian Reimers and Paul Bodesheim and Jakob Runge and Joachim Denzler},
   title         = {Towards Learning an Unbiased Classifier from Biased Data via Conditional Adversarial Debiasing},
@@ -2675,6 +2753,20 @@ well-known benchmark dataset with real-world images of cats and dogs.},
   keywords      = {rank5},
   publisher     = {National Academy of Sciences},
   url           = {https://www.pnas.org/content/early/2020/08/31/1907375117},
+}
+
+@Article{Bau2020a,
+  author   = {David Bau and Jun-Yan Zhu and Hendrik Strobelt and Agata Lapedriza and Bolei Zhou and Antonio Torralba},
+  title    = {Understanding the role of individual units in a deep neural network},
+  journal  = {Proceedings of the National Academy of Sciences},
+  year     = {2020},
+  volume   = {117},
+  number   = {48},
+  pages    = {30071-30078},
+  abstract = {Deep neural networks excel at finding hierarchical representations that solve complex tasks over large datasets. How can we humans understand these learned representations? In this work, we present network dissection, an analytic framework to systematically identify the semantics of individual hidden units within image classification and image generation networks. First, we analyze a convolutional neural network (CNN) trained on scene classification and discover units that match a diverse set of object concepts. We find evidence that the network has learned many object classes that play crucial roles in classifying scene classes. Second, we use a similar analytic method to analyze a generative adversarial network (GAN) model trained to generate scenes. By analyzing changes made when small sets of units are activated or deactivated, we find that objects can be added and removed from the output scenes while adapting to the context. Finally, we apply our analytic framework to understanding adversarial attacks and to semantic image editing.},
+  doi      = {10.1073/pnas.1907375117},
+  eprint   = {https://www.pnas.org/doi/pdf/10.1073/pnas.1907375117},
+  url      = {https://www.pnas.org/doi/abs/10.1073/pnas.1907375117},
 }
 
 @Article{Lapuschkin2019,

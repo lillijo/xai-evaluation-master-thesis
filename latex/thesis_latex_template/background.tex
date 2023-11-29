@@ -10,17 +10,20 @@
         \item Structural Causal Models and causal framework
     \end{enumerate}
 }
-\todo{write background}
 
 \section{Neural Networks}
+\todo{General explanation of neural networks}
 \begin{itemize}
-    \item Explain all general concepts that are needed for understanding CRP etc
-    \item layers
-    \item neurons
-    \item convolutional blocks/ layers
+    \item Explain all general concepts that are needed for understanding CRP etc. 
+    \item neurons and layers
+    \item convolutional layers and channels
+    \item linear layers and output layer
     \item activation functions (especially ReLU)
-    \item other types of layers?
+    \item MaxPooling layer 
     \item backpropagation / forward
+    \item optimizers (specifically Adam) - learning rate
+    \item loss function (here CrossEntropyLoss)
+    \item training? batch size
 \end{itemize}
 
 \section{Layerwise Relevance Propagation}
@@ -41,6 +44,7 @@ The idea then is to follow the flow of relevance from the output, where usually 
 To apply LRP, best practices and rules have emerged \cite{Kohlbrenner2020, Montavon2019, Samek2021}. However in this thesis we stick to the propagation rule that the authors of CRP use, namely the composite $LRP_{\epsilon-z+-\flat}$-rule (or "epsilon-plus-flat"), which is recommended by \cite{Kohlbrenner2020} and uses different rules for different parts of the model, further described in the appendix \autoref{appendix:lrprules}.
 
 \section{Concept Relevance Propagation}
+
 LRP aggregates the significance of all latent layers and their neurons into one importance map, where the intermediate layers outputs are merely a side-product of the computation.
 Achtibat et. al. propose in their recent work \cite{Achtibat2022} to use those intermediate results to further disentangle the attributions. While in LRP the initialization at the output layer usually takes the value of one class output $y$ w.r.t input $\mathbf{x}$, all other output neurons set to zero, and thereby produces a class-conditional attribution ($R(\mathbf{x}|y)$), a similar thing can be done in latent layers too. Allthough it is yet unclear how to interpret the attribution to these hidden features, the authors of CRP propose to obtain importance scores for them by computing "(multi-)concept-conditional" relevances $R(\mathbf{x}|\theta)$. The variable $\theta$ here describes a set of conditions $c_l$ which in essence \textit{filters} for certain \textit{concepts} i.e. features in potentially mutliple layers by masking out all other features' contributions:
 
@@ -105,7 +109,7 @@ $\delta_{jc_l}$ is the Kronecker-Delta selecting the relevance $R^l_j$ of featur
         \foreach \y in {1,2,3}
         \foreach \x in {1,2,3}{
                 \ifnum\x=\y
-                    \draw[<-] (X\x) -- (L\y); 
+                    \draw[<-] (X\x) -- (L\y);
                     %node[midway, edgelabel] {$R_{X_\x  \gets L\y}$};
                 \else
                     \pgfmathparse{2 > \x-\y && 2 > \y-\x}
@@ -137,13 +141,13 @@ $\delta_{jc_l}$ is the Kronecker-Delta selecting the relevance $R^l_j$ of featur
 
         % Last layer
         \foreach \x in {1,2} {
-            \ifnum \x = 2
-                \node [neuron, conditioned]  (Y\x) at (12,{-\x* 1.8 - 0.7}) {$Y_\x$};
-                \node [neuronlabel] at (12.7,{-\x* 1.8 - 1.3}) {$R_{Y_\x} = f(x)$};
-            \else
-                \node  [neuron]  (Y\x) at (12,{-\x* 1.8 - 0.7}){$Y_\x$};
-            \fi
-        }
+                \ifnum \x = 2
+                    \node [neuron, conditioned]  (Y\x) at (12,{-\x* 1.8 - 0.7}) {$Y_\x$};
+                    \node [neuronlabel] at (12.7,{-\x* 1.8 - 1.3}) {$R_{Y_\x} = f(x)$};
+                \else
+                    \node  [neuron]  (Y\x) at (12,{-\x* 1.8 - 0.7}){$Y_\x$};
+                \fi
+            }
 
         % Connect nodes
         \foreach \y in {1,3}
@@ -154,24 +158,53 @@ $\delta_{jc_l}$ is the Kronecker-Delta selecting the relevance $R^l_j$ of featur
         \foreach \x in {1,3}
         \foreach \y in {2}
         \draw[<-] (L\x) -- (Y\y) node[midway,align=center, edgelabel] {$R_{L_\x  \gets Y_\y}$};
-
     \end{tikzpicture}
 
     \caption{Left side: simple neural network forward pass with input layer X, one hidden layer L and output layer Y. Conditioning set $\theta = \{L_1, L_3, Y_2\}$ \\ Right side: only the relevance of the neurons matching the conditioning set is propagated back \\
-    Result at input pixel $R_{X_2} = \sum_{j}  R_{X_2 \gets L_j} =  \sum_i \sum_{j} \cdot \frac{a_i w_{ij}}{\sum_h a_h w_{hj}} R_j \dots$ }
+        Result at input pixel $R_{X_2} = \sum_{j}  R_{X_2 \gets L_j} =  \sum_i \sum_{j} \cdot \frac{a_i w_{ij}}{\sum_h a_h w_{hj}} R_j \dots$ }
     \label{fig:crp_example_condition}
 \end{figure}
 
-\begin{itemize}
-    \item some examples of usage:
-          \begin{itemize}
-              \item relevance scores for \textit{concepts} (=neurons)
-              \item relevance maximization images
-              \item conditioning on single concepts/ neurons ...?
-              \item attribution graph
-          \end{itemize}
-\end{itemize}
+\subsubsection*{Usage Scenarios}
+Heatmaps produced by conditional attribution could be analyzed in a similar fashion to the tradional class-specific heatmaps produced by LRP. The hinderance is that the meanings of the conditioned on latent features are not known, so it is unclear how to interpret the importance of some pixels for feature $i$ in layer $l$. For large, complex models some human-understandable concepts can emerge in hidden layers from simpler more local concepts in earlier and more abstract concepts in later layers \cite{Bau2017, Hohman2020, Olah2017, Bau2020}. However this is not a fact to rely on and seems to regularly fail for smaller models or simpler problems as noted before (\autoref{subsection:evaluation_critique}) and in other work \todo{cite}.
 
+CRP's authors therefore construct a framework for the understanding of these latent features. \textit{Activation Maximization} is used to find the samples for which the neuron (set) of a concept has the highest activation. They build on the idea of activation maximization when proposing \textit{Relevance Maximization}, where samples maximize the conditional relevance of a concept instead of the activation. Both methods yield a set of images or samples (see \autoref{fig:act_rel_max}), which can be enhanced further by masking out the irrelevant parts of the image, creating class specific reference samples and carefully selecting or extending the pool of samples to choose from. 
+
+\begin{figure}[htbp]
+    \centering
+	\includegraphics[width=0.3\textwidth]{pics/test.png}
+    \caption{Activation Maximization in Comparison to Relevance Maximization. The image is cropped to the region with highest activation/relevance thresholded by X. }
+    \label{fig:act_rel_max}
+\end{figure}
+\todo{image of ActMax and RelMax examples (using my dataset?)}
+
+The resulting interpretation tools for single concepts are combined with methods for a local explanation, i.e. the analysis of a single sample or image. A \textit{Concept Atlas} (\autoref{fig:concept_atlas}) inspired by Carter et. al.'s \textit{Activation Atlas} \todo{cite} colors parts of an image based on the most relevant concept in that region. \textit{Hierarchical attribution graphs} (\autoref{fig:attr_graph}) decompose the relevant concepts for an image into their lower layer subconcept channels. The presumption being that the spread of relevance into lower level features helps in the understanding of relevant concepts for a sample.
+
+\begin{figure}[htbp]
+    \centering
+	\includegraphics[width=0.3\textwidth]{pics/test.png}
+    \caption{Concept Atlas}
+    \label{fig:concept_atlas}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+	\includegraphics[width=0.3\textwidth]{pics/test.png}
+    \caption{Hierarchical attribution graph}
+    \label{fig:attr_graph}
+\end{figure}
+\todo{image of Concept Atlas and hierarchical concept composition}
+
+From these local explanations ... 
+first experiments for a more global explanation
+
+\todo{global: Assessing Concept Similarity in Latent Space}
+
+\todo{papers with crp and more global explanation / concept clustering stuff}
+other papers (vielhaben, lapuschkin...) do more in this direction
+summarize work that builds on top of original CRP paper ?
+what else CRP could potentially be used for
+\cite{Dreyer2023,Pahde2023,Dreyer2023a,Vielhaben2022,Vielhaben2023,Achtibat2023}
 
 \section{Causal Framework}
 \subsection{Structural Causal Models}
