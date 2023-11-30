@@ -117,13 +117,15 @@ class CRPAttribution:
         lenl = len(self.layer_id_map.keys())
         images = torch.zeros((lenl, 8, 64, 64))
         for li, l in enumerate(self.layer_id_map.keys()):
-            conditions = [{"y": [label], l: [i]} for i in self.layer_id_map[l]] #"y": [label],
+            conditions = [
+                {"y": [label], l: [i]} for i in self.layer_id_map[l]
+            ]  # "y": [label],
             attr = self.attribution(
                 image,
                 conditions,
                 self.composite,
                 # record_layer=self.layer_names,
-                # start_layer="linear_layers.2" 
+                # start_layer="linear_layers.2"
             )
             for h in range(attr.heatmap.shape[0]):
                 images[li, h] = attr.heatmap[h]
@@ -138,7 +140,9 @@ class CRPAttribution:
                 axs[il, n].xaxis.set_visible(False)
                 axs[il, n].yaxis.set_visible(False)
                 if n < len(self.layer_id_map[l]):
-                    axs[il, n].set_title(f"n:{n} {str(relevances[il][n])}%", fontsize=10)  # ,
+                    axs[il, n].set_title(
+                        f"n:{n} {str(relevances[il][n])}%", fontsize=10
+                    )  # ,
                     maxv = max(float(images[il, n].max()), 0.001)
                     minv = min(float(images[il, n].min()), -0.001)
                     center = 0.0
@@ -252,9 +256,7 @@ class CRPAttribution:
             activs = relu(attr.activations[layer_name])
             relevances = activs
         else:
-            relevances = self.cc.attribute(
-                attr.relevances[layer_name], abs_norm=True
-            )
+            relevances = self.cc.attribute(attr.relevances[layer_name], abs_norm=True)
             # attr.relevances[layer_name][0]
         return relevances, pred, datum[1], watermark
 
@@ -266,17 +268,17 @@ class CRPAttribution:
         rel_c = self.cc.attribute(attr.relevances[layer], abs_norm=True)  #  activations
         return [rel_c[0][i] for i in neurons]
 
-    def attribute_image(self, img):
-        sample = img.view(1, 1, 64, 64)
-        sample.requires_grad = True
-        conditions = [{"y": [1]}]
+    def attribute_images(self, imgs, layer_name):
+        imgs.requires_grad = True
         attr = self.attribution(
-            sample, conditions, self.composite, record_layer=self.layer_names
+            imgs,
+            [{}],
+            self.composite,
+            record_layer=self.layer_names,
+            start_layer=layer_name,
+            init_rel=lambda act: act.clamp(min=0),
         )
-        relevances = self.cc.attribute(
-            attr.relevances["linear_layers.0"][0], abs_norm=True
-        )
-        return relevances
+        return attr.relevances[layer_name]
 
     def make_relevance_graph(self, index):
         names = {
@@ -479,26 +481,19 @@ class CRPAttribution:
 
     def cav_heatmap(self, index, layer_name, cav):
         self.model.eval()
-
-        def hook(module, input, output):
-            module.activations = output
-        layer = None
-        for name, layer in self.model.named_modules():
-            if name == layer_name:
-                layer.register_forward_hook(hook)
-                break
-        if layer is None:
-            return torch.zeros(64, 64)
         img, label = self.dataset[index]
         sample = img.view(1, 1, 64, 64)
         sample.requires_grad = True
         self.model(sample)
-        act = layer.activations.detach().cpu().clamp(min=0)
         cav_s = torch.zeros(1, 8, 7, 7)
         for i in range(cav.shape[0]):
             cav_s[0, i] = cav[i]
         attr = self.attribution(
-            sample, [{}], self.composite, start_layer=layer_name, init_rel=act * cav_s
+            sample,
+            [{}],
+            self.composite,
+            start_layer=layer_name,
+            init_rel=lambda act: act.clamp(min=0) * cav_s,
         )
         return attr.heatmap
 
