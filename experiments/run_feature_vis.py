@@ -3,6 +3,7 @@ import json
 import torch
 from expbasics.network import train_network, accuracy_per_class
 from expbasics.biased_noisy_dataset import BiasedNoisyDataset
+from expbasics.helper import to_name
 from torch.utils.data import DataLoader, random_split
 from crp.visualization import FeatureVisualization
 from zennit.composites import EpsilonPlusFlat
@@ -23,12 +24,6 @@ LAYER_NAME = "convolutional_layers.6"
 BIASES = list(np.round(np.linspace(0.0, 0.4, 4), 3)) + list(
     np.round(np.linspace(0.5, 1, 51), 3)
 )
-
-def to_name(b, i):
-    return "b{}-i{}".format(
-        str(round(b, 2)).replace(".", "_"),
-        str(i),
-    )
 
 
 def make_feature_vis(item, test_loader, test_ds):
