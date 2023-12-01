@@ -7,14 +7,10 @@ import networkx as nx
 from tqdm import tqdm
 from PIL import Image
 from crp.image import imgify, vis_opaque_img, plot_grid
-from sklearn.decomposition import NMF
 from tigramite import plotting as tp
 import os
 
 from torchvision.models.feature_extraction import create_feature_extractor
-from sklearn.manifold import TSNE, Isomap, MDS, LocallyLinearEmbedding
-from sklearn.decomposition import PCA
-from sklearn.cluster import SpectralClustering, KMeans
 
 from .network import train_network as train_network, accuracy_per_class
 from .biased_noisy_dataset import (
@@ -69,18 +65,6 @@ def get_model_etc(bias, num_it=0):
     )
 
     return model, gm, crp_attribution, unbiased_ds, test_loader
-
-
-def get_dr_methods():
-    m_names = ["tsne", "iso", "pca", "nmf", "mds", "lle"]
-    tsne = TSNE(n_components=2, perplexity=20)
-    iso = Isomap(n_components=2)
-    pca = PCA(n_components=2)
-    nmf = NMF(2, max_iter=10000)
-    mds = MDS(2, max_iter=10000)
-    lle = LocallyLinearEmbedding(n_components=2, n_neighbors=20)
-    methods = [tsne, iso, pca, nmf, mds, lle]
-    return methods, m_names
 
 
 def get_attributions(

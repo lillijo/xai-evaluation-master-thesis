@@ -11,69 +11,6 @@ import math
 METHOD = 2
 FACECOL = "#2BC4D9"
 
-
-def visualize_dr(
-    methods, names, vector, watermarks, labels, predictions, bias, activations, num_it, method = 2, layer_name="linear_layers.0"
-):
-    # nmf_res = methods[METHOD].fit_transform(vector.numpy())
-    # res = pca.fit_transform(nmf_res)
-    res = methods[method].fit_transform(vector.numpy())
-    # res = res = iso.fit_transform(res)
-    ALPHA = 0.4
-    plt.clf()
-
-    centroids = np.zeros((8, 2))
-    counts = np.zeros((8), dtype=int)
-
-    colors = matplotlib.cm.gist_ncar(np.linspace(0, 1, 9))  # type: ignore # gist_ncar
-
-    def ft(lab, wm, pred):
-        d = np.logical_and(watermarks == wm, labels == lab)
-        d = np.logical_and(d, predictions == pred)
-        if res[d, 0].shape[0] > 0:
-            plt.scatter(
-                res[d, 0],
-                res[d, 1],
-                s=3,
-                color=colors[lab + 2 * wm + 4 * pred],
-                alpha=ALPHA,
-            )
-            centroids[lab + 2 * wm + 4 * pred] = np.median(res[d], axis=0)
-            counts[lab + 2 * wm + 4 * pred] = res[d, 0].shape[0]
-        else:
-            centroids[lab + 2 * wm + 4 * pred] = np.array([np.nan, np.nan])
-
-    ft(0, 0, 1)
-    ft(0, 0, 0)
-    ft(0, 1, 1)
-    ft(0, 1, 0)
-
-    ft(1, 0, 1)
-    ft(1, 0, 0)
-    ft(1, 1, 1)
-    ft(1, 1, 0)
-
-    for lab in [0, 1]:
-        for wm in [0, 1]:
-            for pred in [0, 1]:
-                if counts[lab + 2 * wm + 4 * pred] > 0:
-                    plt.scatter(
-                        centroids[lab + 2 * wm + 4 * pred, 0],
-                        centroids[lab + 2 * wm + 4 * pred, 1],
-                        color=colors[lab + 2 * wm + 4 * pred],
-                        marker="s",  # type: ignore
-                        s=70,
-                        label=f"lab {lab}, pred {pred}, wm {wm == 1} {counts[lab + 2*wm + 4* pred]}",
-                        alpha=0.8,
-                    )
-
-    plt.legend(bbox_to_anchor=(0.3, 0.5))
-    plt.title(f"Bias: {bias}, Activations: {activations}, Method: {names[method]}")
-    file_name = f"{str(bias).replace('0.', 'b0i')}_{num_it}_{layer_name}"
-    plt.savefig(f"outputs/imgs/{file_name}.png")
-    return centroids
-
-
 def get_lat_names():
     with open("metadata.pickle", "rb") as mf:
         metadata = pickle.load(mf)
@@ -302,7 +239,7 @@ def max_neuron_ground_truth_plot(path, factor, m_type="mean_logit_change", bcut=
         allneurons = np.array([a[f"crp_{m_type}"][factor] for a in datas[l]])
         sorted_neurons = np.sort(allneurons, 1)
         summed_neurons = np.sum(allneurons, 1) / n_neurons
-        for n in range(n_neurons -1, -1, -1):
+        for n in range(n_neurons - 1, -1, -1):
             nd = sorted_neurons[:, n]
             plt.scatter(
                 x_pos,
@@ -319,7 +256,7 @@ def max_neuron_ground_truth_plot(path, factor, m_type="mean_logit_change", bcut=
             summed_neurons,
             color=colors[0],
             label=f"{latents_names[factor]} {m_type} sum neurons" if l == 0 else "",
-            marker="_", # type: ignore
+            marker="_",  # type: ignore
         )
 
     plt.xticks(np.arange(bcut, 1.01, 0.05))
@@ -328,7 +265,9 @@ def max_neuron_ground_truth_plot(path, factor, m_type="mean_logit_change", bcut=
     fig.savefig(f"outputs/imgs/{file_name}.png")
 
 
-def avg_max_neuron_ground_truth_plot(path, factor, m_type="mean_logit_change", bcut=0.0):
+def avg_max_neuron_ground_truth_plot(
+    path, factor, m_type="mean_logit_change", bcut=0.0
+):
     datas, filtbiases, biases, alldata = data_iterations(path, biascut=bcut)
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
@@ -361,7 +300,7 @@ def avg_max_neuron_ground_truth_plot(path, factor, m_type="mean_logit_change", b
         summed_neurons,
         color=colors[0],
         label=f"{latents_names[factor]} {m_type} sum neurons",
-        marker="_",
+        marker="_", # type: ignore
     )
     plt.xticks(np.arange(bcut, 1.01, 0.05))
     fig.legend(bbox_to_anchor=(1.2, 0.8))
@@ -451,7 +390,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5):
     colind = [0, 3, 5, 2, 7, 1]
     for f in [1, 0, 2, 3, 4, 5]:
         lat_data = [
-            np.sum([datas[a][i][f"pred_{m_type}"][f] for a in range(4)]) / 0.04#*100#
+            np.sum([datas[a][i][f"pred_{m_type}"][f] for a in range(4)]) / 0.04  # *100#
             for i in range(len(datas[0]))
         ]
         plt.plot(
@@ -460,8 +399,8 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5):
             color=colors[colind[f]],
             label=latents_names[f],
             alpha=0.9,
-            #s=25,
-            #marker="s",  # type: ignore
+            # s=25,
+            # marker="s",  # type: ignore
         )
         for l in range(4):
             lat_data = [a[f"pred_{m_type}"][f] * 100 for a in datas[l]]

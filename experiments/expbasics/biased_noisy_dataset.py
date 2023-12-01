@@ -108,7 +108,8 @@ class BiasedNoisyDataset(Dataset):
 
     def get_item_info(self, index):
         has_watermark = self.watermarks[index]
-        return (self.labels[index][1:], has_watermark)
+        offsets = [self.offset_y[index], self.offset_x[index]]
+        return (self.labels[index][1:], has_watermark, offsets)
 
 
 def get_all_datasets(batch_size=128, img_path=IMG_PATH_DEFAULT):

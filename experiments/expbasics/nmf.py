@@ -1,3 +1,4 @@
+import pickle
 import torch
 import numpy as np
 import os
@@ -10,16 +11,19 @@ from expbasics.crp_attribution import CRPAttribution
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+MAX_INDEX = 491520
+STEP_SIZE = 1111
 
-def load_cavs(layer_name, model_name):
-    cavs = torch.load(
-        "cavs/{}_{}_cav.pt".format(layer_name, model_name)
-    )
-    idx = torch.load(
-        "cavs/{}_{}_idx.pt".format(layer_name, model_name)
-    )
 
-    return cavs, idx
+def load_cavs(layer_name, model_name, method="bb"):
+    cavs = torch.load("outputs/cavs/{}_{}_cav_{}.pt".format(layer_name, model_name, method))
+    idx = torch.load("outputs/cavs/{}_{}_idx_{}.pt".format(layer_name, model_name, method))
+    infos = {}
+    if method == "bb":
+        with open(f"outputs/cavs/{layer_name}_{model_name}_info_bb.pickle", "rb") as f:
+            infos = pickle.load(f)
+
+    return cavs, idx, infos
 
 
 def _compute_cavs(activations, step_size, data_indices):
@@ -57,7 +61,8 @@ def sample_cavs(
     layer_name,
     spatial_step_size,
     batch_step_size,
-    batch_size,model_name
+    batch_size,
+    model_name,
 ):
     """
     Iterate through the dataset as dataloader and compute the cavs along the channel dimension for a specific layer.
@@ -95,14 +100,14 @@ def sample_cavs(
         pbar.update(1)
     pbar.close()
 
-    os.makedirs("cavs", exist_ok=True)
+    # os.makedirs("outputs/cavs", exist_ok=True)
     torch.save(
         torch.cat(cavs),
-        f"cavs/{layer_name}_{model_name}_cav.pt",
+        f"outputs/cavs/{layer_name}_{model_name}_cav_act.pt",
     )
     torch.save(
         torch.cat(cavs_to_data_idx),
-        f"cavs/{layer_name}_{model_name}_idx.pt",
+        f"outputs/cavs/{layer_name}_{model_name}_idx_act.pt",
     )
 
 
@@ -114,7 +119,7 @@ def sample_relevance_cavs(
     batch_step_size,
     batch_size,
     crp_attribution: CRPAttribution,
-    model_name
+    model_name,
 ):
     """
     Iterate through the dataset as dataloader and compute the cavs along the channel dimension for a specific layer.
@@ -143,14 +148,106 @@ def sample_relevance_cavs(
         pbar.update(1)
     pbar.close()
 
-    os.makedirs("cavs", exist_ok=True)
+    os.makedirs("outputs/cavs", exist_ok=True)
     torch.save(
         torch.cat(cavs),
-        f"cavs/{layer_name}_{model_name}_cav.pt",
+        f"outputs/cavs/{layer_name}_{model_name}_cav_rel.pt",
     )
     torch.save(
         torch.cat(cavs_to_data_idx),
-        f"cavs/{layer_name}_{model_name}_idx.pt",
+        f"outputs/cavs/{layer_name}_{model_name}_idx_rel.pt",
+    )
+
+
+def sample_bbox_cavs(
+    model: ShapeConvolutionalNeuralNetwork,
+    layer_name,
+    crp_attribution: CRPAttribution,
+    model_name,
+):
+    """
+    Iterate through the dataset as dataloader and compute the cavs along the channel dimension for a specific layer.
+    Save all cavs in a list on the disk.
+    """
+
+    model.eval()
+
+    cavs_to_data_idx = list(range(0, MAX_INDEX, STEP_SIZE))
+
+    cavs = torch.zeros((len(cavs_to_data_idx), 64))
+    infos = {}
+
+    pbar = tqdm(
+        total=len(cavs_to_data_idx),
+        desc="Computing CAVs",
+        unit="img",
+        dynamic_ncols=True,
+    )
+    for i, index in enumerate(cavs_to_data_idx):
+        results = crp_attribution.watermark_importance(index)
+        cavs[i] = results["relevances"]
+        infos[index] = [results["label"], results["watermark"], results["pred"]]
+        pbar.update(1)
+    pbar.close()
+
+    os.makedirs("outputs/cavs", exist_ok=True)
+    with open(f"outputs/cavs/{layer_name}_{model_name}_info_bb.pickle", "wb") as f:
+        pickle.dump(infos, f)
+    torch.save(
+        cavs,
+        f"outputs/cavs/{layer_name}_{model_name}_cav_bb.pt",
+    )
+    torch.save(
+        torch.tensor(cavs_to_data_idx, dtype=torch.int),
+        f"outputs/cavs/{layer_name}_{model_name}_idx_bb.pt",
+    )
+
+
+def sample_all_layers_relevance_cavs(
+    model: ShapeConvolutionalNeuralNetwork,
+    dataset,
+    layer_name,
+    spatial_step_size,
+    batch_step_size,
+    batch_size,
+    crp_attribution: CRPAttribution,
+    model_name,
+):
+    """
+    Iterate through the dataset as dataloader and compute the cavs along the channel dimension for a specific layer.
+    Save all cavs in a list on the disk.
+    """
+
+    model.eval()
+
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=8)  # type: ignore
+
+    cavs, cavs_to_data_idx = [], []
+    pbar = tqdm(
+        total=len(dataloader), desc="Computing CAVs", unit="batch", dynamic_ncols=True
+    )
+
+    for i, (img, target) in enumerate(dataloader):
+        if i % batch_step_size == 0:
+            img = img.to(device)
+            rel = crp_attribution.attribute_images(img, layer_name)
+
+            data_indices = torch.arange(i * batch_size, (i + 1) * batch_size)
+            c, idx = _compute_cavs(rel, spatial_step_size, data_indices)  # type: ignore
+            cavs.append(c)
+            cavs_to_data_idx.append(idx)
+
+        pbar.update(1)
+    pbar.close()
+
+    os.makedirs("outputs/cavs", exist_ok=True)
+    torch.save(
+        torch.cat(cavs),
+        f"outputs/cavs/{layer_name}_{model_name}_cav.pt",
+    )
+    torch.save(
+        torch.cat(cavs_to_data_idx),
+        f"outputs/cavs/{layer_name}_{model_name}_idx.pt",
     )
 
 

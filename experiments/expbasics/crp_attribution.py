@@ -16,6 +16,8 @@ from crp.visualization import FeatureVisualization
 from crp.graph import trace_model_graph
 from crp.attribution import AttributionGraph
 
+from expbasics.biased_noisy_dataset import BiasedNoisyDataset
+
 
 def vis_simple(
     data_batch, heatmaps, rf=False, alpha=1.0, vis_th=0.0, crop_th=0.0, kernel_size=9
@@ -39,7 +41,7 @@ class CRPAttribution:
         # device = "cuda:0" if torch.cuda.is_available() else "cpu"
         # canonizers = [SequentialMergeBatchNorm()]
         self.composite = EpsilonPlusFlat()
-        self.dataset = dataset
+        self.dataset: BiasedNoisyDataset = dataset
         self.model = model
 
         self.cc = ChannelConcept()
@@ -112,20 +114,38 @@ class CRPAttribution:
             symmetric=True,
         )
 
+    def all_layers_rel(self, image):
+        image.requires_grad = True
+        """ all_l = sum([len(v) for v in self.layer_id_map.values()])
+        relevances = torch.zeros(all_l) """
+        relevances = []
+        for li, l in enumerate(self.layer_id_map.keys()):
+            conditions = [{l: [i]} for i in self.layer_id_map[l]]  # "y": [label],
+            attr = self.attribution(
+                image,
+                [{}],
+                self.composite,
+                record_layer=self.layer_names,
+                start_layer="linear_layers.2",
+                init_rel=lambda act: act.clamp(min=0),
+            )
+            rel_c = self.cc.attribute(attr.relevances[l], abs_norm=True)
+            relevances += rel_c.tolist()
+        return relevances
+
     def relevance_for_image(self, label, image, relevances):
         image.requires_grad = True
         lenl = len(self.layer_id_map.keys())
         images = torch.zeros((lenl, 8, 64, 64))
         for li, l in enumerate(self.layer_id_map.keys()):
-            conditions = [
-                {"y": [label], l: [i]} for i in self.layer_id_map[l]
-            ]  # "y": [label],
+            conditions = [{l: [i]} for i in self.layer_id_map[l]]  # "y": [label],
             attr = self.attribution(
                 image,
                 conditions,
                 self.composite,
-                # record_layer=self.layer_names,
-                # start_layer="linear_layers.2"
+                record_layer=self.layer_names,
+                start_layer=l,
+                # init_rel = lambda act:  act.clamp(min=0),
             )
             for h in range(attr.heatmap.shape[0]):
                 images[li, h] = attr.heatmap[h]
@@ -168,7 +188,7 @@ class CRPAttribution:
         datum = self.dataset[index]
         label = datum[1]
         img = datum[0]
-        latents, watermark = self.dataset.get_item_info(index)
+        latents, watermark, offset = self.dataset.get_item_info(index)
         sample = img.view(1, 1, 64, 64)
         sample.requires_grad = True
         result_string = ""
@@ -199,7 +219,7 @@ class CRPAttribution:
                 + str(round(float(rel_values[i]) * 100, 2))
                 + "%"
                 + " act:"
-                + str(round(float(act_c[0][int(concept_ids[i])]) * 100, 2))
+                + str(round(float(act_c[0][int(concept_ids[i])]), 2))
                 for i in range(len(self.layer_id_map[cond_layer]))
             ]
             result_string += f'\n \n {cond_layer}: \n {", ".join(perc)} '
@@ -215,7 +235,7 @@ class CRPAttribution:
             index = np.random.randint(0, len(self.dataset))
         datum = self.dataset[index]
         img = datum[0]
-        _, watermark = self.dataset.get_item_info(index)
+        _, watermark, _ = self.dataset.get_item_info(index)
         sample = img.view(1, 1, 64, 64)
         sample.requires_grad = True
         output = self.model(sample)
@@ -241,7 +261,7 @@ class CRPAttribution:
             index = np.random.randint(0, len(self.dataset))
         datum = self.dataset[index]
         img = datum[0]
-        _, watermark = self.dataset.get_item_info(index)
+        _, watermark, _ = self.dataset.get_item_info(index)
         sample = img.view(1, 1, 64, 64)
         sample.requires_grad = True
         output = self.model(sample)
@@ -323,13 +343,13 @@ class CRPAttribution:
         image.requires_grad = True
         images = {}
         for li, l in enumerate(self.layer_id_map.keys()):
-            conditions = [{"y": [label], l: [i]} for i in self.layer_id_map[l]]
+            conditions = [{l: [i]} for i in self.layer_id_map[l]]
             attr = self.attribution(
                 image,
                 conditions,
                 self.composite,
                 record_layer=self.layer_names,
-                init_rel=1,
+                start_layer=l,
             )
             for h in range(attr.heatmap.shape[0]):
                 heatmap = attr.heatmap[h]
@@ -387,6 +407,55 @@ class CRPAttribution:
         return node_labels, edges, images
 
     def watermark_importance(self, index):
+        img, label = self.dataset[index]
+        _, watermark, offset = self.dataset.get_item_info(index)
+        mask = torch.zeros(64, 64)
+        mask[
+            max(0, 57 + offset[0]) : max(0, 57 + offset[0]) + 6,
+            3 + max(offset[1], 0) : 3 + max(offset[1], 0) + 13,
+        ] = 1
+        antimask = (mask + 1) % 2
+        sample = img.view(1, 1, 64, 64)
+        sample.requires_grad = True
+
+        output = self.model(sample)
+        pred = int(output.data.max(1)[1][0])
+        conditions = [
+            {"y": [pred], l: [i]}
+            for l in self.layer_id_map.keys()
+            for i in self.layer_id_map[l]
+        ]
+        relevances = []
+        antirelevances = []
+        for attr in self.attribution.generate(
+            sample,
+            conditions,
+            self.composite,
+            record_layer=self.layer_names,
+            exclude_parallel=False,
+            batch_size=len(conditions),
+            verbose=False,
+        ):
+            masked = attr.heatmap * mask
+            antimasked = attr.heatmap * antimask
+            relevances.append(torch.sum(masked, dim=(1, 2)))
+            antirelevances.append(torch.sum(antimasked, dim=(1, 2)))
+
+        relevances = torch.cat(relevances)  # for NMF: .clamp(min=0)
+        antirelevances = torch.cat(antirelevances) 
+        relevances = torch.cat([relevances, antirelevances]) 
+        relevances = abs_norm(relevances)
+
+        return dict(
+            relevances=relevances,
+            watermark=watermark,
+            pred=pred,
+            label=label,
+            output=output.data,
+            mask=mask,
+        )
+
+    def old_wm_importance(self, index):
         img, label = self.dataset[index]
         sample = img.view(1, 1, 64, 64)
         sample.requires_grad = True
@@ -512,7 +581,7 @@ class CRPAttribution:
             for w in range(2):
                 for ind in indices[s][w]:
                     img, label = test_ds[ind]
-                    _, wm = test_ds.get_item_info(ind)
+                    _, wm, _ = test_ds.get_item_info(ind)
                     sample = img.view(1, 1, 64, 64)
                     sample.requires_grad = True
                     conditions = [{"y": [w]}]
@@ -558,7 +627,7 @@ class CRPAttribution:
                 rels_antimasked = torch.zeros(len(conditions_0))
                 for ind in indices[s][w]:
                     img, label = test_ds[ind]
-                    _, wm = test_ds.get_item_info(ind)
+                    _, wm, _ = test_ds.get_item_info(ind)
                     sample = img.view(1, 1, 64, 64)
                     assert wm == w and label == s
                     if w == 1:
