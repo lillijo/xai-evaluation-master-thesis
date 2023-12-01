@@ -22,46 +22,38 @@
 
 
 \section{The Field of Explainable Artificial Intelligence}
+With the field of machine learning and particularly complex deep neural network models ever expanding, so is the demand for explanations of these models.
+As especially neural networks are so called \textit{black boxes} that inhibit a human understanding of their results, plenty of explanation methods have been developed, summarized under the term \textit{explainable AI} or short \textit{XAI}.
+\todo{more on why XAI is necessary in general}
+\todo{post-hoc vs. interpretable models vs. ?}
+Those methods can generally be divided into local and global approaches. While local methods aim to explain the decision making for one specific example, typically with attribution maps assigning importance to input features, global ones make more general interpretations of a model, for example, which features are identified in the decision-making process. The first category prominently includes saliency map methods \todo{cite}, which are usually tested on computer-vision tasks, where they assign importance to pixels or regions of a sample image, creating a heatmap. The importance is most often computed through forms of backpropagation \todo{cite} or with the help of gradients \todo{cite}. These saliency maps may generate insight into the locality of important objects, however this is usually only one facet of understanding the decision-making, especially for people not familiar with the data domain.
 
-\todo{General Map of the field, embedding CRP}
+...
 
-\begin{enumerate}
-      \item XAI is needed for AI because of black box other approach is making AI not black box
-      \item generally divided into local and global methods
-      \item name a few popular global methods
-      \item local methods that rely on attribution/ saliency maps (gradientXinput, integrated gradients, LRP, ???)
-      \item what are backpropagation methods, saliency methods, local attribution methods
-      \item CRP is based on LRP, so in principle it is a loal attribution method.
-            However the authors argue that it could be a \textit{glocal} method because it can be used to summarize the workings of the model over many samples
-\end{enumerate}
 
-General Overview papers to cite
-\begin{itemize}
-      \item focus on post-hoc explanations + theoretical foundations, test algorithms \cite{Samek2021}
-      \item need some more \todo{overview papers and map of XAI papers}
-\end{itemize}
+\todo{gradientXinput, integrated gradients, activation maximization, feature attack (generative approaches), activation atlas, specific local and global models ... }
 
-\section{Layerwise Relevance Propagation (LRP)}
- {\color{red} what has LRP been used for already, in which context to set CRP}
+\section{Layer-Wise and Concept Relevance Propagation}
 
-\begin{itemize}
-      \item LRP first paper \cite{Bach2015}
-      \item general XAI \cite{Samek2021}
-      \item mention that it has been getting a mathematical background with Deep Taylor Decomposition  \cite{Montavon2017}
-      \item LRP in practice \cite{Kohlbrenner2020}
-      \item disentangle representations, similar to PCA: Principal Relevant Component Analysis - uses LRP \cite{Chormai2022}
-      \item LRP is also good at pruning... idea/intuition: if you can "prune" certain neurons, their causal effect must be none or extremely small \cite{Yeom2019}
-      \item recent criticism of Sixt here? (deep taylor decomposition fails, when only positive relevance taken into account, matrix falls to rank 1 \cite{Sixt2022})
-\end{itemize}
+\todo{LRP and surroundings: also other applications like pruning (if you can "prune" certain neurons, their causal effect must be none or extremely small \cite{Yeom2019})}
 
-\section{Concept Relevance Propagation (CRP)}
+Concept Relevance Propagation, a recent method by \cite{Achtibat2022}, claims to be a \textit{glocal} XAI method, extending on the established local attribution method Layerwise Relevance Propagation (LRP) \cite{Bach2015} with more global methods like activation maximization \todo{cite and more}.
+Layerwise Relevance Propagation, as a local XAI method, produces saliency maps for single data samples through a modified backpropagation process further described in \autoref{chapter:background}. By filtering on subsets of latent features within the layers of the model during this modified backpropagation, CRP yields saliency maps, which could in principle produce more specific explanations. With the help of feature visualization methods CRP's authors try to go beyond the pure \textit{"where"} of saliency maps, towards a \textit{what}, explaining which (human understandable?) concepts a model has recognized in a specific image region. This more global idea is integrating into a growing field of \textit{concept-based} explanation methods \todo{cite}.
+These have in common that they try to disentangle the large latent feature space of models into human-understandable concepts.
+
+
+\todo{papers using, extending on, similar to, evaluating CRP}
 which papers have been published on this
 \begin{itemize}
-      \item from where to what... CRP main paper \cite{Achtibat2022}
       \item reveal to revise: whole framework for XAI using CRP as one of the methods for concept/bias discovery \cite{Pahde2023}
       \item using CRP to identify and unlearn bias 'Right Reason Class Artifact Compensation (RR-ClArC)' \cite{Dreyer2023a}
       \item newest summary paper \cite{Achtibat2023}
+      \item disentangle representations, similar to PCA, uses LRP \cite{Chormai2022}
 \end{itemize}
+
+\todo{more overview papers and map of XAI papers}
+categorization \cite{Samek2021}
+
 
 \section{Evaluation of XAI Methods}
 
@@ -70,7 +62,7 @@ which papers have been published on this
 
 \subsection{Evaluating Back-Propagation Methods}
 \label{subsection:evaluation_critique}
-The research on quantification and evaluation of XAI methods has increased with their rising popularity. Recently, a plethora of benchmarks and theoretical analyses have examined the fidelity, especially of feature importance methods, to the model they are trying to explain. Evaluations commonly used by authors of new XAI methods include feature ablation and data randomization (e.g. pixel flipping) \todo{cite}. . Additionally, more complex benchmarks \cite{Kim2018, Arras2022, Bau2017, Singla2022} which are often human-supervised aim at comparing XAI outputs to human-understandable concepts. 
+The research on quantification and evaluation of XAI methods has increased with their rising popularity. Recently, a plethora of benchmarks and theoretical analyses have examined the fidelity, especially of feature importance methods, to the model they are trying to explain. Evaluations commonly used by authors of new XAI methods include feature ablation and data randomization (e.g. pixel flipping) \todo{cite}. . Additionally, more complex benchmarks \cite{Kim2018, Arras2022, Bau2017, Singla2022} which are often human-supervised aim at comparing XAI outputs to human-understandable concepts.
 
 
 \begin{itemize}
@@ -94,8 +86,8 @@ Although a general lack of dependence between explanations and their model \cite
 Kindermans et. al. \cite{Kindermans2019} show that a constant vector shift on the input data, which is not affecting the performance of the model, can lead to misleading explanations. \cite{Sixt2020} finds the class insensitivity of some back-propagation methods to be due to their improper use of negative relevance.
 While authors of new methods often underline their results with user studies \todo{cite}, Sixt et. al. \cite{Sixt2022a} among others \todo{cite} show that XAI methods do not necessarily increase humans skill at identifying relevant features.
 
-Constructing a test which is neither too simple and therefore too far away from realistic application scenarios nor not quantifiable empirically due to its \textit{human} component or unidentifiable ground truth, poses a challenge which \cite{Clark2023} tries to tackle. This benchmark is based on recent analysis \cite{Wilming2023} of suppressor variables, which can be for example the background color of an image, that are used by the model without having an association to the core features to normalize the image and improve the prediction. 
-They introduce a generation process for mixing the suppressor and real features which serves as inspiraiton for the structural causal model applied here. 
+Constructing a test which is neither too simple and therefore too far away from realistic application scenarios nor not quantifiable empirically due to its \textit{human} component or unidentifiable ground truth, poses a challenge which \cite{Clark2023} tries to tackle. This benchmark is based on recent analysis \cite{Wilming2023} of suppressor variables, which can be for example the background color of an image, that are used by the model without having an association to the core features to normalize the image and improve the prediction.
+They introduce a generation process for mixing the suppressor and real features which serves as inspiraiton for the structural causal model applied here.
 
 \begin{itemize}
       \item explanations are independent of later layers (no negative relevance) \cite{Sixt2020}
@@ -125,18 +117,21 @@ They introduce a generation process for mixing the suppressor and real features 
       \item \cite{Narendra2018}: build SCM over input-model-output -> has potential to be more accurate than saliency purely observational
       \item \cite{Chattopadhyay2019}: build SCM over last linear layer before output and attribute because of sensitivity to constant shifts as shown by Kindermans
             \\ task: treat Model as SCM and calculate interventional expectations and average causal effect
+      \item \cite{Sixt2022}: deep taylor decomposition fails, when only positive relevance taken into account, matrix falls to rank 1 \\ task: theoretical analysis
 \end{enumerate}
 
-\subsubsection{Causality Research on Evaluation and Benchmarking of XAI}
-The link an explanation and its model should have, has come under the causal lense both for developing new XAI methods and their evaluation  \todo{cite}. Counterfactual explanations 
+\subsection{Causality and XAI (on Evaluation and Benchmarking of XAI)}
+The link an explanation and its model should have, has come under the causal lense both for developing new XAI methods and their evaluation  \todo{cite}. Counterfactual explanations
 
-{\color{red} which other methods/approaches/papers are there that broadly connect explainable AI and causality }
+      {\color{red} which other methods/approaches/papers are there that broadly connect explainable AI and causality }
 \begin{itemize}
       \item general map of causality and XAI mixups
       \item counterfactual stuff
       \item seeing model as scm stuff \cite{Chattopadhyay2019}
-      \item representation learning
+      \item seeing whole process as SCM \cite{Karimi2023} - very important for my work, as i do basically the same thing just not for hyperparameters but biasedness!
+      \item representation learning??? \todo{mabye ask simon, what is a good overview paper? Schoelkopf2019? }
       \item overview of \cite{Schoelkopf2019}
+      \item Oanas thesis / work??
 \end{itemize}
 
 \begin{itemize}

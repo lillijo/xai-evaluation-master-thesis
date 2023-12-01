@@ -27,7 +27,7 @@
 \end{itemize}
 
 \section{Layerwise Relevance Propagation}
-Layer-wise relevance propagation \cite{Bach2015} is the basis for concept relevance propagation and is next to SHAP, LIME, Integrated Gradients \todo{cite} among the most highly cited local attribution methods in XAI. As other saliency methods, LRP is commonly used in computer vision to attribute importance to each pixel in an image, which can then be visualized as a heatmap, but is also applicable to other data formats. In the following I will summarize the basic functioning of LRP for neural networks as described in \cite{Bach2015}:
+Layer-wise relevance propagation \cite{Bach2015} is the basis for concept relevance propagation and is next to SHAP, LIME, Integrated Gradients \todo{cite} among the most highly cited local attribution methods in XAI. As other saliency methods, LRP is commonly used in computer vision tasks to attribute importance to each pixel in an image, which can then be visualized as a heatmap, but is also applicable to other data formats. In the following I will summarize the basic functioning of LRP for neural networks as described in \cite{Bach2015}:
 
 LRP assumes that the model has multiple layers of computation it can be decomposed into, starting from the input layer, for example the pixels of an image, to all latent layers $l$ and finally to the output layer. Further each of those layers has $V(l)$ dimensions for which a Relevance Score $R^{(l)}_d$ could be determined so that the following equation holds:
 
@@ -42,6 +42,9 @@ The idea then is to follow the flow of relevance from the output, where usually 
 \end{equation}
 
 To apply LRP, best practices and rules have emerged \cite{Kohlbrenner2020, Montavon2019, Samek2021}. However in this thesis we stick to the propagation rule that the authors of CRP use, namely the composite $LRP_{\epsilon-z+-\flat}$-rule (or "epsilon-plus-flat"), which is recommended by \cite{Kohlbrenner2020} and uses different rules for different parts of the model, further described in the appendix \autoref{appendix:lrprules}.
+
+\todo{mention that it has been getting a mathematical background with Deep Taylor Decomposition  \cite{Montavon2017}}
+
 
 \section{Concept Relevance Propagation}
 

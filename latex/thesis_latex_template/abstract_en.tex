@@ -9,7 +9,7 @@
     \item Avoid equations and math. Exceptions: Your paper proposes E = m c 2.
 \end{itemize}
 
-\subsubsection{Motivation}
+\subsubsection*{Motivation}
 \begin{itemize}
     \item explainable AI shows great progress in visualizing how neural networks see/decide
     \item however there have been many criticisms and some argue that the XAI methods don't show what is actually seen by the NN and rely more on hyperparameters or the data itself.
@@ -20,13 +20,13 @@
     \item Looking at individual concepts with their relevances and specific heatmaps has the potential to identify which of the features (core or spurious) is actually most relevant.
 \end{itemize}
 
-\subsubsection{Problem Statement}
+\subsubsection*{Problem Statement}
 \begin{itemize}
     \item investigate the example of CRP, a recent method which takes the popular Layer-Wise Relevance Propagation to the next level, by producing conditional attributions for neurons or sets of neurons coined "concepts"
     \item find out, whether the heatmaps or relevances produced by this algorithm have a connection either to the causal ground truth of data or the "causal pathways" in the NN
 \end{itemize}
 
-\subsubsection{Approach}
+\subsubsection*{Approach}
 \begin{itemize}
     \item for validation purposes very simple disentangling dataset DSPRITES
     \item introduce "causal" biases into dataset, by adding small watermark not uniformly to certain images
@@ -35,14 +35,14 @@
     \item \textit{do causality lol}
 \end{itemize}
 
-\subsubsection{Results}
+\subsubsection*{Results}
 \begin{itemize}
     \item does CRP succeed in identifying the true biasedness of the model
     \item what do we want to explain
     \item does this result generalize for other attribution methods, data, SCMs?
 \end{itemize}
 
-\subsubsection{Conclusions}
+\subsubsection*{Conclusions}
 \begin{itemize}
     \item found a new benchmark measure to combat the critique about the robustness and fidelity of especially concept-based methods.
     \item from that new method a way to enrich or improve those methods arises
