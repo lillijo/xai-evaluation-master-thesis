@@ -57,6 +57,7 @@ Achtibat et. al. propose in their recent work \cite{Achtibat2022} to use those i
 
 $\delta_{jc_l}$ is the Kronecker-Delta selecting the relevance $R^l_j$ of feature $j$ in layer $l$ if that index is in the condition $c_l$, masking out all other features in that layer. If no condition is set for a particular layer, the relevance from that layer is not masked. The authors note that conditions within the same layer compare to logical OR operations and across layers to AND operations. In the following a small example illustrates the process (\autoref{fig:crp_example_condition}):
 
+\todo{mention new paper which is more summarized: \cite{Achtibat2023}}
 
 \begin{figure}[htbp]
     \centering
@@ -252,4 +253,21 @@ Other?
     \item explain the measures i use to score how well the concepts are separated
     \item show theoretical basis
 \end{itemize}
+
+\subsubsection*{NOCHMAL: MÖGLICHE DR/CONCEPT ALGORITHMEN:}
+\todo{decide on measures to try out / officially add to comparison}
+\begin{itemize}
+    \item KNN auf allen layers / einer bestimmten layer - relevances mit 4 clustern
+    \item NMF auf clamped relevances
+    \item "causal effect" von latent factors auf relevanzen
+    \item image perturbation - oana
+    \item Intersection over union "Weakly supervised location (WSL)" Real Time Image Saliency for Black Box Classifiers
+    \item Precision: how many of the important pixels are within the actual object
+    \item Earth Movers Distance: cost of trnsforming importance map into F+ (image?) using euclidean distance between pixels
+    \item TCAV: user defined concept (e.g. choose only images with watermark) 
+    \item Causal Concept Effect (CaCE) (can avoid confounding errors) 
+    \item encoder-decoder: try to learn latent factors 
+\end{itemize}
+
+
 \subsection{Causally somehow? }

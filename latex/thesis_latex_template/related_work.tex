@@ -62,8 +62,10 @@ categorization \cite{Samek2021}
 
 \subsection{Evaluating Back-Propagation Methods}
 \label{subsection:evaluation_critique}
-The research on quantification and evaluation of XAI methods has increased with their rising popularity. Recently, a plethora of benchmarks and theoretical analyses have examined the fidelity, especially of feature importance methods, to the model they are trying to explain. Evaluations commonly used by authors of new XAI methods include feature ablation and data randomization (e.g. pixel flipping) \todo{cite}. . Additionally, more complex benchmarks \cite{Kim2018, Arras2022, Bau2017, Singla2022} which are often human-supervised aim at comparing XAI outputs to human-understandable concepts.
+The research on quantification and evaluation of XAI methods has increased with their rising popularity. Recently, a plethora of benchmarks and theoretical analyses have examined the fidelity, especially of feature importance methods, to the model they are trying to explain. Evaluations commonly used by authors of new XAI methods include feature ablation and data randomization (e.g. pixel flipping) \todo{cite}. Additionally, more complex benchmarks \cite{Kim2018, Arras2022, Bau2017, Singla2022} which are often human-supervised aim at comparing XAI outputs to human-understandable concepts.
 
+In the quantitative evaluation of \cite{Kim2018} a similar approach to ours is put into action: 
+a noise parameter controls the correlation of an image and a label on it and the accuracy for images without the label is tested. If the label was not learned as an important feature, the TCAV score should be low. User study showed that saliency maps for TCAVs did not help in identifying the important feature. This is an important insight and corresponds with \cite{Sixt2022a}. It seems that saliency maps are misleading more often than not. If there is no additional insight as with CRPs relevance images or similar, one can not expect to tell spurious from core features only using saliency maps. 
 
 \begin{itemize}
       \item differentiate between numerical evaluation and evaluation through user studies
@@ -71,7 +73,7 @@ The research on quantification and evaluation of XAI methods has increased with 
             \begin{itemize}
                   \item feature ablation and related methods
                   \item TCAVs \cite{Kim2018} with benchmark feature set (hard and often not applicable)
-                  \item clevr-xai? \cite{Arras2022}
+                  \item clevr-xai? \cite{Arras2022} 
             \end{itemize}
       \item clever XAI artificial benchmark dataset \cite{Arras2022}
       \item NetDissect dataset with concept-segmented images \cite{Bau2017}
@@ -123,6 +125,73 @@ They introduce a generation process for mixing the suppressor and real features 
 \subsection{Causality and XAI (on Evaluation and Benchmarking of XAI)}
 The link an explanation and its model should have, has come under the causal lense both for developing new XAI methods and their evaluation  \todo{cite}. Counterfactual explanations
 
+
+{
+\color{red}
+quote from \cite{Goyal2019}:
+
+\begin{quote}
+The relationship between causality and explainability has a
+long history, see (Woodward, 2005 \textit{making things happen: a theory of causal explanation}) for a discussion from
+a philosophy of science point of view. Halpern \& Pearl
+(2005 \textit{Causes and Explanations: a structural-model approach}) give a formal causal theory of what constitutes an
+explanation, in terms of what is known as "actual causality"
+\end{quote}
+
+\begin{quote}
+We note that this problem does not exist as such for most
+local interpretation methods: because for a given image,
+the pixels deterministically cause the output of a model,
+there is no notion of probability or confounding. However,
+confounding might affect local models where pixels are per-
+turbed based on data-dependent models....
+
+Many interpretability methods developed to have causal-
+flavor are for local explanations, such as removing and
+adding pixels to generate counterfactual explanations for
+images
+\end{quote}
+
+The summary of \cite{Moraffah2020a} is really good for \"general map of XAI\" but also is a good summary on the existing causal stuff for XAI! \todo{base some of my related works section of \cite{Moraffah2020a}}
+
+\begin{quote}
+Pearl [83] introduces different levels of said interpretability
+and argues that generating counterfactual explanations is
+the way to achieve the highest level of interpretability.
+
+\begin{itemize}
+      \item statistical: how would seeing x change my belief in y?
+      \item interventional: what if?
+      \item counterfactual: why?
+\end{itemize}
+\end{quote}
+
+In this paper and year (2020) there were no specific datasets designed for the purpose of causal interpretability (performance evaluation)
+
+Evaluation:
+
+\begin{itemize}
+      \item human subject: [89], [17], [91], [66]
+      \item how close model is to actual causal features
+      \item how locally faithful is proposed method (i.e. with masking, perturbation)
+      \item how consistent are explanation? 
+      \item metrics for evaluating counterfactual explanations: sparsity/size, interpretability, proximity, speed, diversity, visual-linguistic counterfactuals
+\end{itemize}
+
+CLEVR-XAI \cite{Arras2022} is a well defined benchmark dataset with extensive ground-truth information. 
+
+similar: M. Schuessler, P. Weiß, L. Sixt, Two4two: Evaluating interpretable machine learning - a synthetic dataset for controlled experiments
+
+good summary table of most commonly used evaluation methods:
+- Pixel Perturbation
+- Data Randomization Test
+- Model Randomization Test
+- Remove and Retrain
+- Object Localization/Segmentation
+- Pointing Game
+
+Although the term \textit{causality} is not specifically mentioned in the paper, the CLEVR-XAI benchmark has potential for the causal evaluation of XAI methods. With (ground truth) generating factors available and a complex scene graph comparable to a structural causal model, it is straight-forward to measure causal effects or do counterfactual analysis. However the dataset requires quite a complex network architecture, which can read text (questions?) e.g. with a recurrent CNN and give not just a classification output but a set of output features.
+}
       {\color{red} which other methods/approaches/papers are there that broadly connect explainable AI and causality }
 \begin{itemize}
       \item general map of causality and XAI mixups

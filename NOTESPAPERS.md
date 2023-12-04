@@ -1734,3 +1734,23 @@ all current research fields:
 - use sparse subspace clustering (SSC) for clustering of feature maps
 - test concepts by masking out images with a classical inputation algorithm (Bertalmia 2001)
 - MCD-SSC is actually not the best, but they argue that the ones that are better consistently only find one concept and therefore have no benefit over classical attribution methods like LRP
+
+## iNNvestigate neural networks! (Alber2018)
+- code and reference implementation for many XAI methods
+- not important
+
+## Benchmarking Attribution Methods with Relative Feature Importance (Been Kim, Mengjiao Yang) (Yang2019)
+- **relative feature importance** similar to wm/(wm+shape) 
+- a priori knowledge of relative feature importance
+- 1. carefully crafted dataset with known feature importance
+- 2. 3 metrics to quantitatively evaluate attribution methods
+- certain methods tend to produce *false-positive* (not actually important marked important)
+- *relative*: we do not know *absolute* importance of a feature, but can identify *relative* feature importance, compared to another model -> by changing frequency of features in dataset
+- metrics compare attributions between pairs of models *model dependence* and pairs of input *input (in)dependence*
+- train one model on object and one on scene (background) of images
+- take average attribution that saliency method applies to image region (object or background)
+- *CF* common feature (or bias) -> with different degree
+Metrics:
+1. Model Contrast Score (MCS): difference between concept attributions between the two models
+2. Input dependence rate (IDR): percentage of correctly classified inputs where CF is attributed less than original regions covered by CF
+3. Input Independence rate (IIR):
