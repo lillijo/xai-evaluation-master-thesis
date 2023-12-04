@@ -11,6 +11,7 @@ import math
 METHOD = 2
 FACECOL = "#2BC4D9"
 
+
 def get_lat_names():
     with open("metadata.pickle", "rb") as mf:
         metadata = pickle.load(mf)
@@ -300,7 +301,7 @@ def avg_max_neuron_ground_truth_plot(
         summed_neurons,
         color=colors[0],
         label=f"{latents_names[factor]} {m_type} sum neurons",
-        marker="_", # type: ignore
+        marker="_",  # type: ignore
     )
     plt.xticks(np.arange(bcut, 1.01, 0.05))
     fig.legend(bbox_to_anchor=(1.2, 0.8))
@@ -390,7 +391,8 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5):
     colind = [0, 3, 5, 2, 7, 1]
     for f in [1, 0, 2, 3, 4, 5]:
         lat_data = [
-            np.sum([datas[a][i][f"pred_{m_type}"][f] for a in range(4)]) / 0.04  # *100#
+            np.max([datas[a][i][f"pred_{m_type}"][f] for a in range(4)])
+            * 100  #  / 0.04  #
             for i in range(len(datas[0]))
         ]
         plt.plot(
@@ -407,6 +409,55 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5):
             plt.scatter(filtbiases, lat_data, color=colors[colind[f]], s=2, alpha=0.4)
     plt.legend(loc="upper left")
     plt.ylabel(titles[m_type][0])
+    plt.xlabel("Bias")
+    plt.title(titles[m_type][1])
+    plt.legend(bbox_to_anchor=(1.01, 0.7))
+
+
+def plot_corr_factors(path, m_type="flip", bcut=0.5):
+    titles = {
+        "flip": ["Percentage of flipped", "Prediction Flip Watermark and Shape"],
+        "mean_logit_change": ["Mean Logit Difference * 100", "Mean Logit Change Watermark and Shape"],
+        "ols": ["Correlation Coefficient * 100", "R2 Watermark and Shape"],
+    }
+    datas, filtbiases, biases, alldata = data_iterations(path, biascut=bcut)
+    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
+    latents_names, latents_sizes, latents_bases = get_lat_names()
+    fig = plt.figure(figsize=(10, 6))
+    fig.set_facecolor(FACECOL)
+    colind = [0, 3, 5, 2, 7, 1]
+    shape_values = np.array([
+        np.sum([datas[a][i][f"pred_{m_type}"][1] for a in range(4)]) / 0.04  #  *100#
+        for i in range(len(datas[0]))
+    ])
+    wm_values = np.array([
+        np.sum([datas[a][i][f"pred_{m_type}"][0] for a in range(4)]) / 0.04  #  *100#
+        for i in range(len(datas[0]))
+    ])
+    indices = np.argsort(shape_values)
+
+    """ plt.scatter(
+        shape_values[indices],
+        wm_values[indices],
+        color=colors[colind[0]],
+        label=f"{latents_names[0]} - {latents_names[1]}",
+        alpha=0.9,
+        # s=25,
+        # marker="s",  # type: ignore
+    ) """
+    ratio = [wm_values[i] /(shape_values[i] + wm_values[i]) for i in range(len(wm_values)) ]
+    print(len(ratio), len(shape_values[indices]))
+    plt.plot(
+        filtbiases,
+        ratio,
+        color=colors[5],
+        label=f"{latents_names[0]} vs. {latents_names[1]} ratio",
+        alpha=0.9,
+        # s=25,
+        # marker="s",  # type: ignore
+    )
+    plt.legend(loc="upper left")
+    plt.ylabel("Watermark ratio")
     plt.xlabel("Bias")
     plt.title(titles[m_type][1])
     plt.legend(bbox_to_anchor=(1.01, 0.7))

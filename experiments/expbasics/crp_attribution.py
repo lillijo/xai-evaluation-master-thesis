@@ -283,7 +283,7 @@ class CRPAttribution:
     def get_reference_scores(self, img, label, layer, neurons):
         conditions = [{"y": [label]}]
         attr = self.attribution(
-            img, conditions, self.composite, record_layer=self.layer_names
+            img, [{}], self.composite, record_layer=self.layer_names, start_layer="linear_layers.2"
         )
         rel_c = self.cc.attribute(attr.relevances[layer], abs_norm=True)  #  activations
         return [rel_c[0][i] for i in neurons]

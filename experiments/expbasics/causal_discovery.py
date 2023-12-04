@@ -17,7 +17,7 @@ from tigramite.independence_tests.cmisymb import CMIsymb
 from tigramite.independence_tests.regressionCI import RegressionCI
 
 from .crp_attribution import CRPAttribution
-from .biased_dsprites_dataset import BiasedDSpritesDataset
+from .biased_noisy_dataset import BiasedNoisyDataset
 from .network import ShapeConvolutionalNeuralNetwork
 from .cmiknnmixed import CMIknnMixed
 
@@ -25,7 +25,7 @@ from .cmiknnmixed import CMIknnMixed
 class CausalDiscovery:
     def __init__(
         self,
-        dataset: BiasedDSpritesDataset,
+        dataset: BiasedNoisyDataset,
         model: ShapeConvolutionalNeuralNetwork,
         crpattribution: CRPAttribution,
     ) -> None:
@@ -34,10 +34,10 @@ class CausalDiscovery:
         self.crpatrr = crpattribution
         self.layers = [
             ["factors", ["shape", "scale", "rot", "posX", "posY", "watermark"]],
-            # ["convolutional_layers.0", range(6)],
-            # ["convolutional_layers.3", [5]],
+            #["convolutional_layers.0", range(6)],
+            #["convolutional_layers.3", [5]],
             ["convolutional_layers.6", range(6)],
-            # ["linear_layers.0", range(6)],
+            ["linear_layers.0", range(6)],
             ["linear_layers.2", range(2)],
             # ["prediction",  ["rectangle", "ellipse", "heart"]] #  ["class"]],  #
         ]  # , ["prediction", range(3)]
@@ -52,7 +52,7 @@ class CausalDiscovery:
             # test_unbiased, train, no_watermark
             index = np.random.randint(0, len(self.ds))
             indices.append(index)
-            latents, watermark = self.ds.get_item_info(index)
+            latents, watermark, offset = self.ds.get_item_info(index)
             # only specific shape
             img, label = self.ds[index]
             if shape is not None and label != shape:
@@ -158,16 +158,16 @@ class CausalDiscovery:
     def causal_discovery(
         self, layers, dataframe, test="RobustParCorr", link_assum=True
     ):
-        ci_test = RobustParCorr(significance="analytic")
+        ci_test = RobustParCorr(significance="analytic") # With Data Type
         if test == "CMIknn":
             ci_test = CMIknn(significance="fixed_thres", fixed_thres=0.1)
-        elif test == "GPDCtorch":
+        elif test == "GPDCtorch": # No Data Type
             ci_test = GPDCtorch(significance="analytic")
-        elif test == "RegressionCI":
+        elif test == "RegressionCI": # With Data Type
             ci_test = RegressionCI(significance="fixed_thres", fixed_thres=0.6)
         elif test == "CMIsymb":
             ci_test = CMIsymb(significance="fixed_thres", fixed_thres=0.4)
-        elif test == "CMIknnMixed":
+        elif test == "CMIknnMixed": # With Data Type
             ci_test = CMIknnMixed(
                 significance="fixed_thres", fixed_thres=0.05
             )  # significance='fixed_thres', fixed_thres=0.1
