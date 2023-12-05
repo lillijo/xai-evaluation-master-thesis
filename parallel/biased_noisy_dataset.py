@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 
 TRAINING_DATASET_LENGTH = 437280
 TEST_DATASET_LENGTH = 300000
-SEED = 37
+SEED = 41
 IMG_PATH_DEFAULT = "../dsprites-dataset/images/"
 
 
@@ -87,21 +87,8 @@ class BiasedNoisyDataset(Dataset):
         self.watermarks = wms
 
         if self.verbose:
-            print(
-                {
-                    0: Counter(self.watermarks[np.where(self.labels[:, 1] == 0)]),
-                    1: Counter(self.watermarks[np.where(self.labels[:, 1] == 1)]),
-                }
-            )
-            plt.scatter(s, w)
-            plt.ylabel("watermark")
-            plt.xlabel("shape")
-            plt.text(0.02, 0.9 - self.strength, "rectangle, no watermark")
-            plt.text(0.02, self.strength + 0.1, "rectangle, with watermark")
-            plt.text(0.6, 0.9 - self.strength, "ellipse, no watermark")
-            plt.text(0.6, self.strength + 0.1, "ellipse, with watermark")
-            plt.plot([0.5, 0.5], [0, 1], c="green")
-            plt.plot([0, 1], [self.strength, self.strength], c="red")
+            print("verbose")
+            #plot_fancy_distribution(self, s,w)
 
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
@@ -121,7 +108,8 @@ class BiasedNoisyDataset(Dataset):
 
     def get_item_info(self, index):
         has_watermark = self.watermarks[index]
-        return (self.labels[index][1:], has_watermark)
+        offsets = [self.offset_y[index], self.offset_x[index]]
+        return (self.labels[index][1:], has_watermark, offsets)
 
 
 def get_all_datasets(batch_size=128, img_path=IMG_PATH_DEFAULT):
