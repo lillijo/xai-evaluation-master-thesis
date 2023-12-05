@@ -1741,6 +1741,7 @@ all current research fields:
 
 ## Benchmarking Attribution Methods with Relative Feature Importance (Been Kim, Mengjiao Yang) (Yang2019)
 - **relative feature importance** similar to wm/(wm+shape) 
+- **MCS** model contrast score could be used for wm/shape attribution
 - a priori knowledge of relative feature importance
 - 1. carefully crafted dataset with known feature importance
 - 2. 3 metrics to quantitatively evaluate attribution methods
@@ -1750,7 +1751,39 @@ all current research fields:
 - train one model on object and one on scene (background) of images
 - take average attribution that saliency method applies to image region (object or background)
 - *CF* common feature (or bias) -> with different degree
+- one model trained to recognize dogs, one to recognize background
 Metrics:
 1. Model Contrast Score (MCS): difference between concept attributions between the two models
-2. Input dependence rate (IDR): percentage of correctly classified inputs where CF is attributed less than original regions covered by CF
-3. Input Independence rate (IIR):
+2. Input dependence rate (IDR): percentage of correctly classified inputs where CF is attributed less than original regions covered by CF ("unimportant feature")
+3. Input Independence rate (IIR): How similar is attribution result when dog is present / not present
+
+## A Holistic Approach to Unifying Automatic Concept Extraction and Concept Importance Estimation (Fel2023a)
+- general framework for concept importance estimation:
+1. concept extraction
+2. importance estimation
+- recast "concept extraction" as "dictionary learning"
+- recast "concept importance estimation" as "attribution method"
+- dictionary learning: A ~ UV.T (A= original activations, U transformation into "dictionary space", V = dictionary)
+- K-Means, PCA, NMF (CRAFT and ICE), Sparse Autoencoder
+- ACE -> CAVs = centroids of k-means clusters, but only one concept per sample possible 
+- PCA -> lower constraints, but not able to capture "stable concepts" e.g. dog-head if it is important for all dog images, also orthogonality constraint might not be ideal 
+- NMF -> moderately sparse representation
+- **last layer is best for concept extraction!?**
+- Evaluation of Concept Importance Methods:
+- C-Deletion, C-Insertion, C-myFidelity
+- C-Deletion: gradually remove most important concepts, area under curve
+- C-Insertion: gradually add concepts in increasing order of importance
+- C-myFidelity: correlation between output when concepts randomly removed 
+- concept has *global importance* which can be decomposed into *reliability* (how diagnostic for class) and *prevalence* (how frequently encountered)
+- do big (and seemingly well conducted) user study
+
+## PredDiff: Explanations and Interactions from Conditional Expectations (also Vielhaben) (Bluecher2022)
+- how strongly do feature x and y interact with each other (not really important for my task)
+- what does feature x do, given feature sets y,z
+- draw from "imputer distribution q" that approximates p: q(Y|x) -> true generative distribution for reconstructing Y given features X evaluated at x
+
+## SUMMIT: Scaling Deep Learning Interpretability by Visualizing Activation and Attribution Summarizations (Hohman2020)
+- mostly an interface for global explanations using some standard visualization methods
+- attribution graph (using "activation aggregation")
+- embedding view using UMAP of classes (by activation?)
+- "neuron-influence aggregation" how do previous layers influence current

@@ -1,8 +1,8 @@
 # Papers important for related work and theoretical background:
-_______________________________________________________________________________________________________________________________________________
-1. XAI in General and Important Methods:
 
-## Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications (Samek2021)
+## 1. XAI in General and Important Methods:
+
+### Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications (Samek2021)
 - not just accuracy but also: robustness, resilience to drifting data distributions, assess confidence, safety, legal requirements, complement humans, reveal interesting correlations, protection against spurious correlations,
 - focused on _post-hoc_ explanation methods: take any model and analyze after training
 - global: "prototypes" of a class
@@ -44,14 +44,14 @@ ________________________________________________________________________________
 - first goal: find data artifacts - clever hans effects
 - second goal: investigate learning model to find novel prediction strategies
 
-## Unmasking Clever Hans predictors and assessing what machines really learn (Lapuschkin2019)
+### Unmasking Clever Hans predictors and assessing what machines really learn (Lapuschkin2019)
 - **SPRAY**
 - standard performance evaluation metrics bad at distinguishing short-sighted and strategic problem solving behaviors
 - use SPectral Relevance Analysis
 - is some sort of semi-automation using LRP
 - SpRAy: compute relevance maps (LRP), eigenvalue based spectral clustering -> DR using t-SNE
 
-## A Unified Approach to Interpreting Model Predictions (SHAP values) (Lundberg2017)
+### A Unified Approach to Interpreting Model Predictions (SHAP values) (Lundberg2017)
 1. view explanation as a model itself **explanation model** -> class of _additive feature attribution methods_
 2. game theory results guaranteeing a unique solution apply to entire class -> SHAP
 3. SHAP value estimation methods, better aligned with human intuition
@@ -72,7 +72,7 @@ ________________________________________________________________________________
 - model agnostic approximation: shapley sampling values, Kernel SHAP
 - model-specific approximation: for linear model just from weights
 
-## On Pixel-Wise Explanations for Non-Linear Classifier Decisions by Layer-Wise Relevance Propagation (Bach2015)
+### On Pixel-Wise Explanations for Non-Linear Classifier Decisions by Layer-Wise Relevance Propagation (Bach2015)
 - **LRP**
 - for _Bag of Words_ models and _Neural Networks_
 - explain _Pixel-wise Decomposition as a General Concept_
@@ -88,28 +88,28 @@ ________________________________________________________________________________
 - for bag of words methods and multilayered neural networks
 - expect output of method to be >= 0
 
-## Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps (Simonyan2014)
+### Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps (Simonyan2014)
 - **Gradient** method (seminal, but not important, no need to read)
 - showing heatmaps (and cutting according to segmentation)
 - showing strongest activating image (deep dreamed or something) for different classes
 
-## Learning how to explain neural networks: PatternNet and PatternAttribution (Kindermans2017)
+### Learning how to explain neural networks: PatternNet and PatternAttribution (Kindermans2017)
 - other methods fail on linear model -> should "work reliably in the limit of simplicity, the linea models"
 - test methods on linear generative data and linear model
 - uses same example as _"Theoretical Behavior of XAI Methods in the Presence of Suppressor Variables"_ with supressor/distractor variable
 - "PatternAttribution is a DTD extension that learns from data how to set the root point"
 
-## 
-____________________________________________________________________________________________________________________________________________________
+### 
+____________________________________________________________________
 
-2. Causality and XAI
+##  2. Causality and XAI
 
-## Causal feature learning: an overview (Chalupka2016)
+### Causal feature learning: an overview (Chalupka2016)
 - "Just about any scientific discipline is concerned with developing ‘macrovariables’ that summarize an underlying finer-scale structure of ‘microvariables’"
 - a parallel approach to PCMCI -> not explicitly modelling for time series but just seeing a "cluster" of micro-variables/states as one macro variable
 - ambiguous manipulation: "low-cholesterol" -> there is an appropriate level of aggregation
 
-## CAUSALITY FOR MACHINE LEARNING (Schoelkopf2019)
+### CAUSALITY FOR MACHINE LEARNING (Schoelkopf2019)
 - essay -> really good for motivation
 - information revolution
 - AI used Pearls bayesian networks etc. but not with causality explicit
@@ -123,7 +123,7 @@ ________________________________________________________________________________
 - "One way to do this is to employ model-based RL using SCMs, an approach which can help address a problem of confounding in RL where time-varying and time-invariant unobserved confounders influence both actions and rewards. In such an approach, nonstationarities would be a feature rather than a bug, and agents would actively seek out regions that are different from the known ones in order to challenge their existing model and understand which components are robust."
 - "learning causal models that contain independent mechanisms helps in transferring modules across substantially different domains"
 
-## Causal Explanations and XAI (Beckers2022)
+### Causal Explanations and XAI (Beckers2022)
 - XAI because we try to make predictions about results of actions and not observations
 - need causal explanations define: sufficient explanations and counterfactual explanations
 - use feature attribution for explanation of ml model
@@ -143,7 +143,7 @@ ________________________________________________________________________________
 - should only counterfactually depend along _unfair paths_
 - Therefore we can define fairness by demanding that protected variables do not cause the outcome along an unfair network, i.e., a network that consists entirely of unfair paths.
 
-## Causal Adversarial Network for Learning Conditional and Interventional Distributions (Morraffah2020)
+### Causal Adversarial Network for Learning Conditional and Interventional Distributions (Morraffah2020)
 - Label Generation Network LGN + Conditional Image Generation Network CIGN
 - genrate samples from interventional distributions
 - can generate interventional+conditional samples without access to causal graph
@@ -155,7 +155,7 @@ ________________________________________________________________________________
 - conditional relations between labels and pixels and between pixels
 - since assumption: label -> image : conditioning same as intervening (fixing)
 
-## Using Causal Inference to Globally Understand Black Box Predictors beyond Saliency Maps (Reimers2019)
+### Using Causal Inference to Globally Understand Black Box Predictors beyond Saliency Maps (Reimers2019)
 - previous methods:
 1. only local explanation (true for one input or inputs close to it)
 2. only assigns saliency to part of input, not aggregate functions of input
@@ -167,7 +167,7 @@ ________________________________________________________________________________
 - toy dataset with 8x8 pixels tested mean/variance estimator against NN
 - very limited especially because of strong assumptions, cond ind tests, only tested on simple toy model
 
-## Causes and Explanations: A Structural-Model Approach. Part I: Causes - Pearl (Halpern2002)
+### Causes and Explanations: A Structural-Model Approach. Part I: Causes - Pearl (Halpern2002)
 - Actual Causes?
 - Hume: "We may define a cause to be an object followed by another, ..., where, if the first object had not been, the second never had existed"
 - if fire A had not started, fire B would be cause and burned down house should not be "actual cause"
@@ -175,7 +175,7 @@ ________________________________________________________________________________
 - related to specific events: was X = x the actual cause of Y = y in that scenario?
 - lots of interesting examples showing how the choice of the SCM is very important
 
-## Causes and Explanations: A Structural-Model Approach. Part II: Explanations - Pearl (Halpern2005)
+### Causes and Explanations: A Structural-Model Approach. Part II: Explanations - Pearl (Halpern2005)
 - The basic idea is that an explanation is a fact that is not known for certain but, if found to be true, would constitute an actual cause of the explanandum (the fact to be explained), regardless of the agent’s initial uncertainty
 - the definition of an explanation should be relative to the agent’s epistemic state
 - if A is explanation of B happening, after "discovering" A it is not an explanation anymore but part of epistemic state
@@ -184,7 +184,7 @@ ________________________________________________________________________________
 - partial explanations: victoria went to the canary islands and it was sunny there
 - dominant in AI: maximum a posteriori (MAP) approach: best explanation for an observation is the state of the world that is most probable given the evidence
 
-## Counterfactuals uncover the modular structure of deep generative models (Besserve2018)
+### Counterfactuals uncover the modular structure of deep generative models (Besserve2018)
 - previous work: use independence to "disentangle" latent factors
 - too restrictive: counterfactural manipulations -> can be used to design targeted interventions (i.e. style transfer of images)
 - state-of-the-art: GAN and VAE
@@ -200,7 +200,7 @@ ________________________________________________________________________________
 - fine to coarse: individual channels: _elementary influence maps (EIM)_
 - cluster EIMs: smoothing, thresholding, non-negative matrix factorization -> S= WH, cluster based on maximum weight
 
-## Causal Shapley Values: Exploiting Causal Knowledge to Explain Individual Predictions of Complex Models (Heskes2020)
+### Causal Shapley Values: Exploiting Causal Knowledge to Explain Individual Predictions of Complex Models (Heskes2020)
 - extend shapley values with causal graph somehow
 - even counterfactual explanations make simplifying assumption that features are independent
 - -> conditional shapley values: conditioning by intervention (do-calculus)
@@ -219,7 +219,7 @@ ________________________________________________________________________________
 - if only partial causal graph -> "causal chain graph" with directed and undirected edges -> MAG
 - causal or conditional shapley values way more computationally expensive
 
-## Causal Interpretability for Machine Learning - Problems, Methods and Evaluation (Morraffah2020a)
+### Causal Interpretability for Machine Learning - Problems, Methods and Evaluation (Morraffah2020a)
 - especially concerning fairness and bias: "if applicant had different protected features (e.g. race, gender), would outcome be different?"
 - counterfactual analysis -> generate counterfactual explanations (both data and model counterfactuals)
 - 4 categories:
@@ -257,7 +257,7 @@ ________________________________________________________________________________
   - be (close-to) real time
   - be diverse
 
-## Discovering Causal Signals in Images (Lopez-Paz2017)
+### Discovering Causal Signals in Images (Lopez-Paz2017)
 - observable foot-prints that reveal the “causal dispositions” of the object categories appearing in collections of images
 - learning approach to observational causal discovery
 - removing bridge from scene with car -> bridge causes (presence of) car
@@ -273,7 +273,7 @@ ________________________________________________________________________________
 - they generate artificial causal/anti-causal data to learn to distinguish this
 - then test on real image data
 
-## Instance-wise Causal Feature Selection for Model Interpretation (Panda2021)
+### Instance-wise Causal Feature Selection for Model Interpretation (Panda2021)
 - causal extension to instance-wise feature selection to explain black-box visual classifiers
 - validate by measuring the post-hoc accuracy and Average Causal Effect of selected features on the model’s output
 - a good instance-wise feature selection method should capture the most causal features in an instance
@@ -290,7 +290,7 @@ ________________________________________________________________________________
 - -> use F(X\_-s)
 - use function g: prob of being part of -s learned via a NN, then use gumbel-softmax continuous subset sampling
 
-## Explaining Classifiers with Causal Concept Effect (CaCE) (Goyal2019)
+### Explaining Classifiers with Causal Concept Effect (CaCE) (Goyal2019)
 - Many existing explainability methods rely solely on correlations and fail to account for confounding, which may result in potentially misleading explanations
 - CaCE: causal effect of presence/absence of human-interpretable concept in deep neural nets prediction
 - need to be able to simulate _do_-operator -> use VAE
@@ -306,7 +306,7 @@ ________________________________________________________________________________
 - datasets: BARS (vertical/horizontal/green/red), colored-MNIST, CelebA, COCO-Miniplaces
 - We find that a more complex classifier (ResNet-100) tends to be more affected by the correlation between class and color concept and results in higher CaCE values as compared to relatively simpler classifiers (such as simple-CNN).
 
-## Unsupervised Causal Binary Concepts Discovery with VAE for Black-box Model Explanation (Tran2022)
+### Unsupervised Causal Binary Concepts Discovery with VAE for Black-box Model Explanation (Tran2022)
 - concepts such as left/right/tob/middle/bottom stroke for letters
 - _causal binary switches_ e.g. middle stroke OFF
 - explain prediction with _X is Y because binary switch A is on and binary switch B is off_
@@ -318,7 +318,7 @@ ________________________________________________________________________________
 - use information flow to estimate causal effect -> equivalent to mutual information in proposed DAG
 - interpretability regularizer: e.g. interpretable concept only affects small amount of input features, intervention of concept can only add/subtract pixel (not both), g = 1 -> pixels present, g = 0 not
 
-## Explaining Visual Models by Causal Attribution (Parafita2019)
+### Explaining Visual Models by Causal Attribution (Parafita2019)
 - **causal effect of intervening on generating factors**
 - based on Causal Counterfactuals -> for generative models
 - contrasts with salience<: want to know which _latent factors_ e.g. hair color, use of make-up influence outcome: more semantically charged
@@ -332,7 +332,7 @@ ________________________________________________________________________________
 - "Distributional Causal Graph" (DCG)
 - experimantal dataset: use "fake" class as causal generator: type influences known generating factors
 
-## Neural Network Attributions: A Causal Perspective (Chattopadhyay2019)
+### Neural Network Attributions: A Causal Perspective (Chattopadhyay2019)
 - nn is viewed as SCM, computing causal effect from that
   -this approach induces a setting where input neurons are not causally related to each other, but can be jointly caused by a latent confounder
 - We note that our work is different from a related subfield of structure learning, where the goal is to discern the causal structure in given data. The objective of our work is to identify the causal influence of an input on a learned function’s (neural network’s) output
@@ -349,7 +349,7 @@ ________________________________________________________________________________
 - for recurrent nns: can't use distribution of data, estimate means and covariances after evaluating RNN for each input sequence with value at xi = a
 - would usually need Hessian for calculating interv. exp. -> estimate using taylor decomposition
 
-## Explaining Deep Learning Models using Causal Inference (Narendra2018)
+### Explaining Deep Learning Models using Causal Inference (Narendra2018)
 - general framework idea to interpret NN as SCM
 - ability to perform arbitrary causal interventions
 - not like "ablation testing" (turning features on and off)
@@ -363,11 +363,11 @@ ________________________________________________________________________________
 - other phi: take frobenius norm of matrix
 - sanity check: using SCM as prediction model (using frobenius norm transformation)
 - **_might be good as a reference point to start from_**
-_____________________________________________________________________________________________________________________________________
+___________________________________________________________________
 
-3. Evaluation of Explanation Methods
+## 3. Evaluation of Explanation Methods
 
-## Salient Image Net: How to Discover Spurious Features in Deep Learning? (Singla2022)
+### Salient Image Net: How to Discover Spurious Features in Deep Learning? (Singla2022)
 - use class activation maps to identify spurious features, test how much accuracy suffers when deactivating/masking those features
 **Steps:**
 1. select neural features (scnd last layer) and visualize using highly activating examples
@@ -382,7 +382,7 @@ ________________________________________________________________________________
 - is basically the same as CRP?
 - does not work for non-spatial spurious signals: race/gender
 
-## Interpretability Beyond Feature Attribution: Quantitative Testing with Concept Activation Vectors (TCAV) (Kim2018)
+### Interpretability Beyond Feature Attribution: Quantitative Testing with Concept Activation Vectors (TCAV) (Kim2018)
 - Concept Activation Vectors (CAVs): vector in direction of values (e.g. activations) of a concepts set of examples
 - _E_m_ state of ML model, like input features and neural activations, _E_h_ human-interpretable concepts
 - function _g: E_m -> E_h_ that is linear
@@ -402,7 +402,7 @@ ________________________________________________________________________________
 - if network learned actual concept, it will perform well on images without caption
 - evaluate if saliency maps communicate right thing to humans: humans not able to identify whether caption or image concept more important
 
-## Ground Truth Evaluation of Neural Network Explanations with CLEVR-XAI (Arras2022)
+### Ground Truth Evaluation of Neural Network Explanations with CLEVR-XAI (Arras2022)
 - compare 10 different XAI methods based on CLEVR-XAI dataset
 - methods compared: Class Saliency Map, Grad-CAM, Gradient x Input, Integrated Gradients, LRP, Excitation Backpropagation, Guided Backpropagation, SmoothGrad, VarGrad
 - previously validated using pixel perturbation analyses, or using pixel relevances as object detection signal (make bounding box)
@@ -414,9 +414,48 @@ ________________________________________________________________________________
 - pointing game accuracy: singlest most relevant pixel within bounding box of object
 - problem with IoU (intersection over union): classifier might only need part of object, but this favors fully covering object
 
-2.1. Criticisim of XAI Methods:
+## A Holistic Approach to Unifying Automatic Concept Extraction and Concept Importance Estimation (Fel2023a)
+- general framework for concept importance estimation:
+1. concept extraction
+2. importance estimation
+- recast "concept extraction" as "dictionary learning"
+- recast "concept importance estimation" as "attribution method"
+- dictionary learning: A ~ UV.T (A= original activations, U transformation into "dictionary space", V = dictionary)
+- K-Means, PCA, NMF (CRAFT and ICE), Sparse Autoencoder
+- ACE -> CAVs = centroids of k-means clusters, but only one concept per sample possible 
+- PCA -> lower constraints, but not able to capture "stable concepts" e.g. dog-head if it is important for all dog images, also orthogonality constraint might not be ideal 
+- NMF -> moderately sparse representation
+- **last layer is best for concept extraction!?**
+- Evaluation of Concept Importance Methods:
+- C-Deletion, C-Insertion, C-myFidelity
+- C-Deletion: gradually remove most important concepts, area under curve
+- C-Insertion: gradually add concepts in increasing order of importance
+- C-myFidelity: correlation between output when concepts randomly removed 
+- concept has *global importance* which can be decomposed into *reliability* (how diagnostic for class) and *prevalence* (how frequently encountered)
+- do big (and seemingly well conducted) user study
 
-## Theoretical Behavior of XAI Methods in the Presence of Suppressor Variables (Wilming2023)
+### Benchmarking Attribution Methods with Relative Feature Importance (Been Kim, Mengjiao Yang) (Yang2019)
+- **relative feature importance** similar to wm/(wm+shape) 
+- **MCS** model contrast score could be used for wm/shape attribution
+- a priori knowledge of relative feature importance
+- 1. carefully crafted dataset with known feature importance
+- 2. 3 metrics to quantitatively evaluate attribution methods
+- certain methods tend to produce *false-positive* (not actually important marked important)
+- *relative*: we do not know *absolute* importance of a feature, but can identify *relative* feature importance, compared to another model -> by changing frequency of features in dataset
+- metrics compare attributions between pairs of models *model dependence* and pairs of input *input (in)dependence*
+- train one model on object and one on scene (background) of images
+- take average attribution that saliency method applies to image region (object or background)
+- *CF* common feature (or bias) -> with different degree
+- one model trained to recognize dogs, one to recognize background
+Metrics:
+1. Model Contrast Score (MCS): difference between concept attributions between the two models
+2. Input dependence rate (IDR): percentage of correctly classified inputs where CF is attributed less than original regions covered by CF ("unimportant feature")
+3. Input Independence rate (IIR): How similar is attribution result when dog is present / not present
+
+
+*2.1. Criticisim of XAI Methods:*
+
+### Theoretical Behavior of XAI Methods in the Presence of Suppressor Variables (Wilming2023)
 - simple 2D artifical dataset that is capable of creating "supressor" variables (vairables independent of prediction target)
 - suppresors variable -> like watermark: w->X, Y->X (X=target is a collider -> selection bias)
 - a feature is important if it has a statistical dependence with target variable
@@ -445,7 +484,7 @@ ________________________________________________________________________________
 - whole idea is questionable: if "suppressor variable" is necessary to predict accurately, it should have importance!
 - most methods only fail when correlation is present between x1 and x2 (watermark and shape)
 
-## When Explanations Lie: Why Many Modified BP Attributions Fail (Sixt2020)
+### When Explanations Lie: Why Many Modified BP Attributions Fail (Sixt2020)
 - analyze lots of backpropagation XAI methods: DTD, LRP, ExcitationBP, PatternAttribution, DeepLIFT, Deconv, RectGrad, GuidedBP
 - they find that explanations independent of parameters of later layers except for DeepLift
 - new evaluation metric: "CSC" - cosine similarity convergence
@@ -458,7 +497,7 @@ ________________________________________________________________________________
 - theoretical problem: all those methods converge to a rank 1 matrix
 - why not noticed: often only single class prediction tasks (class insensitivity is irrelevant)
 
-## A Rigorous Study Of The Deep Taylor Decomposition (Sixt2022)
+### A Rigorous Study Of The Deep Taylor Decomposition (Sixt2022)
 - fundamental assumption of taylor theorem: DTD roots lie in same linear regions as the input -> not true in empirical evaluation
 - many methods simplify to make accessible to human eye: local neighbourhood, assume linearity (gradient-based) or independence (shapley approximation)
 summary:
@@ -474,7 +513,7 @@ summary:
 - they scaled saliency maps (maybe that is an issue?)
 - indicates that "information leakage" between questionand LRPs saliency map is present
 
-## The (Un)reliability of Saliency Methods (Kindermans2019)
+### The (Un)reliability of Saliency Methods (Kindermans2019)
 - In order to guarantee reliability, we posit that methods should fulfill input invariance
 - "implementation invariance": functionally equivalent networks (different architecture, same output for all inputs) always attribute in an identical way
 - "input invariance":t a saliency method mirrors the sensitivity of the model with respect to transformations of the input
@@ -492,7 +531,7 @@ summary:
   PA root point: x0 = x - a*w^T*x, where a^T*w = 1 -> in linear model a = cov/weights*cov
 - reference point is important!
 
-## Challenging Common Assumptions in the Unsupervised Learning of Disentangled Representations (Locatello2018)
+### Challenging Common Assumptions in the Unsupervised Learning of Disentangled Representations (Locatello2018)
 - (for proof that generative stuff is not a good idea, and VAEs)
 - "The key idea behind the unsupervised learning of disentangled representations is that real-world data is generated by a few explanatory factors of variation which can be recovered by unsupervised learning algorithms"
 - "theoretically show that the unsupervised learning of disentangled representations is fundamentally impossible without inductive biases on both the models and the data"
@@ -507,15 +546,15 @@ summary:
 - future research therefore: research on inductive bias, why do we need disentanglement, more reproducible experiments, test on datasets of varying complexity
 
 
-## On the Relationship Between Explanation and Prediction: A Causal View (Karimi2023)
+### On the Relationship Between Explanation and Prediction: A Causal View (Karimi2023)
 - **also causal method**
 - look at treatment effect of prediction on explanation when blocking paths to hyperparameters
 - effect is small (probably because hyperparameters and input data make all the difference)
 
-_________________________________________________________________________________________________________________
-3. Concept Methods and CRP
+___________________________________________________________________
+##  3. Concept Methods and CRP
 
-## Network Dissection: Quantifying Interpretability of Deep Visual Representations (Bau2017)
+### Network Dissection: Quantifying Interpretability of Deep Visual Representations (Bau2017)
 - qunatify interpretability of CNNs by evaluating alignment between inidividual hidden units and a set of semantic concepts
 - "A disentangled representation aligns its variables with a meaningful factorization of the underlying problem structure"
 - questions:
@@ -540,7 +579,7 @@ ________________________________________________________________________________
 - batch normalization decreases interpretability significantly, drop out reduces object detectors in favor of textures
 - benchmark deep features of trained models on a new task by taking representation at last layer and train linear svm
 
-## Understanding the Role of Individual Units in a Deep Neural Network (Bau2020)
+### Understanding the Role of Individual Units in a Deep Neural Network (Bau2020)
 - **Network Dissection**
 - we wish to understand if it is a spurious correlation, or if the unit has a causal role that reveals how the network models its higher-level notions about trees
 - not _where_ network looks (saliency maps) but _what_ it is looking for and _why_
@@ -548,7 +587,7 @@ ________________________________________________________________________________
 - test the _causal_ structure of network behavior by activating and deactivating the units during processing
 - remove e.g. 20 most important units
 
-## Disentangled Explanations of Neural Network Predictions by Finding Relevant Subspaces (Chormai2022)
+### Disentangled Explanations of Neural Network Predictions by Finding Relevant Subspaces (Chormai2022)
 - this is the paper with PCA?
 - disentangle explanations by finding relevant subspaces in activation space that can be mapped to more abstract human-understandable concepts and enable a joint attribution on concepts and input features
 - extend PCA to PRCA (principal relevant component analysis) and disentangled relevant subspace analysis (DRSA)
@@ -566,21 +605,21 @@ ________________________________________________________________________________
 - therefore PRCA ignores high variance directions if model responds invariant or negatively to these variations
 - DRSA: relevant and _disentangled_ e.g low spatial overlap
 
-## Sparse Subspace Clustering for Concept Discovery (SSCCD) (Vielhaben2022)
+### Sparse Subspace Clustering for Concept Discovery (SSCCD) (Vielhaben2022)
 - motivation: reveal coherent, discriminative structures exploited by model, rather than accordance with human-identified concepts
 - concepts not one- but low-dimensional subspaces
 - approach does not require reinforcing "interpretability" e.g. enforcing dissimilarity of concepts
 - concept interpretability method: a. concept discovery, b. mapping feature - input space c. relevance quantification
 - for b. translate feature level concept maps to the input level by simple bilinear interpolation
 
-## Revealing Hidden Context Bias in Segmentation and Object Detection Through Concept-Specific Explanations (Dreyer2023)
+### Revealing Hidden Context Bias in Segmentation and Object Detection Through Concept-Specific Explanations (Dreyer2023)
 - **application of CRP for segmentation and object detection**
 - for segmentation: "heatmap" just resembles segmentation itself (just tresholded)
 - glocal/ CRP: _where_ the model pays attention to and _what_ it sees
 - "Especially in the multi-object context, it is crucial to attain object-class-specific explanations, which is not possible by the analysis of latent activations: Concepts with the highest activation values can refer to any class that is present in the image, such as the horse’s rider, or none at all, since activations do not indicate whether a feature is actually used for inference."
 - basically same content as main paper, showing how to use concept relevance maximization to visualize features and find biases/context dependency -> "context bias"
 
-## XAI-TRIS: Non-linear benchmarks to quantify ML explanation performance (Benedict Clark, Rick Wilming, Stefan Haufe) (Clark2023)
+### XAI-TRIS: Non-linear benchmarks to quantify ML explanation performance (Benedict Clark, Rick Wilming, Stefan Haufe) (Clark2023)
 - suppressor variables in non-linear benchmarks
 - suppressor variable e.g.: background lighting helps with normalizing objects colors
 - 1 linear, 3 non-linear binary image classification problems
@@ -594,7 +633,7 @@ ________________________________________________________________________________
   - using euclidean distance between pixels
   - normalize EMD score
 
-## Do Users Benefit From Interpretable Vision? A User Study, Baseline, And Dataset (Sixt2022a)
+### Do Users Benefit From Interpretable Vision? A User Study, Baseline, And Dataset (Sixt2022a)
 - compare "baseline" (just predictions ordered by confidence) with some other XAI methods
 - other methods:
   - "Invertible Neural Networks": moving along weight vector changes prediction
@@ -604,7 +643,7 @@ ________________________________________________________________________________
 - might be good measure for ground-truth feature importance: "PREDICTION FLIP" measure difference in prediction with feature on/off
 - calculated a linear fit for each parameter change to the logit change. We reported the coefficient of determination R2 , which indicates how much of the variance in the prediction can be explained linearly by the analyzed property
 
-## From attribution maps to human-understandable explanations through Concept Relevance Propagation (Achtibat2023)
+### From attribution maps to human-understandable explanations through Concept Relevance Propagation (Achtibat2023)
 - for pixel map might be clear where important information can be found, but not what characteristics of the raw input features the model has extracted and used during inference, _or whether this information is a singular characteristic or an overlapping plurality thereof_
 - they do user study with RelMax, against other attribution map-based
 - determining the flow of relevance via controlled masking operations in the backwards process -> what are controlled masking operations?
@@ -616,7 +655,7 @@ ________________________________________________________________________________
 - for my experiment: would be cool/important to know whether CRP identifies if artifact is relevant vs not
 - method for comparing filters: averaged cosine similarity on reference samples
 
-## When are Post-hoc Conceptual Explanations Identifiable? (Leeman2023)
+### When are Post-hoc Conceptual Explanations Identifiable? (Leeman2023)
 - concept discovery should be identifiable, meaning that a number of known concepts can be provably recovered to guarantee reliability of the explanations
 - use automatic/ unsupervised concept discovery
 - unsupervised concept spaces can be highly distorted
@@ -637,7 +676,7 @@ ________________________________________________________________________________
 - searching for an M Jf with orthogonal (instead of disjoint) rows permits post-hoc discovery of concepts. We refer to is property of M Jf as the _IMA criterion_.
 - "identifiable" necessary for our work
 
-## Multi-dimensional concept discovery (MCD): A unifying framework with completeness guarantees (Vielhaben2023)
+### Multi-dimensional concept discovery (MCD): A unifying framework with completeness guarantees (Vielhaben2023)
 - *completeness axiom:* attributions sum up to the model prediction
 - Concepts as multi-dimensional subspaces: space spanned by hidden neurons is decomposed in the most general way:
 - not just allow rotation and non-orthogonality but also multi-dimensionality
