@@ -136,7 +136,7 @@ def train_network(
         if avg_loss < best_loss:
             best_epoch = model_path
             best_loss = avg_loss
-        if avg_loss > 0.7 and epoch < 2:
+        if avg_loss > 0.69 and epoch < 2:
             print("resetting parameters")
             for block in model.children():
                 for layer in block.children():

@@ -283,7 +283,11 @@ class CRPAttribution:
     def get_reference_scores(self, img, label, layer, neurons):
         conditions = [{"y": [label]}]
         attr = self.attribution(
-            img, [{}], self.composite, record_layer=self.layer_names, start_layer="linear_layers.2"
+            img,
+            [{}],
+            self.composite,
+            record_layer=self.layer_names,
+            start_layer="linear_layers.2",
         )
         rel_c = self.cc.attribute(attr.relevances[layer], abs_norm=True)  #  activations
         return [rel_c[0][i] for i in neurons]
@@ -299,6 +303,26 @@ class CRPAttribution:
             init_rel=lambda act: act.clamp(min=0),
         )
         return attr.relevances[layer_name]
+
+    def attribute_all_layers(self, imgs):
+        imgs.requires_grad = True
+        rel = torch.empty((imgs.shape[0], 30))
+        start = 0
+        attr = self.attribution(
+            imgs,
+            [{}],
+            self.composite,
+            record_layer=self.layer_names,
+            start_layer="linear_layers.2",
+            # init_rel=lambda act: act.clamp(min=0),
+        )
+        for l in self.layer_names:
+            if l != "linear_layers.2":
+                attrrel = self.cc.attribute(attr.relevances[l])
+                end = start + attrrel.shape[1]
+                rel[:, start:end] = attrrel.clamp(min=0)
+                start = end
+        return rel
 
     def make_relevance_graph(self, index):
         names = {
@@ -442,8 +466,8 @@ class CRPAttribution:
             antirelevances.append(torch.sum(antimasked, dim=(1, 2)))
 
         relevances = torch.cat(relevances)  # for NMF: .clamp(min=0)
-        antirelevances = torch.cat(antirelevances) 
-        relevances = torch.cat([relevances, antirelevances]) 
+        antirelevances = torch.cat(antirelevances)
+        relevances = torch.cat([relevances, antirelevances])
         relevances = abs_norm(relevances)
 
         return dict(
@@ -553,7 +577,7 @@ class CRPAttribution:
         img, label = self.dataset[index]
         sample = img.view(1, 1, 64, 64)
         sample.requires_grad = True
-        self.model(sample)
+        #self.model(sample)
         cav_s = torch.zeros(1, 8, 7, 7)
         for i in range(cav.shape[0]):
             cav_s[0, i] = cav[i]

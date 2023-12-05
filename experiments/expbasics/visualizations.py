@@ -391,7 +391,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5):
     colind = [0, 3, 5, 2, 7, 1]
     for f in [1, 0, 2, 3, 4, 5]:
         lat_data = [
-            np.max([datas[a][i][f"pred_{m_type}"][f] for a in range(4)])
+            np.mean([datas[a][i][f"pred_{m_type}"][f] for a in range(4)])
             * 100  #  / 0.04  #
             for i in range(len(datas[0]))
         ]

@@ -36,6 +36,7 @@ def visualize_dr(
     # res = pca.fit_transform(nmf_res)
     res = methods[method].fit_transform(vector.numpy())
     # res = res = iso.fit_transform(res)
+    res = res / np.max(np.abs(res))
     ALPHA = 0.4
     plt.clf()
 

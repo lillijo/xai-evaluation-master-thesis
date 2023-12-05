@@ -158,6 +158,51 @@ def sample_relevance_cavs(
         f"outputs/cavs/{layer_name}_{model_name}_idx_rel.pt",
     )
 
+def sample_all_relevances_cavs(
+    model: ShapeConvolutionalNeuralNetwork,
+    dataset,
+    layer_name,
+    spatial_step_size,
+    batch_step_size,
+    batch_size,
+    crp_attribution: CRPAttribution,
+    model_name,
+):
+    """
+    Iterate through the dataset as dataloader and compute the cavs along the channel dimension for a specific layer.
+    Save all cavs in a list on the disk.
+    """
+
+    model.eval()
+
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=8)  # type: ignore
+
+    cavs, cavs_to_data_idx = [], []
+    pbar = tqdm(
+        total=len(dataloader), desc="Computing CAVs", unit="batch", dynamic_ncols=True
+    )
+
+    for i, (img, target) in enumerate(dataloader):
+        if i % batch_step_size == 0:
+            img = img.to(device)
+            rel = crp_attribution.attribute_all_layers(img)
+            data_indices = torch.arange(i * batch_size, (i + 1) * batch_size)
+            #c, idx = _compute_cavs(rel, spatial_step_size, data_indices)  # type: ignore
+            cavs.append(rel)
+            cavs_to_data_idx.append(data_indices)
+
+        pbar.update(1)
+    pbar.close()
+
+    os.makedirs("outputs/cavs", exist_ok=True)
+    torch.save(
+        torch.cat(cavs),
+        f"outputs/cavs/{layer_name}_{model_name}_cav_all.pt",
+    )
+    torch.save(
+        torch.cat(cavs_to_data_idx),
+        f"outputs/cavs/{layer_name}_{model_name}_idx_all.pt",
+    )
 
 def sample_bbox_cavs(
     model: ShapeConvolutionalNeuralNetwork,
