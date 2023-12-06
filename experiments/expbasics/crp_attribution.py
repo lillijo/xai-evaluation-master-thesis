@@ -103,7 +103,7 @@ class CRPAttribution:
                 "relevance",
                 (0, no_ref_samples),
                 composite=self.composite,
-                # rf=True,
+                rf=True,
                 # plot_fn=vis_simple,
             )
             all_refs[f"{i}:{targets}"] = ref_c[f"{i}:{targets}"]
@@ -436,7 +436,7 @@ class CRPAttribution:
         mask = torch.zeros(64, 64)
         mask[
             max(0, 57 + offset[0]) : max(0, 57 + offset[0]) + 6,
-            3 + max(offset[1], 0) : 3 + max(offset[1], 0) + 13,
+            max(offset[1], 0) : 3 + max(offset[1], 0) + 13,
         ] = 1
         antimask = (mask + 1) % 2
         sample = img.view(1, 1, 64, 64)
@@ -444,31 +444,30 @@ class CRPAttribution:
 
         output = self.model(sample)
         pred = int(output.data.max(1)[1][0])
-        conditions = [
-            {"y": [pred], l: [i]}
-            for l in self.layer_id_map.keys()
-            for i in self.layer_id_map[l]
-        ]
         relevances = []
-        antirelevances = []
-        for attr in self.attribution.generate(
-            sample,
-            conditions,
-            self.composite,
-            record_layer=self.layer_names,
-            exclude_parallel=False,
-            batch_size=len(conditions),
-            verbose=False,
-        ):
-            masked = attr.heatmap * mask
-            antimasked = attr.heatmap * antimask
-            relevances.append(torch.sum(masked, dim=(1, 2)))
-            antirelevances.append(torch.sum(antimasked, dim=(1, 2)))
-
+        for l in self.layer_id_map.keys():
+            conditions = [
+                {l: [i]}
+                for i in self.layer_id_map[l]
+            ]
+            layer_rels = []
+            for attr in self.attribution.generate(
+                sample,
+                conditions,
+                self.composite,
+                record_layer=self.layer_names,
+                #exclude_parallel=False,
+                #batch_size=len(conditions),
+                start_layer=l,
+                verbose=False,
+            ):
+                masked = attr.heatmap * mask
+                antimasked = attr.heatmap * antimask
+                layer_rels.append(torch.sum(masked, dim=(1, 2)))
+                layer_rels.append(torch.sum(antimasked, dim=(1, 2)))
+            layer_rels = abs_norm(torch.cat(layer_rels))
+            relevances.append(layer_rels)
         relevances = torch.cat(relevances)  # for NMF: .clamp(min=0)
-        antirelevances = torch.cat(antirelevances)
-        relevances = torch.cat([relevances, antirelevances])
-        relevances = abs_norm(relevances)
 
         return dict(
             relevances=relevances,

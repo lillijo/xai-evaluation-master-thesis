@@ -18,7 +18,6 @@ def get_dr_methods():
     methods = [tsne, iso, pca, nmf, mds, lle]
     return methods, m_names
 
-
 def visualize_dr(
     methods,
     names,
@@ -31,6 +30,7 @@ def visualize_dr(
     num_it,
     method=2,
     layer_name="linear_layers.0",
+    use_clusters=False
 ):
     # nmf_res = methods[METHOD].fit_transform(vector.numpy())
     # res = pca.fit_transform(nmf_res)
@@ -39,22 +39,29 @@ def visualize_dr(
     res = res / np.max(np.abs(res))
     ALPHA = 0.4
     plt.clf()
+    is_act = {False: "Relevances", True: "Activations"}
 
     centroids = np.empty((8, 2))
     full_centroids = np.empty((8, vector.shape[1]))
     counts = np.zeros((8), dtype=int)
-
     colors = matplotlib.cm.gist_ncar(np.linspace(0, 1, 9))  # type: ignore # gist_ncar
+    klabels = watermarks
+    if use_clusters:
+        init_centers = [np.logical_and(watermarks == w, labels== l) for w in [0,1] for l in [0,1]]
+        init_centers = vector[[np.nonzero(init_centers[i])[0][0] for i in range(4)]]
+        kmeans = KMeans(n_clusters=4, init=init_centers).fit(vector)
+        klabels = kmeans.labels_
 
     def ft(lab, wm, pred):
         d = np.logical_and(watermarks == wm, labels == lab)
         d = np.logical_and(d, predictions == pred)
+        coloring = colors[klabels[d] * 2] if use_clusters else colors[lab + 2 * wm + 4 * pred]
         if res[d, 0].shape[0] > 0:
             plt.scatter(
                 res[d, 0],
                 res[d, 1],
                 s=3,
-                color=colors[lab + 2 * wm + 4 * pred],
+                c=coloring,
                 alpha=ALPHA,
             )
             centroids[lab + 2 * wm + 4 * pred] = np.mean(res[d], axis=0)
@@ -75,18 +82,22 @@ def visualize_dr(
         for wm in [0, 1]:
             for pred in [0, 1]:
                 if counts[lab + 2 * wm + 4 * pred] > 0:
+                    col = colors[lab + 2 * wm + 4 * pred]
+                    if use_clusters:
+                        col = kmeans.predict([full_centroids[lab + 2 * wm + 4 * pred]])
+                        col = colors[col[0] * 2]
                     plt.scatter(
                         centroids[lab + 2 * wm + 4 * pred, 0],
                         centroids[lab + 2 * wm + 4 * pred, 1],
-                        color=colors[lab + 2 * wm + 4 * pred],
+                        color=col,
                         marker="s",  # type: ignore
                         s=70,
                         label=f"lab {lab}, pred {pred}, wm {wm == 1} {counts[lab + 2*wm + 4* pred]}",
                         alpha=0.8,
                     )
 
-    plt.legend(bbox_to_anchor=(0.3, 0.5))
-    plt.title(f"Bias: {bias}, Activations: {activations}, Method: {names[method]}")
+    plt.legend(bbox_to_anchor=(1.0, 0.5))
+    plt.title(f"{is_act[activations]} '{layer_name}' Bias: {bias}, Iteration: {num_it}, Method: {names[method]}")
     file_name = (
         f"{names[method]}_{layer_name}_{str(bias).replace('0.', 'b0i')}_{num_it}"
     )
@@ -130,6 +141,7 @@ def centroid_distances(
         plt.scatter(
             biases, [a[i] for a in concept_means_combis.values()], label=names[i]
         )
-    plt.title("Average Distance of Concept Means")
+    plt.title("Distance of Concept Centroids (with watermark vs. without)")
     plt.legend()
     return concept_means_combis
+

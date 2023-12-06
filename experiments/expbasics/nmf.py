@@ -11,13 +11,17 @@ from expbasics.crp_attribution import CRPAttribution
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-MAX_INDEX = 491520
-STEP_SIZE = 1111
+MAX_INDEX = 3000
+STEP_SIZE = 6
 
 
 def load_cavs(layer_name, model_name, method="bb"):
-    cavs = torch.load("outputs/cavs/{}_{}_cav_{}.pt".format(layer_name, model_name, method))
-    idx = torch.load("outputs/cavs/{}_{}_idx_{}.pt".format(layer_name, model_name, method))
+    cavs = torch.load(
+        "outputs/cavs/{}_{}_cav_{}.pt".format(layer_name, model_name, method)
+    )
+    idx = torch.load(
+        "outputs/cavs/{}_{}_idx_{}.pt".format(layer_name, model_name, method)
+    )
     infos = {}
     if method == "bb":
         with open(f"outputs/cavs/{layer_name}_{model_name}_info_bb.pickle", "rb") as f:
@@ -158,6 +162,7 @@ def sample_relevance_cavs(
         f"outputs/cavs/{layer_name}_{model_name}_idx_rel.pt",
     )
 
+
 def sample_all_relevances_cavs(
     model: ShapeConvolutionalNeuralNetwork,
     dataset,
@@ -187,7 +192,7 @@ def sample_all_relevances_cavs(
             img = img.to(device)
             rel = crp_attribution.attribute_all_layers(img)
             data_indices = torch.arange(i * batch_size, (i + 1) * batch_size)
-            #c, idx = _compute_cavs(rel, spatial_step_size, data_indices)  # type: ignore
+            # c, idx = _compute_cavs(rel, spatial_step_size, data_indices)  # type: ignore
             cavs.append(rel)
             cavs_to_data_idx.append(data_indices)
 
@@ -204,11 +209,13 @@ def sample_all_relevances_cavs(
         f"outputs/cavs/{layer_name}_{model_name}_idx_all.pt",
     )
 
+
 def sample_bbox_cavs(
     model: ShapeConvolutionalNeuralNetwork,
     layer_name,
     crp_attribution: CRPAttribution,
     model_name,
+    disable,
 ):
     """
     Iterate through the dataset as dataloader and compute the cavs along the channel dimension for a specific layer.
@@ -227,6 +234,7 @@ def sample_bbox_cavs(
         desc="Computing CAVs",
         unit="img",
         dynamic_ncols=True,
+        disable=disable,
     )
     for i, index in enumerate(cavs_to_data_idx):
         results = crp_attribution.watermark_importance(index)

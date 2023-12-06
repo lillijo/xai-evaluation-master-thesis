@@ -24,7 +24,7 @@ class TestDataset(Dataset):
     ):
         self.length = length
         self.img_dir = "testdata"
-        if not os.path.isdir('testdata'):
+        if not os.path.isdir("testdata"):
             os.makedirs(self.img_dir, exist_ok=True)
             unbiased_ds = BiasedNoisyDataset(0.0, 0.5, img_path=img_path)
             indices = np.round(np.linspace(0, MAX_INDEX, self.length)).astype(int)
@@ -32,7 +32,14 @@ class TestDataset(Dataset):
             for count, i in enumerate(indices):
                 img, target = unbiased_ds[i]
                 latents, has_watermark, offset = unbiased_ds.get_item_info(i)
-                labels.append(dict(target=target, latents=latents, has_watermark=has_watermark, offset=offset))
+                labels.append(
+                    dict(
+                        target=target,
+                        latents=latents,
+                        has_watermark=has_watermark,
+                        offset=offset,
+                    )
+                )
                 with open(f"{self.img_dir}/{count}.npy", "wb") as f:
                     np.save(f, img.numpy())
             with open(f"{self.img_dir}/labels.pickle", "wb") as f:
@@ -59,3 +66,8 @@ class TestDataset(Dataset):
         offset = self.labels[index]["offset"]
         return (latents, has_watermark, offset)
 
+
+def get_test_dataset(batch_size=128):
+    ds = TestDataset(length=3000)
+    test_loader = DataLoader(ds, batch_size=batch_size, shuffle=True)
+    return ds, test_loader

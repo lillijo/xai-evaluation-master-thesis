@@ -1,34 +1,17 @@
-from matplotlib import pyplot as plt
-import matplotlib as mpl
 import numpy as np
 import torch
-import math
-import networkx as nx
-from tqdm import tqdm
-from PIL import Image
-from crp.image import imgify, vis_opaque_img, plot_grid
-from tigramite import plotting as tp
-import os
 
-from torchvision.models.feature_extraction import create_feature_extractor
-
-from .network import train_network as train_network, accuracy_per_class
-from .biased_noisy_dataset import (
-    get_test_dataset,
-    get_biased_loader,
-    BiasedNoisyDataset,
-)
-from .crp_hierarchies import sample_from_categories
-from .network import train_network, accuracy_per_class
-from .ground_truth_measures import GroundTruthMeasures
-from .crp_attribution import CRPAttribution, vis_simple
-
-
-# from zennit.canonizers import SequentialMergeBatchNorm
 from zennit.composites import EpsilonPlusFlat
 from crp.concepts import ChannelConcept
 from crp.helper import get_layer_names
 from crp.attribution import CondAttribution
+
+from .crp_attribution import CRPAttribution
+from .network import train_network as train_network
+from .biased_noisy_dataset import get_biased_loader
+from .test_dataset import get_test_dataset
+from .network import train_network
+from .ground_truth_measures import GroundTruthMeasures
 
 
 def to_name(b, i):
@@ -57,8 +40,7 @@ def get_model_etc(bias, num_it=0):
         epochs=3,
         num_it=num_it,
     )
-
-    unb_short, unbiased_ds, test_loader = get_test_dataset(split=0.1)
+    unbiased_ds, test_loader = get_test_dataset()
     gm = GroundTruthMeasures()
     crp_attribution = CRPAttribution(
         model, unbiased_ds, "noise_pos", to_name(bias, num_it)

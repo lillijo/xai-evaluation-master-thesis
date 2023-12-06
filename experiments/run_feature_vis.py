@@ -2,15 +2,12 @@ import numpy as np
 import json
 import torch
 from tqdm import tqdm
-from expbasics.network import train_network, accuracy_per_class
-from torch.utils.data import DataLoader, random_split
+from expbasics.network import train_network
+from torch.utils.data import DataLoader
 from crp.visualization import FeatureVisualization
 from zennit.composites import EpsilonPlusFlat
 from crp.concepts import ChannelConcept
 from crp.attribution import CondAttribution
-
-# from crp_attribution import CRPAttribution
-import argparse
 
 from expbasics.test_dataset import TestDataset
 
@@ -28,7 +25,7 @@ BATCH_SIZE = 128
 NAME = "../clustermodels/noise_pos"  # models/noise_pos
 FV_NAME = "noise_pos"
 IMAGE_PATH = "../dsprites-dataset/images/"  # "images/"
-LAYER_NAME = "convolutional_layers.6"
+LAYER_NAME = "linear_layers.0"#"convolutional_layers.6"
 BIASES = list(np.round(np.linspace(0.0, 0.4, 5), 3)) + list(
     np.round(np.linspace(0.5, 1, 51), 3)
 )
@@ -79,7 +76,7 @@ def compute_all():
         for num_it in ITERATIONS:
             name, path = compute_with_param(bias, num_it)
             paths[name] = path
-        with open("outputs/fv_paths.json", "w") as f:
+        with open("outputs/fv_paths1.json", "w") as f:
             json.dump(paths,f,indent=1)
 
 
