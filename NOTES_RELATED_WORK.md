@@ -363,6 +363,11 @@ ____________________________________________________________________
 - other phi: take frobenius norm of matrix
 - sanity check: using SCM as prediction model (using frobenius norm transformation)
 - **_might be good as a reference point to start from_**
+
+### On the Relationship Between Explanation and Prediction: A Causal View (Karimi2023)
+- **also causal method**
+- look at treatment effect of prediction on explanation when blocking paths to hyperparameters
+- effect is small (probably because hyperparameters and input data make all the difference)
 ___________________________________________________________________
 
 ## 3. Evaluation of Explanation Methods
