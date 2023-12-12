@@ -10,7 +10,7 @@ EPOCHS = 3
 BATCH_SIZE = 128
 NAME = "../clustermodels/noise_pos"  # "models/bigm"
 IMAGE_PATH = "../dsprites-dataset/images/"  # "images/"
-LAYER_NAME = "convolutional_layers.6"
+LAYER_NAME = "linear_layers.0"  #"convolutional_layers.6"
 
 
 def logit_change_evaluate(item):
@@ -62,7 +62,7 @@ def compute_with_param():
         result = logit_change_evaluate(item)
         accuracies[name] = result
 
-        with open("outputs/conv_ground_truth.json", "w") as f:
+        with open("outputs/lin_ground_truth.json", "w") as f:
             json.dump(accuracies, f, indent=2)
 
 

@@ -7,10 +7,9 @@ from crp.helper import get_layer_names
 from crp.attribution import CondAttribution
 
 from .crp_attribution import CRPAttribution
-from .network import train_network as train_network
 from .biased_noisy_dataset import get_biased_loader
 from .test_dataset import get_test_dataset
-from .network import train_network
+from .network import load_model
 from .ground_truth_measures import GroundTruthMeasures
 
 
@@ -22,24 +21,8 @@ def to_name(b, i):
 
 
 def get_model_etc(bias, num_it=0):
-    STRENGTH = 0.5
-    BATCH_SIZE = 128
-    LR = 0.001
     NAME = "../clustermodels/noise_pos"
-
-    train_loader = get_biased_loader(bias, 0.5, batch_size=BATCH_SIZE, verbose=False)
-    model = train_network(
-        train_loader,
-        bias,
-        STRENGTH,
-        NAME,
-        BATCH_SIZE,
-        load=True,
-        retrain=False,
-        learning_rate=LR,
-        epochs=3,
-        num_it=num_it,
-    )
+    model = load_model(NAME, bias, num_it)
     unbiased_ds, test_loader = get_test_dataset()
     gm = GroundTruthMeasures()
     crp_attribution = CRPAttribution(

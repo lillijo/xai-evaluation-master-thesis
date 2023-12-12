@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 from crp.image import vis_opaque_img, plot_grid
 
-# from zennit.canonizers import SequentialMergeBatchNorm
+from zennit.canonizers import SequentialMergeBatchNorm
 from zennit.composites import EpsilonPlusFlat
 from crp.concepts import ChannelConcept
 from crp.helper import get_layer_names, get_output_shapes, abs_norm
@@ -40,7 +40,7 @@ class CRPAttribution:
         # Feature Visualization:
         # device = "cuda:0" if torch.cuda.is_available() else "cpu"
         # canonizers = [SequentialMergeBatchNorm()]
-        self.composite = EpsilonPlusFlat()
+        self.composite = EpsilonPlusFlat([SequentialMergeBatchNorm()])
         self.dataset: BiasedNoisyDataset = dataset
         self.model = model
 
@@ -133,7 +133,7 @@ class CRPAttribution:
             relevances += rel_c.tolist()
         return relevances
 
-    def relevance_for_image(self, label, image, relevances):
+    def relevance_for_image(self, label, image, relevances, pred):
         image.requires_grad = True
         lenl = len(self.layer_id_map.keys())
         images = torch.zeros((lenl, 8, 64, 64))
@@ -150,7 +150,7 @@ class CRPAttribution:
             for h in range(attr.heatmap.shape[0]):
                 images[li, h] = attr.heatmap[h]
         fig, axs = plt.subplots(
-            lenl, 8, figsize=(10, 8), gridspec_kw={"wspace": 0.1, "hspace": 0}
+            lenl, 8, figsize=(10, 8), gridspec_kw={"wspace": 0.1, "hspace": 0.2}
         )
         fig.suptitle("Conditional Heatmap per concept in layer")
         fig.set_facecolor("#2BC4D9")
@@ -161,10 +161,10 @@ class CRPAttribution:
                 axs[il, n].yaxis.set_visible(False)
                 if n < len(self.layer_id_map[l]):
                     axs[il, n].set_title(
-                        f"n:{n} {str(relevances[il][n])}%", fontsize=10
+                        f"n:{n} {str(round(relevances[il][n],1))}%", fontsize=10
                     )  # ,
-                    maxv = max(float(images[il, n].max()), 0.001)
-                    minv = min(float(images[il, n].min()), -0.001)
+                    maxv = max(float(images[il, n].max()), 0.0001)
+                    minv = min(float(images[il, n].min()), -0.0001)
                     center = 0.0
                     divnorm = mpl.colors.TwoSlopeNorm(
                         vmin=minv, vcenter=center, vmax=maxv
@@ -178,7 +178,7 @@ class CRPAttribution:
         image.requires_grad = False
         axs[lenl - 1, 5].axis("on")
         lab = ["rectangle", "ellipse"]
-        axs[lenl - 1, 5].set_title(f"original, predicted: {lab[label]} ({label})")
+        axs[lenl - 1, 5].set_title(f"original {label}, predicted: {lab[pred]} ({pred})")
         axs[lenl - 1, 5].imshow(image[0, 0], cmap="bwr")
         return fig
 
@@ -197,37 +197,36 @@ class CRPAttribution:
         res = pred[0][0].tolist()
         conditions = [{"y": [res]}]
         attr = self.attribution(
-            sample, conditions, self.composite, record_layer=self.layer_names
+            sample, conditions, self.composite, record_layer=self.layer_names#, init_rel=lambda x: x.clamp(min=0)
         )
         relevances = []
         for cond_layer in self.layer_id_map.keys():
-            rel_c = self.cc.attribute(attr.relevances[cond_layer], abs_norm=True)
+            """ conditions = [{cond_layer: self.layer_id_map[cond_layer]}]
+            attr = self.attribution(
+                sample, conditions, self.composite, record_layer=self.layer_names, init_rel=lambda x: x
+            ) """
+            rel_c = self.cc.attribute(attr.relevances[cond_layer])  # , abs_norm=True)
             act_c = self.cc.attribute(attr.activations[cond_layer], abs_norm=True)
+            #print(attr.relevances[cond_layer].shape, torch.where(attr.relevances[cond_layer] != 0))
             # concepts ordered by relevance and their contribution to final classification in percent
-            rel_values, concept_ids = torch.topk(
-                rel_c[0], len(self.layer_id_map[cond_layer])
-            )
             relevances += [
                 [
-                    round(float(rel_c[0][i] * 100), 1)
+                    float(rel_c[0][i] * 100)
                     for i in range(len(self.layer_id_map[cond_layer]))
                 ]
             ]
             perc = [
-                str(int(concept_ids[i]))
+                str(i)
                 + ": "
-                + str(round(float(rel_values[i]) * 100, 2))
-                + "%"
-                + " act:"
-                + str(round(float(act_c[0][int(concept_ids[i])]), 2))
+                + str(round(float(act_c[0][i]), 2))
                 for i in range(len(self.layer_id_map[cond_layer]))
             ]
-            result_string += f'\n \n {cond_layer}: \n {", ".join(perc)} '
+            result_string += f'\n {cond_layer}: \n {", ".join(perc)} '
         if verbose:
             print(
-                f"output: {output.data}, \n latents: {latents}, \n watermark: {watermark}, \n prediction:{res}  {result_string}"
+                f"output: {output.data}, \n latents: {latents}, watermark: {watermark}, prediction:{res} {result_string}"
             )
-            self.relevance_for_image(res, sample, relevances)
+            self.relevance_for_image(label, sample, relevances, res)
         return relevances
 
     def relevances(self, index=None, activations=False):
@@ -426,7 +425,7 @@ class CRPAttribution:
                     edges[source][target] = (
                         edges[source][target] / in_counts[source[:-2]]
                     )
-
+        print(edges)
         node_labels = list(used_nodes)
         return node_labels, edges, images
 
@@ -446,18 +445,15 @@ class CRPAttribution:
         pred = int(output.data.max(1)[1][0])
         relevances = []
         for l in self.layer_id_map.keys():
-            conditions = [
-                {l: [i]}
-                for i in self.layer_id_map[l]
-            ]
+            conditions = [{l: [i]} for i in self.layer_id_map[l]]
             layer_rels = []
             for attr in self.attribution.generate(
                 sample,
                 conditions,
                 self.composite,
                 record_layer=self.layer_names,
-                #exclude_parallel=False,
-                #batch_size=len(conditions),
+                # exclude_parallel=False,
+                # batch_size=len(conditions),
                 start_layer=l,
                 verbose=False,
             ):
@@ -576,7 +572,7 @@ class CRPAttribution:
         img, label = self.dataset[index]
         sample = img.view(1, 1, 64, 64)
         sample.requires_grad = True
-        #self.model(sample)
+        # self.model(sample)
         cav_s = torch.zeros(1, 8, 7, 7)
         for i in range(cav.shape[0]):
             cav_s[0, i] = cav[i]

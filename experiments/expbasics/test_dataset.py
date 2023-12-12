@@ -25,6 +25,7 @@ class TestDataset(Dataset):
         self.length = length
         self.img_dir = "testdata"
         if not os.path.isdir("testdata"):
+            print("making new test dataset")
             os.makedirs(self.img_dir, exist_ok=True)
             unbiased_ds = BiasedNoisyDataset(0.0, 0.5, img_path=img_path)
             indices = np.round(np.linspace(0, MAX_INDEX, self.length)).astype(int)
