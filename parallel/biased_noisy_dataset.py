@@ -1,15 +1,17 @@
 import numpy as np
 import torch
 import os
+import copy
 from torch.utils.data import Dataset, DataLoader, random_split
 import pickle
 from collections import Counter
 from typing import Tuple
 from matplotlib import pyplot as plt
+#from expbasics.visualizations import plot_fancy_distribution
 
 TRAINING_DATASET_LENGTH = 437280
 TEST_DATASET_LENGTH = 300000
-SEED = 41
+SEED = 431
 IMG_PATH_DEFAULT = "../dsprites-dataset/images/"
 
 
@@ -26,7 +28,7 @@ class BiasedNoisyDataset(Dataset):
         self.strength = strength
         self.verbose = verbose
         self.img_dir = img_path
-        self.rng = np.random.default_rng()  # seed=SEED
+        self.rng = np.random.default_rng(seed=SEED)  # seed=SEED
         self.water_image = np.load("watermark.npy")
         self.fixed_length = length
         with open("labels.pickle", "rb") as f:
@@ -46,6 +48,7 @@ class BiasedNoisyDataset(Dataset):
                     ),
                 )
             )
+            self.latents_names = [i.decode("ascii") for i in metadata["latents_names"]]
         # self.watermark_process() # simple bias process -> no SCM
         self.causal_process()  # using actual SCM
 
@@ -85,48 +88,63 @@ class BiasedNoisyDataset(Dataset):
             (1 - rand) * np.random.randint(-4, 52, TOTAL)
         )
         self.watermarks = wms
+        self.seeds = np.random.choice(TOTAL, TOTAL, replace=False)
 
         if self.verbose:
             print("verbose")
-            #plot_fancy_distribution(self, s,w)
+            #plot_fancy_distribution(self, s, w)
 
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
         image = np.load(img_path, mmap_mode="r")
         image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
         if self.watermarks[index]:
-            offset_water_image = self.water_image + np.array([[0], [self.offset_y[index]], [self.offset_x[index]]])
+            offset_water_image = self.water_image + np.array(
+                [[0], [self.offset_y[index]], [self.offset_x[index]]]
+            )
             image[offset_water_image] = 1.0
-        image = image + self.rng.normal(0.0, 0.05, (64, 64))
-        min_val = image.min()
+        img_noiser = np.random.default_rng(seed=self.seeds[index])
+        image = image + img_noiser.normal(0.0, 0.05, (64, 64))
+        """ min_val = image.min()
         if min_val < 0:
             image -= min_val
-        image = image / (torch.max(image) + 1e-10)
+        image = image / (torch.max(image) + 1e-10) """
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         target = self.labels[index][1]
         return (image, target)
+
+    def latent_to_index(self, latents):
+        return np.dot(latents, self.latents_bases).astype(int)
+
+    def index_to_latent(self, index):
+        return copy.deepcopy(self.labels[index])
+
+    def load_image_wm(self, index, watermark):
+        img_path = os.path.join(self.img_dir, f"{index}.npy")
+        image = np.load(img_path, mmap_mode="r")
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
+        if watermark:
+            offset_water_image = self.water_image + np.array(
+                [[0], [self.offset_y[index]], [self.offset_x[index]]]
+            )
+            image[offset_water_image] = 1.0
+        img_noiser = np.random.default_rng(seed=self.seeds[index])
+        image = image + img_noiser.normal(0.0, 0.05, (64, 64))
+        """ min_val = image.min()
+        if min_val < 0:
+            image -= min_val
+        image = image / (torch.max(image) + 1e-10) """
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32))
+        if torch.cuda.is_available():
+            image = image.cuda()
+        image = image.view(1, 1, 64, 64)
+        image.requires_grad = True
+        return image
 
     def get_item_info(self, index):
         has_watermark = self.watermarks[index]
         offsets = [self.offset_y[index], self.offset_x[index]]
         return (self.labels[index][1:], has_watermark, offsets)
-
-
-def get_all_datasets(batch_size=128, img_path=IMG_PATH_DEFAULT):
-    BIAS_RANGES = [0.0, 0.5, 0.7, 0.9, 0.99, 1.0]  # np.linspace(0, 1, 5)
-    STRENGTH_RANGES = [0.0, 0.1, 0.3, 0.6, 0.9, 0.99, 1.0]
-    rand_gen = torch.Generator().manual_seed(SEED)
-    datasets = []
-    for b in BIAS_RANGES:
-        for s in STRENGTH_RANGES:
-            ds = BiasedNoisyDataset(
-                verbose=False, strength=s, bias=b, img_path=img_path
-            )
-            train_ds, test_ds = random_split(ds, [0.3, 0.7], generator=rand_gen)
-            train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
-            test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=True)
-            datasets.append([train_ds, train_loader, test_ds, test_loader])
-    return datasets
 
 
 def get_dataset(

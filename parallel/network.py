@@ -2,6 +2,7 @@ import numpy as np
 import torch.nn as nn
 import torch
 import os
+import warnings
 from torch.optim import SGD, Adam
 from tqdm import tqdm
 from torch.autograd import Variable
@@ -84,6 +85,25 @@ def train_one_epoch(
     return last_loss
 
 
+def load_model(name, bias, num_it=0):
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    model = ShapeConvolutionalNeuralNetwork()
+    model = model.to(device)
+    path = "{}_{}_{}.pickle".format(
+        name,
+        str(bias).replace("0.", "b0i").replace("1.", "b1i"),
+        str(num_it),
+    )
+    if os.path.exists(path):
+        model.load_state_dict(torch.load(path, map_location=torch.device(device)))
+        return model
+    warnings.warn(
+        "[model not found] model path not found, returning random initialized model"
+    )
+    model.eval()
+    return model
+
+
 def train_network(
     training_loader,
     bias,
@@ -136,7 +156,7 @@ def train_network(
         if avg_loss < best_loss:
             best_epoch = model_path
             best_loss = avg_loss
-        if avg_loss > 0.7 and epoch < 2:
+        if avg_loss > 0.69 and epoch < 2:
             print("resetting parameters")
             for block in model.children():
                 for layer in block.children():
