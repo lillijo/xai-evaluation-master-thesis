@@ -89,7 +89,8 @@ def compute_with_param(bias, num_it):
         print(f"(((({name}:{result}))))")
         accuracies[name] = result
     else:
-        print(f"(((({name}:{accuracies[name]}))))")
+        print("model exists")
+        #print(f"(((({name}:{accuracies[name]}))))")
 
 
 if __name__ == "__main__":

@@ -1,9 +1,7 @@
 import numpy as np
 import os
 
-BIASES =list(np.round(np.linspace(0.0, 0.4, 5), 3)) + list(
-    np.round(np.linspace(0.5, 1, 11), 3)
-) 
+BIASES = list(np.round(np.linspace(0.5, 1, 26), 3))
 ITERATIONS = range(6)  # range(4, 8)
 # np.round(np.linspace(0.8, 1, 21), 3) # 101
 
