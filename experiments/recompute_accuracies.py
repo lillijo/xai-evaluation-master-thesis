@@ -43,10 +43,10 @@ def recompute_accs(allwm, nowm, item):
     res["no_wm_accuracy"] = list(accuracy_per_class(model, nowm))
 
     gm = GroundTruthMeasures(img_path=IMAGE_PATH)
-    flipvalues = gm.ols_values(model, LAYER_NAME)
+    flipvalues = gm.intervened_attributions(model, LAYER_NAME)
     ols_vals = gm.ordinary_least_squares(flipvalues)
     mean_logit = gm.mean_logit_change(flipvalues)
-    flip_pred = gm.ols_prediction_values(model)
+    flip_pred = gm.intervened_predictions(model)
     ols_pred = gm.ordinary_least_squares_prediction(flip_pred)
     mean_logit_pred = gm.mean_logit_change_prediction(flip_pred)
     prediction_flip = gm.prediction_flip(flip_pred).tolist()

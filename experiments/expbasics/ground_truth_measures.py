@@ -13,55 +13,19 @@ from crp.helper import get_layer_names, abs_norm
 from crp.attribution import CondAttribution
 from crp.image import imgify
 
+from .biased_noisy_dataset import BiasedNoisyDataset
+
 MAX_INDEX = 491520
-STEP_SIZE = 7069
+STEP_SIZE = 13267 # 1033, 2011, 2777, 5381, 7069, 13267, 18181
 LATSIZE = [2, 2, 6, 40, 32, 32]
 
 
 class GroundTruthMeasures:
-    def __init__(self, binary=False, img_path="../dsprites-dataset/images/") -> None:
-        self.img_dir = img_path
-        self.water_image = np.load("watermark.npy")
-        self.binary = binary
-        with open("labels.pickle", "rb") as f:
-            labels = pickle.load(f)
-            self.labels = labels
-        with open("metadata.pickle", "rb") as mf:
-            metadata = pickle.load(mf)
-            self.metadata = metadata
-            self.latents_sizes = np.array(metadata["latents_sizes"])
-            self.latents_bases = np.concatenate(
-                (
-                    self.latents_sizes[::-1].cumprod()[::-1][1:],
-                    np.array(
-                        [
-                            1,
-                        ]
-                    ),
-                )
-            )
-            self.latents_names = [i.decode("ascii") for i in metadata["latents_names"]]
-
-    def latent_to_index(self, latents):
-        return np.dot(latents, self.latents_bases).astype(int)
-
-    def index_to_latent(self, index):
-        return copy.deepcopy(self.labels[index])
-
-    def load_image(self, index, watermark):
-        img_path = os.path.join(self.img_dir, f"{index}.npy")
-        image = np.load(img_path)
-        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
-        if watermark:
-            image[self.water_image] = 1.0
-        image = image.view(1, 1, 64, 64)
-        if torch.cuda.is_available():
-            image = image.cuda()
-        image.requires_grad = True
-        return image
+    def __init__(self, dataset: BiasedNoisyDataset) -> None:
+        self.dataset = dataset
 
     def get_output(self, index, model, wm):
-        image = self.load_image(index, wm)
+        image = self.dataset.load_image_wm(index, wm)
         output = model(image)
         res = output.data[0] / (torch.abs(output.data[0]).sum(-1) + 1e-10)
         return res
@@ -69,20 +33,20 @@ class GroundTruthMeasures:
     def get_value_computer(self, attribution, composite, layer_name, cc, func_type):
         if func_type == "default_relevance":
             # return normed relevances of given layer
-            def default_relevance(index: int, wm: bool)-> List[float]:
-                image = self.load_image(index, wm)
+            def default_relevance(index: int, wm: bool) -> List[float]:
+                image = self.dataset.load_image_wm(index, wm)
                 attr = attribution(
                     image, [{}], composite, start_layer=layer_name  # , init_rel=act
                 )
-                rel_c= cc.attribute(attr.relevances[layer_name], abs_norm=True)
+                rel_c = cc.attribute(attr.relevances[layer_name], abs_norm=True)
                 return rel_c[0].tolist()
 
             return default_relevance
 
         else:
             # return activations of given layer
-            def apply_func(index: int, wm: bool)-> List[float]:
-                image = self.load_image(index, wm)
+            def apply_func(index: int, wm: bool) -> List[float]:
+                image = self.dataset.load_image_wm(index, wm)
                 attr = attribution(image, [{}], composite, start_layer=layer_name)
                 rel_c = cc.attribute(attr.activations[layer_name])
                 return rel_c[0].tolist()
@@ -91,7 +55,7 @@ class GroundTruthMeasures:
 
             return apply_func
 
-    def ols_values(self, model, layer_name="linear_layers.0"):
+    def intervened_attributions(self, model, layer_name="linear_layers.0"):
         """
         * This is just the computation of lots of values when intervening on the generating factors
         """
@@ -101,26 +65,30 @@ class GroundTruthMeasures:
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         tdev = torch.device(device)
         attribution = CondAttribution(model, no_param_grad=True, device=tdev)
-        #layer_names = get_layer_names(model, [torch.nn.Conv2d, torch.nn.Linear])
-        apply_func = self.get_value_computer(attribution, composite, layer_name, cc, "normal")
+        # layer_names = get_layer_names(model, [torch.nn.Conv2d, torch.nn.Linear])
+        apply_func = self.get_value_computer(
+            attribution, composite, layer_name, cc, "default_relevance"
+        )
 
         indices = range(0, MAX_INDEX, STEP_SIZE)
         everything = []
         for index in indices:
-            latents = self.index_to_latent(index)
+            latents = self.dataset.index_to_latent(index)
             original_latents = apply_func(index, False)
             with_wm = apply_func(index, True)
             everything.append([0, 0, original_latents, True, index])
             everything.append([0, 1, with_wm, False, index])
 
-            for lat in range(1, self.latents_sizes.size):
-                lat_name = self.latents_names[lat]
-                len_latent = 2 if (lat_name == "shape") else self.latents_sizes[lat]
+            for lat in range(1, self.dataset.latents_sizes.size):
+                lat_name = self.dataset.latents_names[lat]
+                len_latent = (
+                    2 if (lat_name == "shape") else self.dataset.latents_sizes[lat]
+                )
                 for j in range(len_latent):
                     if j != latents[lat]:
                         flip_latents = copy.deepcopy(latents)
                         flip_latents[lat] = j
-                        flip_index = self.latent_to_index(flip_latents)
+                        flip_index = self.dataset.latent_to_index(flip_latents)
                         flip_pred = apply_func(flip_index, False)
                         everything.append([lat, j, flip_pred, False, index])
                     else:
@@ -165,7 +133,7 @@ class GroundTruthMeasures:
         results = np.sum(index_results, 0) / len(indices)
         return results
 
-    def ols_prediction_values(self, model):
+    def intervened_predictions(self, model):
         """
         * SAME FOR MODELS PREDICTION
         """
@@ -173,20 +141,22 @@ class GroundTruthMeasures:
         indices = range(0, MAX_INDEX, STEP_SIZE)
         everything = []
         for index in indices:
-            latents = self.index_to_latent(index)
+            latents = self.dataset.index_to_latent(index)
             original_output = self.get_output(index, model, False)
             with_wm_output = self.get_output(index, model, True)
             everything.append([0, 0, original_output, True, index])
             everything.append([0, 1, with_wm_output, False, index])
 
-            for lat in range(1, self.latents_sizes.size):
-                lat_name = self.latents_names[lat]
-                len_latent = 2 if (lat_name == "shape") else self.latents_sizes[lat]
+            for lat in range(1, self.dataset.latents_sizes.size):
+                lat_name = self.dataset.latents_names[lat]
+                len_latent = (
+                    2 if (lat_name == "shape") else self.dataset.latents_sizes[lat]
+                )
                 for j in range(len_latent):
                     if j != latents[lat]:
                         flip_latents = copy.deepcopy(latents)
                         flip_latents[lat] = j
-                        flip_index = self.latent_to_index(flip_latents)
+                        flip_index = self.dataset.latent_to_index(flip_latents)
                         flip_pred = self.get_output(flip_index, model, False)
                         everything.append([lat, j, flip_pred, False, index])
                     else:
@@ -250,55 +220,3 @@ class GroundTruthMeasures:
                 index_results[count][latent] = mean_change
         results = np.sum(index_results, 0) / len(indices)
         return results
-
-    def heatmaps(self, model, bias, index):
-        """
-        * Calculate heatmap for each neuron in each bias
-        """
-        image = self.load_image(index, False)
-        wm_image = self.load_image(index, True)
-
-        image.requires_grad = True
-        wm_image.requires_grad = True
-
-        composite = EpsilonPlusFlat()
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        tdev = torch.device(device)
-        attribution = CondAttribution(model, no_param_grad=True, device=tdev)
-        layer_names = get_layer_names(model, [torch.nn.Conv2d, torch.nn.Linear])
-        image_path = "heatmaps/image"
-        conditions = [{"linear_layers.0": [neuron], "y": [0]} for neuron in range(6)]
-
-        heatmaps, _, _, _ = attribution(
-            image,
-            conditions,
-            composite,
-            record_layer=layer_names,
-            exclude_parallel=False,
-        )
-        heatmapswm, _, _, _ = attribution(
-            wm_image,
-            conditions,
-            composite,
-            record_layer=layer_names,
-            exclude_parallel=False,
-        )
-        image_heatmaps = torch.cat((heatmaps, heatmapswm))
-        vmin = min([heatmaps.min(), heatmapswm.min()])
-        vmax = max([heatmaps.max(), heatmapswm.max()])
-        grid = {}
-        for h in range(0, 6):
-            grid[f"neuron {h}"] = [heatmaps[h], heatmapswm[h]]
-        img = imgify(
-            image_heatmaps,
-            vmax=vmax,
-            vmin=vmin,
-            # symmetric=True,
-            grid=(len(heatmaps), 2),  # type: ignore
-            padding=True,
-        )
-        img_name = f"{image_path}_{bias}_{index}"
-        img.save(f"{img_name}.png")
-        with open(f"{img_name}.pickle", "wb") as handle:
-            pickle.dump(grid, handle)
-        return img_name, [float(vmin), float(vmax)]

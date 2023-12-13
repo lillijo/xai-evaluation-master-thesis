@@ -589,12 +589,12 @@ def fancy_attributions(unbiased_ds, crp_attribution):
         axs[c % 2, c // 2].xaxis.set_visible(False)
         axs[c % 2, c // 2].yaxis.set_visible(False)
         cmap = matplotlib.cm.Greys if i % 2 == 0 else matplotlib.cm.bwr  # type: ignore
-        maxv = img[i].max()
-        minv = float(img[i].min())
+        maxv = img[i].abs().max()
+        #minv = float(img[i].min())
         center = 0.5 if i % 2 == 0 else 0.0
         if i % 2 == 0:
             axs[c % 2, c // 2].set_title(f"pred: {int(preds[i // 2])}")
-        divnorm = matplotlib.colors.TwoSlopeNorm(vmin=minv, vcenter=center, vmax=maxv)
+        divnorm = matplotlib.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
         # img[i] = divnorm(img[i])
         axs[c % 2, c // 2].imshow(img[i], cmap=cmap, norm=divnorm)
         c += 1
@@ -611,11 +611,11 @@ def my_plot_grid(images, rows, cols):
             axs[il, n].xaxis.set_visible(False)
             axs[il, n].yaxis.set_visible(False)
             if torch.any(images[il, n] != 0):
-                maxv = max(float(images[il, n].max()), 0.001)
-                minv = min(float(images[il, n].min()), -0.001)
+                maxv = max(float(images[il, n].abs().max()), 0.001)
+                #minv = min(float(images[il, n].min()), -0.001)
                 center = 0.0
                 divnorm = matplotlib.colors.TwoSlopeNorm(
-                    vmin=minv, vcenter=center, vmax=maxv
+                    vmin=-maxv, vcenter=center, vmax=maxv
                 )
                 axs[il, n].imshow(images[il, n], cmap="bwr", norm=divnorm)
             else:
@@ -638,11 +638,11 @@ def plot_nmfs(cav_images, num_neighbors, n_basis):
             ax.set_xticks([])
             ax.set_yticks([])
             if torch.any(cav_images[outerind, innerind] != 0):
-                maxv = max(float(cav_images[outerind, innerind].max()), 0.001)
-                minv = min(float(cav_images[outerind, innerind].min()), -0.001)
+                maxv = max(float(cav_images[outerind, innerind].abs().max()), 0.001)
+                #minv = min(float(cav_images[outerind, innerind].min()), -0.001)
                 center = 0.0
                 divnorm = matplotlib.colors.TwoSlopeNorm(
-                    vmin=minv, vcenter=center, vmax=maxv
+                    vmin=-maxv, vcenter=center, vmax=maxv
                 )
                 ax.imshow(cav_images[outerind, innerind], cmap="bwr", norm=divnorm)
             else:

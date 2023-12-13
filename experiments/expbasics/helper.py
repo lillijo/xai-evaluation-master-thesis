@@ -7,7 +7,7 @@ from crp.helper import get_layer_names
 from crp.attribution import CondAttribution
 
 from .crp_attribution import CRPAttribution
-from .biased_noisy_dataset import get_biased_loader
+from .biased_noisy_dataset import BiasedNoisyDataset
 from .test_dataset import get_test_dataset
 from .network import load_model
 from .ground_truth_measures import GroundTruthMeasures
@@ -23,13 +23,14 @@ def to_name(b, i):
 def get_model_etc(bias, num_it=0):
     NAME = "../clustermodels/noise_pos"
     model = load_model(NAME, bias, num_it)
-    unbiased_ds, test_loader = get_test_dataset()
-    gm = GroundTruthMeasures()
+    test_ds, test_loader = get_test_dataset()
+    gm_dataset = BiasedNoisyDataset()
+    gm = GroundTruthMeasures(gm_dataset)
     crp_attribution = CRPAttribution(
-        model, unbiased_ds, "noise_pos", to_name(bias, num_it)
+        model, test_ds, "noise_pos", to_name(bias, num_it)
     )
 
-    return model, gm, crp_attribution, unbiased_ds, test_loader
+    return model, gm, crp_attribution, test_ds, test_loader
 
 
 def get_attributions(
@@ -131,7 +132,7 @@ def get_attribution_function(model, heatmap=True, batch_size=128, activations=Fa
     return attribution_fn
 
 
-def get_cavs(model, unbiased_ds, activations=False):
+def get_cavs(model, test_ds, activations=False):
     MAX_INDEX = 491520
     STEP_SIZE = 1000
     single_attr = get_attribution_function(
@@ -141,7 +142,7 @@ def get_cavs(model, unbiased_ds, activations=False):
     idx = np.array(list(range(0, MAX_INDEX, STEP_SIZE)))
     cavs = torch.zeros((len(idx), 6))
     for count, index in enumerate(idx):
-        x, _ = unbiased_ds[index]
+        x, _ = test_ds[index]
         res = single_attr(x).detach().contiguous()
         cavs[count] = res
     return idx, cavs

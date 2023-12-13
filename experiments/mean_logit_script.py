@@ -3,8 +3,9 @@ import json
 from tqdm import tqdm
 
 from expbasics.ground_truth_measures import GroundTruthMeasures
-from expbasics.network import train_network
+from expbasics.network import load_model
 from expbasics.biased_noisy_dataset import get_biased_loader
+from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 
 EPOCHS = 3
 BATCH_SIZE = 128
@@ -19,30 +20,15 @@ def logit_change_evaluate(item):
     res = item
     bias = item["bias"]
     strength = item["strength"]
-    learnr = item["learning_rate"]
     num_it = item["num_it"]
-    train_loader = get_biased_loader(
-        bias, strength, batch_size=128, verbose=False, img_path=IMAGE_PATH
-    )
-    model = train_network(
-        train_loader,
-        bias,
-        strength,
-        NAME,
-        BATCH_SIZE,
-        load=True,
-        retrain=False,
-        learning_rate=learnr,
-        epochs=EPOCHS,
-        num_it=num_it
-    )
-
+    model = load_model(NAME, bias, num_it)
+    ds = BiasedNoisyDataset(bias, 0.5, img_path=IMAGE_PATH)
     # add change / new measure to compute here
-    gm = GroundTruthMeasures(img_path=IMAGE_PATH)
-    flipvalues = gm.ols_values(model, LAYER_NAME)
+    gm = GroundTruthMeasures(ds)
+    flipvalues = gm.intervened_attributions(model, LAYER_NAME)
     ols_vals = gm.ordinary_least_squares(flipvalues)
     mean_logit = gm.mean_logit_change(flipvalues)
-    flip_pred = gm.ols_prediction_values(model)
+    flip_pred = gm.intervened_predictions(model)
     ols_pred = gm.ordinary_least_squares_prediction(flip_pred)
     mean_logit_pred = gm.mean_logit_change_prediction(flip_pred)
     prediction_flip = gm.prediction_flip(flip_pred).tolist()

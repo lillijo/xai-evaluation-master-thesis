@@ -7,7 +7,7 @@ import pickle
 from collections import Counter
 from typing import Tuple
 from matplotlib import pyplot as plt
-from expbasics.visualizations import plot_fancy_distribution
+#from expbasics.visualizations import plot_fancy_distribution
 
 TRAINING_DATASET_LENGTH = 437280
 TEST_DATASET_LENGTH = 300000
@@ -91,14 +91,17 @@ class BiasedNoisyDataset(Dataset):
         self.seeds = np.random.choice(TOTAL, TOTAL, replace=False)
 
         if self.verbose:
-            plot_fancy_distribution(self, s,w)
+            print("verbose")
+            #plot_fancy_distribution(self, s, w)
 
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
         image = np.load(img_path, mmap_mode="r")
         image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
         if self.watermarks[index]:
-            offset_water_image = self.water_image + np.array([[0], [self.offset_y[index]], [self.offset_x[index]]])
+            offset_water_image = self.water_image + np.array(
+                [[0], [self.offset_y[index]], [self.offset_x[index]]]
+            )
             image[offset_water_image] = 1.0
         img_noiser = np.random.default_rng(seed=self.seeds[index])
         image = image + img_noiser.normal(0.0, 0.05, (64, 64))
@@ -109,7 +112,7 @@ class BiasedNoisyDataset(Dataset):
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         target = self.labels[index][1]
         return (image, target)
-    
+
     def latent_to_index(self, latents):
         return np.dot(latents, self.latents_bases).astype(int)
 
@@ -121,7 +124,9 @@ class BiasedNoisyDataset(Dataset):
         image = np.load(img_path, mmap_mode="r")
         image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
         if watermark:
-            offset_water_image = self.water_image + np.array([[0], [self.offset_y[index]], [self.offset_x[index]]])
+            offset_water_image = self.water_image + np.array(
+                [[0], [self.offset_y[index]], [self.offset_x[index]]]
+            )
             image[offset_water_image] = 1.0
         img_noiser = np.random.default_rng(seed=self.seeds[index])
         image = image + img_noiser.normal(0.0, 0.05, (64, 64))
@@ -132,6 +137,7 @@ class BiasedNoisyDataset(Dataset):
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         if torch.cuda.is_available():
             image = image.cuda()
+        image = image.view(1, 1, 64, 64)
         image.requires_grad = True
         return image
 
@@ -139,7 +145,6 @@ class BiasedNoisyDataset(Dataset):
         has_watermark = self.watermarks[index]
         offsets = [self.offset_y[index], self.offset_x[index]]
         return (self.labels[index][1:], has_watermark, offsets)
-
 
 
 def get_dataset(

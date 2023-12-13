@@ -163,11 +163,11 @@ class CRPAttribution:
                     axs[il, n].set_title(
                         f"n:{n} {str(round(relevances[il][n],1))}%", fontsize=10
                     )  # ,
-                    maxv = max(float(images[il, n].max()), 0.0001)
-                    minv = min(float(images[il, n].min()), -0.0001)
+                    maxv = max(float(images[il, n].abs().max()), 0.0001)
+                    #minv = min(float(images[il, n].min()), -0.0001)
                     center = 0.0
                     divnorm = mpl.colors.TwoSlopeNorm(
-                        vmin=minv, vcenter=center, vmax=maxv
+                        vmin=-maxv, vcenter=center, vmax=maxv
                     )
                     axs[il, n].imshow(images[il, n], cmap="bwr", norm=divnorm)
                 else:
@@ -178,7 +178,7 @@ class CRPAttribution:
         image.requires_grad = False
         axs[lenl - 1, 5].axis("on")
         lab = ["rectangle", "ellipse"]
-        axs[lenl - 1, 5].set_title(f"original {label}, predicted: {lab[pred]} ({pred})")
+        axs[lenl - 1, 5].set_title(f"original {lab[label]} ({label}), predicted: {lab[pred]} ({pred})")
         axs[lenl - 1, 5].imshow(image[0, 0], cmap="bwr")
         return fig
 
@@ -376,10 +376,10 @@ class CRPAttribution:
             )
             for h in range(attr.heatmap.shape[0]):
                 heatmap = attr.heatmap[h]
-                maxv = max(float(heatmap.max()), 0.0001)
-                minv = min(float(heatmap.min()), -0.0001)
+                maxv = max(float(heatmap.abs().max()), 0.0001)
+                #minv = min(float(heatmap.min()), -0.0001)
                 center = 0.0
-                divnorm = mpl.colors.TwoSlopeNorm(vmin=minv, vcenter=center, vmax=maxv)
+                divnorm = mpl.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
                 images[f"{l}_{h}"] = [heatmap, divnorm]
         images["original"] = [
             image[0, 0].detach().numpy(),
