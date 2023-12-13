@@ -1789,3 +1789,8 @@ Metrics:
 - attribution graph (using "activation aggregation")
 - embedding view using UMAP of classes (by activation?)
 - "neuron-influence aggregation" how do previous layers influence current
+
+## β-VAE: Learning Basic Visual Concepts with a Constrained Variational Framework (Higgins2017)
+- appairently learning disentangled representation can improve performance of model
+- especially for scenarios like knowledge transfer, zero-shot inference, novelty detection
+- 
