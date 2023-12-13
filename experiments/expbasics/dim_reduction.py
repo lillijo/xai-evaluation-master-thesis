@@ -7,6 +7,7 @@ from sklearn.cluster import SpectralClustering, KMeans
 from sklearn.decomposition import NMF
 import torch
 
+
 def get_dr_methods():
     m_names = ["tsne", "iso", "pca", "nmf", "mds", "lle"]
     tsne = TSNE(n_components=2, perplexity=20)
@@ -17,6 +18,7 @@ def get_dr_methods():
     lle = LocallyLinearEmbedding(n_components=2, n_neighbors=20)
     methods = [tsne, iso, pca, nmf, mds, lle]
     return methods, m_names
+
 
 def visualize_dr(
     methods,
@@ -30,7 +32,7 @@ def visualize_dr(
     num_it,
     method=2,
     layer_name="linear_layers.0",
-    use_clusters=False
+    use_clusters=False,
 ):
     # nmf_res = methods[METHOD].fit_transform(vector.numpy())
     # res = pca.fit_transform(nmf_res)
@@ -47,7 +49,9 @@ def visualize_dr(
     colors = matplotlib.cm.gist_ncar(np.linspace(0, 1, 9))  # type: ignore # gist_ncar
     klabels = watermarks
     if use_clusters:
-        init_centers = [np.logical_and(watermarks == w, labels== l) for w in [0,1] for l in [0,1]]
+        init_centers = [
+            np.logical_and(watermarks == w, labels == l) for w in [0, 1] for l in [0, 1]
+        ]
         init_centers = vector[[np.nonzero(init_centers[i])[0][0] for i in range(4)]]
         kmeans = KMeans(n_clusters=4, init=init_centers).fit(vector)
         klabels = kmeans.labels_
@@ -55,7 +59,11 @@ def visualize_dr(
     def ft(lab, wm, pred):
         d = np.logical_and(watermarks == wm, labels == lab)
         d = np.logical_and(d, predictions == pred)
-        coloring = colors[klabels[d] * 2] if use_clusters else colors[lab + 2 * wm + 4 * pred]
+        coloring = (
+            colors[klabels[d] * 2]
+            if use_clusters
+            else [[colors[lab + 2 * wm + 4 * pred]]]
+        )
         if res[d, 0].shape[0] > 0:
             plt.scatter(
                 res[d, 0],
@@ -95,9 +103,18 @@ def visualize_dr(
                         label=f"lab {lab}, pred {pred}, wm {wm == 1} {counts[lab + 2*wm + 4* pred]}",
                         alpha=0.8,
                     )
+                else:
+                    full_centroids[lab + 2 * wm + 4 * pred] = full_centroids[
+                        lab + 2 * wm + 4 * ((pred + 1) % 2)
+                    ]
+                    centroids[lab + 2 * wm + 4 * pred] = centroids[
+                        lab + 2 * wm + 4 * ((pred + 1) % 2)
+                    ]
 
     plt.legend(bbox_to_anchor=(1.0, 0.5))
-    plt.title(f"{is_act[activations]} '{layer_name}' Bias: {bias}, Iteration: {num_it}, Method: {names[method]}")
+    plt.title(
+        f"{is_act[activations]} '{layer_name}' Bias: {bias}, Iteration: {num_it}, Method: {names[method]}"
+    )
     file_name = (
         f"{names[method]}_{layer_name}_{str(bias).replace('0.', 'b0i')}_{num_it}"
     )
@@ -114,11 +131,12 @@ def clean_centroids(concept_means):
                 for pred in [0, 1]:
                     if concept_means[k][lab + 2 * wm + 4 * pred][0] is not None:
                         concept_means__named[k][f"l{lab}_w{wm}_p{pred}"] = np.array(
-                            concept_means[k][lab + 2 * wm + 4 * pred]
+                            concept_means[k][lab + 2 * wm + 4 * pred], dtype=np.float64
                         )
                     else:
                         concept_means__named[k][f"l{lab}_w{wm}_p{pred}"] = np.array(
-                            concept_means[k][lab + 2 * wm + 4 * ((pred + 1) % 2)]
+                            concept_means[k][lab + 2 * wm + 4 * ((pred + 1) % 2)],
+                            dtype=np.float64,
                         )
     return concept_means__named
 
@@ -129,11 +147,19 @@ def centroid_distances(
     concept_means_combis = {}
     if combis is None:
         combis = [["l0_w0_p0", "l0_w1_p0"], ["l1_w0_p1", "l1_w1_p1"]]
+
     for k in concept_means_named.keys():
         concept_means_combis[k] = {}
+        abs_max = np.abs(
+            np.array(list(concept_means_named[k].values())).flatten()
+        ).max()
+
         for x, c in enumerate(combis):
-            diff = np.linalg.norm(
-                (concept_means_named[k][c[0]]) - (concept_means_named[k][c[1]])
+            diff = (
+                np.linalg.norm(
+                    ((concept_means_named[k][c[0]]) - (concept_means_named[k][c[1]]))
+                )
+                / abs_max
             )
             concept_means_combis[k][x] = diff
 
@@ -144,4 +170,3 @@ def centroid_distances(
     plt.title("Distance of Concept Centroids (with watermark vs. without)")
     plt.legend()
     return concept_means_combis
-

@@ -179,7 +179,12 @@ class CRPAttribution:
         axs[lenl - 1, 5].axis("on")
         lab = ["rectangle", "ellipse"]
         axs[lenl - 1, 5].set_title(f"original {lab[label]} ({label}), predicted: {lab[pred]} ({pred})")
-        axs[lenl - 1, 5].imshow(image[0, 0], cmap="bwr")
+        maxv = max(float(image[0, 0].abs().max()), 0.0001)
+        center = 0.0
+        divnorm = mpl.colors.TwoSlopeNorm(
+            vmin=-maxv, vcenter=center, vmax=maxv
+        )
+        axs[lenl - 1, 5].imshow(image[0, 0], cmap="coolwarm", norm=divnorm)
         return fig
 
     def image_info(self, index=None, verbose=False):
@@ -301,7 +306,9 @@ class CRPAttribution:
             start_layer=layer_name,
             init_rel=lambda act: act.clamp(min=0),
         )
-        return attr.relevances[layer_name]
+        output = self.model(imgs)
+        pred = output.data.max(1)[1]
+        return attr.relevances[layer_name], pred
 
     def attribute_all_layers(self, imgs):
         imgs.requires_grad = True

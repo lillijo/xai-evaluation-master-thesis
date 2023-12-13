@@ -15,8 +15,8 @@ LAYER_NAME = "linear_layers.0"  #"convolutional_layers.6"
 
 
 def logit_change_evaluate(item):
-    """ if "crp_ols" in item:
-        return item """
+    if "crp_ols" in item and len(item["crp_ols"][0]) == 6:
+        return item
     res = item
     bias = item["bias"]
     strength = item["strength"]
@@ -34,15 +34,15 @@ def logit_change_evaluate(item):
     prediction_flip = gm.prediction_flip(flip_pred).tolist()
 
     res["crp_ols"] = ols_vals
-    res["crp_mean_logit_change"] = mean_logit.tolist()
+    res["crp_mlc"] = mean_logit.tolist()
     res["pred_ols"] = [a[0] for a in ols_pred]
-    res["pred_mean_logit_change"] = mean_logit_pred.tolist()
+    res["pred_mlc"] = mean_logit_pred.tolist()
     res["pred_flip"] = prediction_flip
     return res
 
 
 def compute_with_param():
-    with open("outputs/noise_pos_accuracies.json", "r") as f:
+    with open("outputs/lin_ground_truth.json", "r") as f:
         accuracies = json.load(f)
     for name, item in tqdm(accuracies.items()):
         result = logit_change_evaluate(item)

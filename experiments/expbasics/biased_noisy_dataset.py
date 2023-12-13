@@ -7,7 +7,7 @@ import pickle
 from collections import Counter
 from typing import Tuple
 from matplotlib import pyplot as plt
-#from expbasics.visualizations import plot_fancy_distribution
+from expbasics.visualizations import plot_fancy_distribution
 
 TRAINING_DATASET_LENGTH = 437280
 TEST_DATASET_LENGTH = 300000
@@ -91,8 +91,8 @@ class BiasedNoisyDataset(Dataset):
         self.seeds = np.random.choice(TOTAL, TOTAL, replace=False)
 
         if self.verbose:
-            print("verbose")
-            #plot_fancy_distribution(self, s, w)
+            #print("verbose")
+            plot_fancy_distribution(self, s, w)
 
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")

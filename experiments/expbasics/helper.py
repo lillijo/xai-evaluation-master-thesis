@@ -21,13 +21,13 @@ def to_name(b, i):
 
 
 def get_model_etc(bias, num_it=0):
-    NAME = "../clustermodels/noise_pos"
+    NAME = "../clustermodels/model"
     model = load_model(NAME, bias, num_it)
     test_ds, test_loader = get_test_dataset()
     gm_dataset = BiasedNoisyDataset()
     gm = GroundTruthMeasures(gm_dataset)
     crp_attribution = CRPAttribution(
-        model, test_ds, "noise_pos", to_name(bias, num_it)
+        model, test_ds, "model", to_name(bias, num_it)
     )
 
     return model, gm, crp_attribution, test_ds, test_loader
