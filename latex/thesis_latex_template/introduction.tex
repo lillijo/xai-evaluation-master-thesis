@@ -53,8 +53,11 @@ In other words: Does CRP learn the causal effect of the spurious feature on the 
     \item use very simple artificial disentangling benchmarking dataset DSPRITES
     \item add artificial watermark to artificial benchmark... because we need ground truth
     \item create dataset with biased and with unbiased watermark distribution
-    \item train very small convolutional neural network on recognizing shapes
-    \item evaluate CRP on neural network trained on biased and unbiased dataset
+    \item train very small convolutional neural networks on recognizing shapes while intervening on biasedness
+    \item establish ground-truth of model accuracy and importance of generating factors
+    \item evaluate CRP on neural network trained dataset with intervened biasedness
+    \item disentangle and identify learned concepts
+    \item evaluate fidelity of CRP to causal model and to learned model
 \end{itemize}
 
 \section{Outline}
