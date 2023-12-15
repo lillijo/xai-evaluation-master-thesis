@@ -51,7 +51,7 @@ class BiasedNoisyDataset(Dataset):
             )
             self.latents_names = [i.decode("ascii") for i in metadata["latents_names"]]
         # self.watermark_process() # simple bias process -> no SCM
-        self.causal_process()  # using actual SCM
+        self.multiplicative_causal_process()  # using actual SCM
 
     def __len__(self):
         if self.fixed_length:
@@ -61,9 +61,9 @@ class BiasedNoisyDataset(Dataset):
     def reinitialize_bias(self, bias, strength):
         self.bias = bias
         self.strength = strength
-        self.causal_process()
+        self.multiplicative_causal_process()
 
-    def causal_process(self):
+    """ def causal_process(self):
         SIZE = (len(self.labels) // 3) * 2
         TOTAL = len(self.labels)
         ITEM_L = len(self.labels) // 3
@@ -71,6 +71,43 @@ class BiasedNoisyDataset(Dataset):
         generator = self.rng.uniform(0, 1, TOTAL)
         s = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL)
         w = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL)
+        shape = s <= 0.5
+        watermark = w > self.strength
+        shape_r = np.asarray(shape == True).nonzero()
+        shape_e = np.asarray(shape == False).nonzero()
+        wms_r = watermark[shape_r[0][:ITEM_L]]
+        wms_e = watermark[shape_e[0][:ITEM_L]]
+        wms = np.zeros(SIZE, dtype=np.bool_)
+        wms[:ITEM_L] = wms_r
+        wms[ITEM_L:] = wms_e
+
+        rand = self.rng.choice([0, 1], TOTAL)
+        self.offset_y = rand * self.rng.integers(-58, 3, TOTAL) + (
+            (1 - rand) * (-58 + self.rng.choice([0, 1], TOTAL) * 60)
+        )
+        self.offset_x = rand * (-4 + self.rng.choice([0, 1], TOTAL) * 55) + (
+            (1 - rand) * self.rng.integers(-4, 52, TOTAL)
+        )
+        self.watermarks = wms
+        self.seeds = self.rng.choice(TOTAL, TOTAL, replace=False)
+
+        if self.verbose:
+            # print("verbose")
+            plot_fancy_distribution(self, s, w) """
+
+    def multiplicative_causal_process(self):
+        SIZE = (len(self.labels) // 3) * 2
+        TOTAL = len(self.labels)
+        ITEM_L = len(self.labels) // 3
+
+        generator = self.rng.normal(0, 1, TOTAL)
+        s = (1 - ((1-self.bias) * self.rng.normal(0, 1, TOTAL))) * generator
+        s = s / np.max(s)
+        w = (1 - ((1-self.bias) * self.rng.normal(0, 1, TOTAL))) * generator
+        w = w / np.max(w)
+        self.cutoff = 0  # np.median(s)#(1- self.bias)
+        print(self.cutoff, np.median(s), np.max(s))
+        self.strength = 0
         shape = s <= self.cutoff
         watermark = w > self.strength
         shape_r = np.asarray(shape == True).nonzero()

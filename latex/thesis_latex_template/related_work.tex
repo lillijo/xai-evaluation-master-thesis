@@ -122,6 +122,33 @@ They introduce a generation process for mixing the suppressor and real features 
       \item \cite{Sixt2022}: deep taylor decomposition fails, when only positive relevance taken into account, matrix falls to rank 1 \\ task: theoretical analysis
 \end{enumerate}
 
+\subsection{Other Similar works (todo)}
+\todo{read again and summarize}
+
+\cite{Yang2019} 
+- Common Feature Measure -> how many of the (10) classes have this feature in background (e.g. dog)
+- vary cf measure from 0.1 (only one class has feature = watermark) to 0.9 (9 out of 10 classes have feature)
+- measure MCS = Model Contrast Score = how different is importance of cf in different models
+
+\cite{Arras2022}
+- Mass Accuracy = relevance within feature bounding box / total relevance in image
+- Rank Accuracy = how many of the pixels inside bounding box are in K most important pixels
+
+
+\cite{Bluecher2022}
+- interactions of different concepts with each other
+- close / similar to shapely values
+- 
+
+
+\cite{Rong2022}
+- new evaluation strategy for attribution methods: remove and debias
+
+\subsubsection{Human User Studies stuff}
+do i need to say something about this? at least i should mention that it actually the most important but hard and expensive to measure
+\cite{Rong2023, }
+
+
 \subsection{Causality and XAI (on Evaluation and Benchmarking of XAI)}
 The link an explanation and its model should have, has come under the causal lense both for developing new XAI methods and their evaluation  \todo{cite}. Counterfactual explanations
 

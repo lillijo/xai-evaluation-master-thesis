@@ -247,7 +247,8 @@ def ground_truth_plot(path, factor, m_type="mlc", num_it=4):
 
 def max_neuron_ground_truth_plot(path, factor, m_type="mlc", bcut=-1.0, num_it=6):
     titles = {
-        "mlc": ["Mean Logit Difference * 100", "Mean Logit Change Score Neurons"],
+        "mrc": ["Mean Relevance Difference * 100", "Mean Relevance Change of Neurons"],
+        "mlc": ["Mean Relevance Difference * 100", "Mean Relevance Change of Neurons"],
         "ols": ["Correlation Coefficient * 100", "R2 Score Neurons"],
     }
     datas, filtbiases, biases, alldata = data_iterations(
@@ -294,7 +295,7 @@ def max_neuron_ground_truth_plot(path, factor, m_type="mlc", bcut=-1.0, num_it=6
         color="#000",
         label="average",
         alpha=0.5,
-        linestyle="dashed"
+        linestyle="dashed",
     )
 
     plt.xticks(np.arange(bcut, 1.01, 0.05))
@@ -353,7 +354,7 @@ def plot_accuracies(path, treshold=90, num_it=6):
     ecol = ["#addd8e", "#78c679", "#31a354", "#006837"]
     fig = plt.figure(figsize=(8, 5))
     fig.set_facecolor(FACECOL)
-    plt.ylim([0, 100])
+    plt.ylim([50, 100])
     plt.plot(
         filtbiases,
         sum_it(datas, lambda x: x["train_accuracy"][0]),
@@ -425,11 +426,12 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
         path, biascut=bcut, num_it=num_it
     )
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
+    shapes = ["8", "s", "P", "*", "X", "d", "v", ">", ]
     latents_names, latents_sizes, latents_bases = get_lat_names()
     fig = plt.figure(figsize=(10, 6))
     fig.set_facecolor(FACECOL)
     colind = [0, 3, 5, 2, 7, 1]
-    for f in [1, 0, 2, 3, 4, 5]:
+    for f in [2, 3, 4, 5, 1, 0]:
         lat_data = [
             np.mean([datas[a][i][f"pred_{m_type}"][f] for a in range(num_it)])
             * 100  #  / 0.04  #
@@ -442,16 +444,22 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
             label=latents_names[f],
             alpha=0.9,
             # s=25,
-            # marker="s",  # type: ignore
         )
         for l in range(num_it):
             lat_data = [a[f"pred_{m_type}"][f] * 100 for a in datas[l]]
-            plt.scatter(filtbiases, lat_data, color=colors[colind[f]], s=2, alpha=0.4)
+            plt.scatter(
+                filtbiases,
+                lat_data,
+                color=colors[colind[f]],
+                s=20,
+                alpha=0.5,
+                marker=shapes[f], # type: ignore
+            )
     plt.legend(loc="upper left")
     plt.ylabel(titles[m_type][0])
     plt.xlabel("Bias")
     plt.title(titles[m_type][1])
-    plt.legend(bbox_to_anchor=(1.01, 0.7))
+    # plt.legend(bbox_to_anchor=(1.01, 0.7))
 
 
 def plot_corr_factors(path, m_type="flip", bcut=0.5, num_it=6):
@@ -517,7 +525,10 @@ def plot_fancy_distribution(dataset=None, s=[], w=[]):
     from collections import Counter
     from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 
-    fig = plt.figure(figsize=(5, 5))
+    lim_x = [np.min(s), np.max(s)]
+    lim_y = [np.min(w), np.max(w)]
+
+    fig = plt.figure(figsize=(7, 5))
     fig.set_facecolor(FACECOL)
     fig.set_alpha(0.0)
     ax = fig.add_subplot(111)
@@ -550,56 +561,69 @@ def plot_fancy_distribution(dataset=None, s=[], w=[]):
 
     ax.tick_params(axis="y", direction="in", pad=-22)
     ax.tick_params(axis="x", direction="in", pad=-15)
-    ax.yaxis.set_ticks([0.2, 0.4, 0.6, 0.8, 1.0])
-    ax.xaxis.set_ticks(list(np.arange(0.0, 1.1, 0.1)))
+    # ax.yaxis.set_ticks(list(np.round(np.linspace(lim_y[0], lim_y[1], 5), decimals=2)))
+    # ax.xaxis.set_ticks(list(np.arange(lim_x[0], lim_x[1], 0.2)))
     plt.text(
-        0.05,
-        0.65 - dataset.strength,
+        lim_x[0] + 0.1,
+        lim_y[1] * 0.65 - dataset.strength,
         "rectangle\nno watermark",
         size=12,
     )
     plt.text(
-        0.05,
-        dataset.strength + 0.35,
+        lim_x[0] + 0.1,
+        lim_y[0] + 0.35 + dataset.strength,
         "rectangle\nwith watermark",
         size=12,
     )
-    plt.text(0.05, dataset.strength + 0.02, "strength", size=12)
+    plt.text(lim_x[0] + 0.1, dataset.strength + 0.02, "strength", size=12)
     plt.text(
-        0.6,
-        0.65 - dataset.strength,
+        lim_x[1] - 0.5,
+        lim_y[1] * 0.65 - dataset.strength,
         "ellipse \nno watermark",
         size=12,
     )
     plt.text(
-        0.6,
-        dataset.strength + 0.35,
+        lim_x[1] - 0.5,
+        lim_y[0] + 0.35 + dataset.strength,
         "ellipse\nwith watermark",
         size=12,
     )
     plt.text(
-        0.45,
-        1.0,
-        f"a = {dataset.bias}",
+        (lim_x[0] + lim_x[1]) / 2,
+        lim_y[1],
+        f"$\\rho$ = {dataset.bias}",
         c="red",
         size=12,
         fontweight="bold",
     )
-    plt.plot([0.5, 0.5], [0.05, 1], c="#000", linewidth=1)
-    plt.plot([0, 1], [dataset.strength, dataset.strength], c="#000", linewidth=1)
+    plt.plot(
+        [dataset.cutoff, dataset.cutoff], [lim_y[0], lim_y[1]], c="#000", linewidth=1
+    )
+    plt.plot(
+        [lim_x[0], lim_x[1]],
+        [dataset.strength, dataset.strength],
+        c="#000",
+        linewidth=1,
+    )
 
     plt.text(
-        0.55,
-        0.52,
-        "1 - a",
+        (lim_x[0] + lim_x[1]) * 0.5 - 0.2,
+        (lim_y[0] + lim_y[1]) * 0.5 - 0.2,
+        "1 - $\\rho$",
         c="red",
         size=12,
         fontweight="bold",
         bbox={"fc": "#C8D672", "alpha": 0.8, "ec": "#C8D672"},
     )
     plt.plot(
-        [0.5 - (1 - dataset.bias) * 0.5, 0.5 + (1 - dataset.bias) * 0.5],
-        [0.5 + (1 - dataset.bias) * 0.5, 0.5 - (1 - dataset.bias) * 0.5],
+        [
+            (lim_x[0] + lim_x[1]) * 0.5 - (1 - dataset.bias) * 0.5,
+            (lim_x[0] + lim_x[1]) * 0.5 + (1 - dataset.bias) * 0.5,
+        ],
+        [
+            (lim_y[0] + lim_y[1]) * 0.5 + (1 - dataset.bias) * 0.5,
+            (lim_y[0] + lim_y[1]) * 0.5 - (1 - dataset.bias) * 0.5,
+        ],
         c="red",
         linewidth=5,
         alpha=0.8,

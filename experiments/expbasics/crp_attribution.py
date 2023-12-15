@@ -1,3 +1,4 @@
+from re import S
 import numpy as np
 import torch
 import os
@@ -164,7 +165,7 @@ class CRPAttribution:
                         f"n:{n} {str(round(relevances[il][n],1))}%", fontsize=10
                     )  # ,
                     maxv = max(float(images[il, n].abs().max()), 0.0001)
-                    #minv = min(float(images[il, n].min()), -0.0001)
+                    # minv = min(float(images[il, n].min()), -0.0001)
                     center = 0.0
                     divnorm = mpl.colors.TwoSlopeNorm(
                         vmin=-maxv, vcenter=center, vmax=maxv
@@ -178,12 +179,12 @@ class CRPAttribution:
         image.requires_grad = False
         axs[lenl - 1, 5].axis("on")
         lab = ["rectangle", "ellipse"]
-        axs[lenl - 1, 5].set_title(f"original {lab[label]} ({label}), predicted: {lab[pred]} ({pred})")
+        axs[lenl - 1, 5].set_title(
+            f"original {lab[label]} ({label}), predicted: {lab[pred]} ({pred})"
+        )
         maxv = max(float(image[0, 0].abs().max()), 0.0001)
         center = 0.0
-        divnorm = mpl.colors.TwoSlopeNorm(
-            vmin=-maxv, vcenter=center, vmax=maxv
-        )
+        divnorm = mpl.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
         axs[lenl - 1, 5].imshow(image[0, 0], cmap="coolwarm", norm=divnorm)
         return fig
 
@@ -202,17 +203,20 @@ class CRPAttribution:
         res = pred[0][0].tolist()
         conditions = [{"y": [res]}]
         attr = self.attribution(
-            sample, conditions, self.composite, record_layer=self.layer_names#, init_rel=lambda x: x.clamp(min=0)
+            sample,
+            conditions,
+            self.composite,
+            record_layer=self.layer_names,  # , init_rel=lambda x: x.clamp(min=0)
         )
         relevances = []
         for cond_layer in self.layer_id_map.keys():
-            """ conditions = [{cond_layer: self.layer_id_map[cond_layer]}]
+            """conditions = [{cond_layer: self.layer_id_map[cond_layer]}]
             attr = self.attribution(
                 sample, conditions, self.composite, record_layer=self.layer_names, init_rel=lambda x: x
-            ) """
+            )"""
             rel_c = self.cc.attribute(attr.relevances[cond_layer])  # , abs_norm=True)
             act_c = self.cc.attribute(attr.activations[cond_layer], abs_norm=True)
-            #print(attr.relevances[cond_layer].shape, torch.where(attr.relevances[cond_layer] != 0))
+            # print(attr.relevances[cond_layer].shape, torch.where(attr.relevances[cond_layer] != 0))
             # concepts ordered by relevance and their contribution to final classification in percent
             relevances += [
                 [
@@ -221,9 +225,7 @@ class CRPAttribution:
                 ]
             ]
             perc = [
-                str(i)
-                + ": "
-                + str(round(float(act_c[0][i]), 2))
+                str(i) + ": " + str(round(float(act_c[0][i]), 2))
                 for i in range(len(self.layer_id_map[cond_layer]))
             ]
             result_string += f'\n {cond_layer}: \n {", ".join(perc)} '
@@ -384,7 +386,7 @@ class CRPAttribution:
             for h in range(attr.heatmap.shape[0]):
                 heatmap = attr.heatmap[h]
                 maxv = max(float(heatmap.abs().max()), 0.0001)
-                #minv = min(float(heatmap.min()), -0.0001)
+                # minv = min(float(heatmap.min()), -0.0001)
                 center = 0.0
                 divnorm = mpl.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
                 images[f"{l}_{h}"] = [heatmap, divnorm]
@@ -441,8 +443,8 @@ class CRPAttribution:
         _, watermark, offset = self.dataset.get_item_info(index)
         mask = torch.zeros(64, 64)
         mask[
-            max(0, 57 + offset[0]) : max(0, 57 + offset[0]) + 6,
-            max(offset[1], 0) : 3 + max(offset[1], 0) + 13,
+            max(0, 57 + offset[0]) : max(0, 58 + offset[0]) + 5,
+            max(offset[1] + 3, 0) : max(offset[1] + 4, 0) + 10,
         ] = 1
         antimask = (mask + 1) % 2
         sample = img.view(1, 1, 64, 64)
@@ -481,6 +483,71 @@ class CRPAttribution:
             mask=mask,
         )
 
+    def crp_wm_bbox_layer(self, index, layer_name):
+        img, label = self.dataset[index]
+        _, watermark, offset = self.dataset.get_item_info(index)
+        mask = torch.zeros(64, 64)
+        mask[
+            max(0, 57 + offset[0]) : max(0, 58 + offset[0]) + 5,
+            max(offset[1] + 3, 0) : max(offset[1] + 4, 0) + 10,
+        ] = 1
+        mask_size = mask.sum()
+        # antimask = (mask + 1) % 2
+        sample = img.view(1, 1, 64, 64)
+        sample.requires_grad = True
+        nlen = len(self.layer_id_map[layer_name])
+
+        output = self.model(sample)
+        pred = int(output.data.max(1)[1][0])
+        conditions = [
+            {layer_name: [i], "y": [pred]} for i in self.layer_id_map[layer_name]
+        ]
+        if layer_name == "linear_layers.2":
+            conditions = [{"y": [pred]}]
+
+        rel_within = []
+        rra = []
+        rel_total = []
+        for attr in self.attribution.generate(
+            sample,
+            conditions,
+            self.composite,
+            record_layer=self.layer_names,
+            verbose=False,
+            batch_size=nlen,
+        ):
+            masked = attr.heatmap * mask
+
+            # relevance rank accuracy:
+            cutoffs = torch.sort(
+                attr.heatmap.view(nlen, -1), dim=1, descending=True
+            ).values[:, 300]
+            cutoffs = torch.where(cutoffs > 0, cutoffs, 100)
+            rrank = masked >= cutoffs[:, None, None]
+            rank_counts = torch.count_nonzero(rrank, dim=(1, 2))
+            rra.append(rank_counts / mask_size)
+
+            # antimasked = attr.heatmap * antimask
+            rel_within.append(torch.sum(masked, dim=(1, 2)))
+            rel_total.append(torch.sum(attr.heatmap, dim=(1, 2)))
+        # relevance mass accuracy: R_within / R_total
+        rel_within = torch.cat(rel_within)  # abs_norm* 100
+        rel_total = torch.cat(rel_total)
+        rra = torch.cat(rra)
+        rma = rel_within / (rel_total + 1e-10)
+
+        return dict(
+            rel_total=rel_total.tolist(),
+            rel_within=rel_within.tolist(),
+            rma=rma.tolist(),
+            rra=rra.tolist(),
+            watermark=watermark,
+            pred=pred,
+            label=label,
+            output=output.data.tolist(),
+            #mask=mask,
+        )
+
     def old_wm_importance(self, index):
         img, label = self.dataset[index]
         sample = img.view(1, 1, 64, 64)
@@ -506,33 +573,6 @@ class CRPAttribution:
             sum_rest_relevance,
             attr.heatmap,
             output.data,
-            label,
-        )
-
-    def watermark_neuron_importance(self, index, layer, neuron):
-        img, label = self.dataset[index]
-        sample = img.view(1, 1, 64, 64)
-        sample.requires_grad = True
-
-        output = self.model(sample)
-        pred = int(output.data.max(1)[1][0])
-
-        conditions = [{"y": [pred], layer: [neuron]}]  # pred label
-
-        attr = self.attribution(
-            sample,
-            conditions,
-            self.composite,
-            record_layer=self.layer_names,
-        )
-        masked = attr.heatmap * self.mask[None, :, :]
-        antimasked = attr.heatmap * self.antimask[None, :, :]
-        sum_watermark_relevance = float(torch.sum(masked, dim=(1, 2)))
-        sum_rest_relevance = float(torch.sum(antimasked, dim=(1, 2)))
-        return (
-            sum_watermark_relevance,
-            sum_rest_relevance,
-            pred,  # output.data,
             label,
         )
 
@@ -592,6 +632,37 @@ class CRPAttribution:
         )
         return attr.heatmap
 
+
+""" 
+
+
+    def watermark_neuron_importance(self, index, layer, neuron):
+        img, label = self.dataset[index]
+        sample = img.view(1, 1, 64, 64)
+        sample.requires_grad = True
+
+        output = self.model(sample)
+        pred = int(output.data.max(1)[1][0])
+
+        conditions = [{"y": [pred], layer: [neuron]}]  # pred label
+
+        attr = self.attribution(
+            sample,
+            conditions,
+            self.composite,
+            record_layer=self.layer_names,
+        )
+        masked = attr.heatmap * self.mask[None, :, :]
+        antimasked = attr.heatmap * self.antimask[None, :, :]
+        sum_watermark_relevance = float(torch.sum(masked, dim=(1, 2)))
+        sum_rest_relevance = float(torch.sum(antimasked, dim=(1, 2)))
+        return (
+            sum_watermark_relevance,
+            sum_rest_relevance,
+            pred,  # output.data,
+            label,
+        )
+
     def watermark_concept_importances(self, indices, test_ds):
         neuron_map = {
             l: {
@@ -626,9 +697,9 @@ class CRPAttribution:
                             )
                         for n in self.layer_id_map[cond_layer]:
                             neuron_map[cond_layer][n][s][w] += float(rel_c[0][n])
-        return neuron_map
+        return neuron_map """
 
-    def watermark_mask_importance(self, indices, test_ds):
+"""     def watermark_mask_importance(self, indices, test_ds):
         conditions_w = [
             {l: [n], "y": [1]}
             for l in self.layer_id_map.keys()
@@ -690,4 +761,4 @@ class CRPAttribution:
                     }
                     for k in range(len(all_layers))
                 }
-        return masked_importance
+        return masked_importance """

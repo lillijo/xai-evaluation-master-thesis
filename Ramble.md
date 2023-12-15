@@ -31,3 +31,55 @@ One can of course compute the mean logit change when intervening on each generat
 Most work so far that has tested the effect of clever-hans features, watermarks or correlated background has seen this spurious feature as a binary feature. Either the true core feature is spuriously correlated with some other feature or not. However it might be interesting to see biasedness as a continous variable. This not only makes it possible to study the effect of spurious features more accurately with causal methods, it also for the first time enables comparing the importance of the spurious feature between models that use it to varying degree. For example, Yang2019 tried has a related approach to this thesis but only looks at models either learning the one feature or the other and not fine-grained. We believe this continuous approach to better reflect real data, as very often the question is not *is our data biased or not* (spoiler-alert: it always is) but *is our data unbiased enough to differentiate important from unimportant*. 
 
 Why do we want the discovery of the spurious feature to be more unsupervised? Mostly because we hope that if it is easy to recover without having the ground truth data available, this speaks for the disentanglement to also be obvious for humans when looking at the concepts and their heatmaps or maximally relevant sample sets. Though it has been shown that PCA and similar dimensionality reduction algorithms are not good at finding disentagled latent factors
+
+# good words for "bias"
+- signal-to-noise ratio - SNR - rho - R
+- spurious-to-core (feature) ratio
+- biasedness
+- strength of spurious correlation
+- confounder effect size/ratio
+- confounded-noise-to-signal ratio
+
+
+
+Pipeline:
+
+1. construct a structural causal model linking the existing generating factors of the dataset
+    - see image, but also try with different models later on
+2. sample many datasets by intervening on the bias or "spurious-to-core feature ratio" from 0 to 1, 0 meaning the confounder has 0 effect, 1 meaning shape and watermark are completely correlated
+    - 
+3. train the same simple model architecture with fixed hyperparameters (only random initialization changes) on the intervened datasets 
+4. establish ground-truth importance by estimating the causal effect of latent generating factors on model prediction
+5. extract CRP attributions for a small set of images
+6. Estimate the causal effect of generating factors on CRP conditional attribution (in different layers)
+7. Attempt to disentangle attributions and identify human understandable concepts (shape, watermark) 
+8. Evaluate whether the CRP attributions rely stronger on the causal effect of the latent factors or stronger on what the model has actually learned. Also evaluate whether the CRP "concepts" can be disentangled into human understandable concepts relating to the true generating factors
+
+
+Theory:
+- normal attribution methods can only assign vague importance to all parts of image
+- CRP / neuron concepts have potential to say "shape is relevant, watermark not so much" or opposite, or "watermark is relevant for class 1 but not 0"
+- question: how good is plain old LRP at scoring relevance importance, and how much better is CRP at it
+- answer: take watermark bbox importance of LRP / general heatmap, and of each neuron individually
+- what is explicit information gain? (or is there even one)
+-> is error between CRP importance and true importance larger or smaller than LRP importance? 
+
+MEASURE:
+- CRP: watermark bounding box importance for N most relevant individual neurons -> weighted by relevance of neuron
+- LRP: watermark bounding box importance in summary image
+
+What do i want to measure?
+
+- disentangledness - can CRP differentiate between watermark and shape?
+- importance of watermark feature, in relation to shape feature
+- negative vs positive relevance - does class speficific approach fail?
+- 
+
+what is "good" outcome?
+- do we want to explain the data or the model? depends on what we are comparing to. Mostly we have same data but different model (or?)
+- so we want to compare (and explain) the model
+
+Problem: we cannot compare heatmap similarity/correlation over multiple models 
+Solution: have an abstracted measure of importance for explanation - like  watermark bbox importance, NMF vectors or similar
+
+
