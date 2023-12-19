@@ -32,6 +32,14 @@ Most work so far that has tested the effect of clever-hans features, watermarks 
 
 Why do we want the discovery of the spurious feature to be more unsupervised? Mostly because we hope that if it is easy to recover without having the ground truth data available, this speaks for the disentanglement to also be obvious for humans when looking at the concepts and their heatmaps or maximally relevant sample sets. Though it has been shown that PCA and similar dimensionality reduction algorithms are not good at finding disentagled latent factors
 
+
+Similar to Karimi2023 we do not just assume that model training follows some iid distribution. Instead, we intervene or fix each of the hyperparameters ever used. We do this by constructing a causal graph, including all knowledge we have of the trained model.
+Then one can do causal discovery using this knowledge. We have an assumed true graph, where watermark and shape have causal effects depending on ratio r, and the trained model weights are also depending on the random initialization of the model. 
+If CRP and LRP work as expected, they would reflect the effect of the random initialization accurately when the whole generating graph is marginalized out. 
+But this is not possible with the true image, as without it no CRP or LRP can happen. 
+
+We want to measure the causal effect of the (learned) model weights on the explanation. The generating information as well as the seed act as instrumental variables according to Pearls Front-door criterion. 
+
 # good words for "bias"
 - signal-to-noise ratio - SNR - rho - R
 - spurious-to-core (feature) ratio

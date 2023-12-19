@@ -104,11 +104,11 @@ def sum_it(datas, func):
     ]
 
 
-def ground_truth_plot(path, factor, m_type="mlc", layer="linear", num_it=4):
+def ground_truth_plot(path, factor, m_type="mlc", layer="linear", num_it=4, r_type="crp"):
     datas, filtbiases, biases, alldata = data_iterations(
         path, biascut=0.0, num_it=num_it
     )
-    feat = f"crp_{m_type}_{layer}"
+    feat = f"{r_type}_{m_type}_{layer}"
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     lrindex = 0
@@ -121,7 +121,7 @@ def ground_truth_plot(path, factor, m_type="mlc", layer="linear", num_it=4):
         fig, axs = plt.subplots(
             4,
             its + 1,
-            figsize=(its * 4, 12),
+            figsize=(its * 4, 10),
             gridspec_kw={"wspace": 0.1, "hspace": 0.1},
         )
 
@@ -229,7 +229,7 @@ def ground_truth_plot(path, factor, m_type="mlc", layer="linear", num_it=4):
             linestyle="dotted",
             alpha=0.5,
         )
-        fig.legend(bbox_to_anchor=(1.1, 0.8))
+        fig.legend(loc="lower right")
         fig.suptitle(f"{latents_names[factor]} {m_type} over iterations")
         file_name = f"{factor}_{m_type}"
         fig.savefig(f"outputs/imgs/{file_name}.png")
@@ -238,7 +238,13 @@ def ground_truth_plot(path, factor, m_type="mlc", layer="linear", num_it=4):
 
 
 def max_neuron_ground_truth_plot(
-    path, factor, m_type="mlc", bcut=-1.0, layer="linear", num_it=6,r_type="crp"
+    path,
+    factor,
+    m_type="mlc",
+    bcut=-1.0,
+    layer="linear",
+    num_it=6,
+    r_type="crp",
 ):
     titles = {
         "mrc": ["Mean Relevance Difference * 100", "Mean Relevance Change of Neurons"],
