@@ -48,12 +48,13 @@ Pipeline:
     - see image, but also try with different models later on
 2. sample many datasets by intervening on the bias or "spurious-to-core feature ratio" from 0 to 1, 0 meaning the confounder has 0 effect, 1 meaning shape and watermark are completely correlated
     - 
-3. train the same simple model architecture with fixed hyperparameters (only random initialization changes) on the intervened datasets 
+3. train the same simple model architecture with fixed hyperparameters (only random initialization changes???) on the intervened datasets 
 4. establish ground-truth importance by estimating the causal effect of latent generating factors on model prediction
 5. extract CRP attributions for a small set of images
 6. Estimate the causal effect of generating factors on CRP conditional attribution (in different layers)
 7. Attempt to disentangle attributions and identify human understandable concepts (shape, watermark) 
 8. Evaluate whether the CRP attributions rely stronger on the causal effect of the latent factors or stronger on what the model has actually learned. Also evaluate whether the CRP "concepts" can be disentangled into human understandable concepts relating to the true generating factors
+
 
 
 Theory:
@@ -83,3 +84,14 @@ Problem: we cannot compare heatmap similarity/correlation over multiple models
 Solution: have an abstracted measure of importance for explanation - like  watermark bbox importance, NMF vectors or similar
 
 
+MEASURES FOR CRP:
+
+- general mean relevance change for watermark
+- general predictive value of generating factors to relevances (Ordinary Least Squares R2 Norm)
+- sum of n most relevant neurons inside watermark bounding box (only for images with watermark?)
+- mean activation change vs mean relevance change for watermark?
+- relevance mass accuracy (percentage of relevance within bbox) (clever-xai)
+- relevance rank accuracy (#pixels in bbox which are within n most important pixels)
+
+
+- questions
