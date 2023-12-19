@@ -238,7 +238,7 @@ def ground_truth_plot(path, factor, m_type="mlc", layer="linear", num_it=4):
 
 
 def max_neuron_ground_truth_plot(
-    path, factor, m_type="mlc", bcut=-1.0, layer="linear", num_it=6
+    path, factor, m_type="mlc", bcut=-1.0, layer="linear", num_it=6,r_type="crp"
 ):
     titles = {
         "mrc": ["Mean Relevance Difference * 100", "Mean Relevance Change of Neurons"],
@@ -248,7 +248,7 @@ def max_neuron_ground_truth_plot(
     datas, filtbiases, biases, alldata = data_iterations(
         path, biascut=bcut, num_it=num_it
     )
-    feat = f"crp_{m_type}_{layer}"
+    feat = f"{r_type}_{m_type}_{layer}"
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     lrindex = 0
@@ -260,7 +260,7 @@ def max_neuron_ground_truth_plot(
     fig.set_facecolor(FACECOL)
     allsums = np.zeros(len(filtbiases))
     for l in range(its):
-        x_pos = np.array(filtbiases) + (0.006 * l)
+        x_pos = np.array(filtbiases) + (0.001 * l)
         allneurons = np.array([a[feat][factor] for a in datas[l]])
         sorted_neurons = np.sort(allneurons, 1)
         summed_neurons = np.sum(allneurons, 1) / n_neurons
@@ -352,7 +352,7 @@ def plot_accuracies(path, treshold=90, num_it=6):
     ecol = ["#addd8e", "#78c679", "#31a354", "#006837"]
     fig = plt.figure(figsize=(8, 5))
     fig.set_facecolor(FACECOL)
-    plt.ylim([50, 100])
+    plt.ylim([0, 100])
     plt.plot(
         filtbiases,
         sum_it(datas, lambda x: x["train_accuracy"][0]),

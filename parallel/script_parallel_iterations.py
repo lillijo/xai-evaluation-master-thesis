@@ -11,7 +11,7 @@ def compute_all():
             f"sbatch -J m_{int(bias*100)} ./batch_script_iterations.sh {bias} 0 5"
         ) """
         os.system(
-            f"sbatch -J m_{int(bias*100)} ./batch_script_iterations.sh {bias} 5 10"
+            f"sbatch -J m_{int(bias*100)} ./batch_script_iterations.sh {bias} 0 10"
         )
 
 

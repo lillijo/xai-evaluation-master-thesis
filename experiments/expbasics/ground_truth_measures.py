@@ -10,7 +10,7 @@ from crp.concepts import ChannelConcept
 from crp.helper import get_layer_names
 from crp.attribution import CondAttribution
 
-from biased_noisy_dataset import BiasedNoisyDataset
+from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 
 MAX_INDEX = 491520
 STEP_SIZE = 13267  # 1033, 2011, 2777, 5381, 7069, 13267, 18181
@@ -46,7 +46,7 @@ class GroundTruthMeasures:
         def crp_wm_bbox_layer(index: int, wm: bool):
             image = self.dataset.load_image_wm(index, wm)
             _, _, offset = self.dataset.get_item_info(index)
-            mask = torch.zeros(64, 64)
+            mask = torch.zeros(64, 64).to(self.tdev)
             mask[
                 max(0, 57 + offset[0]) : max(0, 58 + offset[0]) + 5,
                 max(offset[1] + 3, 0) : max(offset[1] + 4, 0) + 10,
@@ -172,25 +172,24 @@ class GroundTruthMeasures:
         self,
         model,
         layer_name="linear_layers.0",
-        func_type="bbox_all",
         disable=False,
     ):
         """
         * This is just the computation of lots of values when intervening on the generating factors
         """
 
-        apply_func = self.get_value_computer(layer_name, model, func_type)
+        apply_func = self.get_value_computer(layer_name, model, func_type="bbox_all")
         indices = range(0, MAX_INDEX, STEP_SIZE)
         everything_rma = []
         everything_rra = []
         for index in tqdm(indices, disable=disable):
             no_wm = apply_func(index, False)
             with_wm = apply_func(index, True)
-            # latent type, latent index, value, is original, index 
-            everything_rma.append([0, 0, no_wm["rma"], False, index]) # type: ignore
-            everything_rma.append([0, 1, with_wm["rma"], True, index]) # type: ignore
-            everything_rra.append([0, 0, no_wm["rra"], False, index]) # type: ignore
-            everything_rra.append([0, 1, with_wm["rra"], True, index]) # type: ignore
+            # latent type, latent index, value, is original, index
+            everything_rma.append([0, 0, no_wm["rma"], False, index])  # type: ignore
+            everything_rma.append([0, 1, with_wm["rma"], True, index])  # type: ignore
+            everything_rra.append([0, 0, no_wm["rra"], False, index])  # type: ignore
+            everything_rra.append([0, 1, with_wm["rra"], True, index])  # type: ignore
         return everything_rma, everything_rra
 
     def ordinary_least_squares(self, everything):

@@ -30,28 +30,38 @@ def to_name(b, i):
 
 
 def logit_change_evaluate(item, ds):
-    if "crp_ols" in item and len(item["crp_ols"][0]) == 6:
-        return item
     res = item
-    bias = item["bias"]
-    strength = item["strength"]
-    num_it = item["num_it"]
-    model = load_model(NAME, bias, num_it)
+    if not "pred_ols" in item:
+        bias = item["bias"]
+        num_it = item["num_it"]
+        model = load_model(NAME, bias, num_it)
 
-    gm = GroundTruthMeasures(ds)
-    flipvalues = gm.intervened_attributions(model, LAYER_NAME, disable=True)
-    ols_vals = gm.ordinary_least_squares(flipvalues)
-    mean_logit = gm.mean_logit_change(flipvalues)
-    flip_pred = gm.intervened_predictions(model)
-    ols_pred = gm.ordinary_least_squares_prediction(flip_pred)
-    mean_logit_pred = gm.mean_logit_change_prediction(flip_pred)
-    prediction_flip = gm.prediction_flip(flip_pred).tolist()
-    ln = "linear" if LAYER_NAME == "linear_layers.0" else "conv"
-    res[f"crp_ols_{ln}"] = ols_vals
-    res[f"crp_mlc_{ln}"] = mean_logit.tolist()
-    res["pred_ols"] = [a[0] for a in ols_pred]
-    res["pred_mlc"] = mean_logit_pred.tolist()
-    res["pred_flip"] = prediction_flip
+        gm = GroundTruthMeasures(ds)
+        flipvalues = gm.intervened_attributions(model, LAYER_NAME, disable=True)
+        ols_vals = gm.ordinary_least_squares(flipvalues)
+        mean_logit = gm.mean_logit_change(flipvalues)
+        flip_pred = gm.intervened_predictions(model)
+        ols_pred = gm.ordinary_least_squares_prediction(flip_pred)
+        mean_logit_pred = gm.mean_logit_change_prediction(flip_pred)
+        prediction_flip = gm.prediction_flip(flip_pred).tolist()
+        ln = "linear" if LAYER_NAME == "linear_layers.0" else "conv"
+        res[f"crp_ols_{ln}"] = ols_vals
+        res[f"crp_mlc_{ln}"] = mean_logit.tolist()
+        res["pred_ols"] = [a[0] for a in ols_pred]
+        res["pred_mlc"] = mean_logit_pred.tolist()
+        res["pred_flip"] = prediction_flip
+    if not "rma_mlc_linear" in item:
+        bias = item["bias"]
+        num_it = item["num_it"]
+        model = load_model(NAME, bias, num_it)
+
+        gm = GroundTruthMeasures(ds)
+        vals_rma, vals_rra = gm.bounding_box_collection(model, LAYER_NAME, disable=True)
+        mrc_rma = gm.mean_logit_change(vals_rma, n_latents=1)
+        mrc_rra = gm.mean_logit_change(vals_rra, n_latents=1)
+        ln = "linear" if LAYER_NAME == "linear_layers.0" else "conv"
+        res[f"rma_mlc_{ln}"] = mrc_rma.tolist()
+        res[f"rra_mlc_{ln}"] = mrc_rra.tolist()
 
     return res
 

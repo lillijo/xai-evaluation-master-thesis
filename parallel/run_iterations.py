@@ -85,9 +85,9 @@ def train_model_evaluate(
 
 
 def compute_with_param(bias, start_it, end_it):
-    accuracies = {}
-    """ with open("parallel_accuracies.json", "r") as f:
-        accuracies = json.load(f) """
+    #accuracies = {}
+    with open("parallel_accuracies.json", "r") as f:
+        accuracies = json.load(f)
     rand_gen = torch.Generator().manual_seed(SEED)
 
     allwm_dataset = TestDataset(

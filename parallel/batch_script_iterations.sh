@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --output=iteration.o%j    # File name for standard output
+#SBATCH --output=measures.o%j           # File name for standard output
 #SBATCH --partition=gpu                 # Specify partition name
 #SBATCH --gpus=1                        # Specify number of GPUs needed for the job
 #SBATCH --exclusive                     # https://slurm.schedmd.com/sbatch.html#OPT_exclusive
 #SBATCH --mem=0                         # Request all memory available on all nodes
 #SBATCH --account=bd1083
-#SBATCH --time=01:00:00                 # Set a limit on the total run time
+#SBATCH --time=02:00:00                 # Set a limit on the total run time
 #SBATCH --mail-type=FAIL                # Notify user by email in case of job failure
 
 set -e
@@ -17,4 +17,4 @@ ulimit -s 204800
 
 # Execute serial programs, e.g.
 # run_one_experiment run_test
-python3 -u run_iterations.py $1 $2 $3
+python3 -u measures.py $1 $2 $3

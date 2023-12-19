@@ -121,8 +121,9 @@ def train_network(
     seeded=False
 ):
     if seeded:
-        torch.manual_seed(num_it)
-        np.random.seed(num_it)
+        seed = num_it if num_it != 9 else 11
+        torch.manual_seed(seed)
+        np.random.seed(seed)
     model = ShapeConvolutionalNeuralNetwork()
     device = f"cuda:{cuda_num}" if torch.cuda.is_available() else "cpu"
 
