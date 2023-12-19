@@ -28,5 +28,5 @@ for f in onlyfiles:
             accuracies[rname] = json.loads(rest)
             accuracies[rname]["num_it"] = int(rname[-1])
 
-with open("../outputs/model_accuracies.json", "w") as fd:
+with open("../outputs/seeded_model_accuracies.json", "w") as fd:
     json.dump(accuracies, fd, indent=2)

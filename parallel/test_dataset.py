@@ -3,9 +3,9 @@ import torch
 import os
 from torch.utils.data import Dataset, DataLoader
 import pickle
-from expbasics.biased_noisy_dataset import BiasedNoisyDataset
+from biased_noisy_dataset import BiasedNoisyDataset
 
-IMG_PATH_DEFAULT = "../dsprites-dataset/images/"
+IMG_PATH_DEFAULT = "images/"
 
 MAX_INDEX = 491519
 STEP_SIZE = 1111

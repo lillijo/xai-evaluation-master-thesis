@@ -81,11 +81,11 @@ class BiasedNoisyDataset(Dataset):
         wms[:ITEM_L] = wms_r
         wms[ITEM_L:] = wms_e
 
-        rand = self.rng.choice([0, 1], TOTAL)
+        rand = self.rng.choice(np.array([0, 1]), TOTAL)
         self.offset_y = rand * self.rng.integers(-58, 3, TOTAL) + (
-            (1 - rand) * (-58 + self.rng.choice([0, 1], TOTAL) * 60)
+            (1 - rand) * (-58 + self.rng.choice(np.array([0, 1]), TOTAL) * 60)
         )
-        self.offset_x = rand * (-4 + self.rng.choice([0, 1], TOTAL) * 55) + (
+        self.offset_x = rand * (-4 + self.rng.choice(np.array([0, 1]), TOTAL) * 55) + (
             (1 - rand) * self.rng.integers(-4, 52, TOTAL)
         )
         self.watermarks = wms
@@ -178,11 +178,19 @@ def get_test_dataset(split=0.3, batch_size=128, img_path=IMG_PATH_DEFAULT):
 
 
 def get_biased_loader(
-    bias, strength, batch_size=128, verbose=True, split=0.3, img_path=IMG_PATH_DEFAULT
+    bias,
+    strength=0.5,
+    batch_size=128,
+    verbose=True,
+    split=0.3,
+    img_path=IMG_PATH_DEFAULT,
 ) -> DataLoader:
+    rand_gen = torch.Generator().manual_seed(SEED)
     ds = BiasedNoisyDataset(
         verbose=verbose, strength=strength, bias=bias, img_path=img_path
     )
-    [train_ds, test_ds] = random_split(ds, [split, 1 - split])
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
+    [train_ds, test_ds] = random_split(ds, [split, 1 - split], generator=rand_gen)
+    train_loader = DataLoader(
+        train_ds, batch_size=batch_size, shuffle=True, generator=rand_gen
+    )
     return train_loader

@@ -118,7 +118,11 @@ def train_network(
     cuda_num=0,
     disable=True,
     num_it=0,
+    seeded=False
 ):
+    if seeded:
+        torch.manual_seed(num_it)
+        np.random.seed(num_it)
     model = ShapeConvolutionalNeuralNetwork()
     device = f"cuda:{cuda_num}" if torch.cuda.is_available() else "cpu"
 
@@ -156,7 +160,7 @@ def train_network(
         if avg_loss < best_loss:
             best_epoch = model_path
             best_loss = avg_loss
-        if avg_loss > 0.69 and epoch < 2:
+        if avg_loss > 0.69 and epoch < 2 and not seeded:
             print("resetting parameters")
             for block in model.children():
                 for layer in block.children():

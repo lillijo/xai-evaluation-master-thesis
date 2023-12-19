@@ -1,14 +1,13 @@
 import numpy as np
 import os
 
-BIASES = list(np.round(np.linspace(0.5, 1, 26), 3))
-ITERATIONS = range(6)  # range(4, 8)
-# np.round(np.linspace(0.8, 1, 21), 3) # 101
+BIASES = list(np.round(np.linspace(0, 1, 21), 3))
+ITERATIONS = range(10)
 
 
 def compute_all():
-    for bias in BIASES:
-        for num_it in ITERATIONS:
+    for num_it in ITERATIONS:
+        for bias in BIASES:
             os.system(
                 f"sbatch -J m_{int(bias*100)}_{num_it} ./batch_script_parallel.sh {bias} {num_it}"
             )

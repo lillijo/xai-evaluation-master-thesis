@@ -1,20 +1,16 @@
-from typing import List, Literal
+from typing import List
 import numpy as np
 import torch
 import copy
-import numpy as np
 import torch
-import os
-import pickle
 from tqdm import tqdm
 
 from zennit.composites import EpsilonPlusFlat
 from crp.concepts import ChannelConcept
-from crp.helper import get_layer_names, abs_norm
+from crp.helper import get_layer_names
 from crp.attribution import CondAttribution
-from crp.image import imgify
 
-from .biased_noisy_dataset import BiasedNoisyDataset
+from biased_noisy_dataset import BiasedNoisyDataset
 
 MAX_INDEX = 491520
 STEP_SIZE = 13267  # 1033, 2011, 2777, 5381, 7069, 13267, 18181
@@ -31,6 +27,8 @@ LAYER_ID_MAP = {
 class GroundTruthMeasures:
     def __init__(self, dataset: BiasedNoisyDataset) -> None:
         self.dataset = dataset
+        self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.tdev = torch.device(self.device)
 
     def get_output(self, index, model, wm):
         image = self.dataset.load_image_wm(index, wm)
@@ -42,9 +40,7 @@ class GroundTruthMeasures:
         model.eval()
         composite = EpsilonPlusFlat()
         cc = ChannelConcept()
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        tdev = torch.device(device)
-        attribution = CondAttribution(model, no_param_grad=True, device=tdev)
+        attribution = CondAttribution(model, no_param_grad=True, device=self.tdev)
         layer_names = get_layer_names(model, [torch.nn.Conv2d, torch.nn.Linear])
 
         def crp_wm_bbox_layer(index: int, wm: bool):
@@ -176,7 +172,7 @@ class GroundTruthMeasures:
         self,
         model,
         layer_name="linear_layers.0",
-        func_type="default_relevance",
+        func_type="bbox_all",
         disable=False,
     ):
         """
@@ -185,21 +181,17 @@ class GroundTruthMeasures:
 
         apply_func = self.get_value_computer(layer_name, model, func_type)
         indices = range(0, MAX_INDEX, STEP_SIZE)
-        everything = []
+        everything_rma = []
+        everything_rra = []
         for index in tqdm(indices, disable=disable):
             no_wm = apply_func(index, False)
             with_wm = apply_func(index, True)
             # latent type, latent index, value, is original, index 
-            everything.append([0, 0, no_wm, False, index])
-            everything.append([0, 1, with_wm, True, index])
-            """ latents = self.dataset.index_to_latent(index)
-            everything.append([1, latents[1], with_wm, True, index])
-            flip_latents = copy.deepcopy(latents)
-            flip_latents[1] = (latents[1] + 1) % 2
-            flip_index = self.dataset.latent_to_index(flip_latents)
-            flip_with_wm = apply_func(flip_index, True)
-            everything.append([1, flip_latents[1], flip_with_wm, False, index]) """
-        return everything
+            everything_rma.append([0, 0, no_wm["rma"], False, index]) # type: ignore
+            everything_rma.append([0, 1, with_wm["rma"], True, index]) # type: ignore
+            everything_rra.append([0, 0, no_wm["rra"], False, index]) # type: ignore
+            everything_rra.append([0, 1, with_wm["rra"], True, index]) # type: ignore
+        return everything_rma, everything_rra
 
     def ordinary_least_squares(self, everything):
         results = []
@@ -296,11 +288,11 @@ class GroundTruthMeasures:
                 vals = list(filter(lambda x: x[0] == latent, vals_index))
                 original_v = list(filter(lambda x: x[3], vals))
                 changed_v = list(filter(lambda x: not x[3], vals))
-                o_neuron = [x[2] for x in original_v]
-                c_neurons = [x[2] for x in changed_v]
+                o_neuron = [x[2].to(self.tdev) for x in original_v]
+                c_neurons = [x[2].to(self.tdev) for x in changed_v]
                 mean_change = 0
                 for other in c_neurons:
-                    ndiff = np.sum(np.abs(np.array(o_neuron[0] - other))) / 2
+                    ndiff = torch.sum(torch.abs(o_neuron[0] - other)) / 2
                     mean_change += ndiff
                 mean_change = mean_change / (len(c_neurons))
                 index_results[count][latent] = mean_change

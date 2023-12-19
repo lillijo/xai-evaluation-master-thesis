@@ -79,9 +79,7 @@ def data_iterations(path, biascut=-1.0, num_it=4):
 
         # to make visualizations more comparable, sort out the bias steps not
         # present in some of them
-        less_items = list(np.round(np.linspace(0.0, 0.4, 5), 3)) + list(
-            np.round(np.linspace(0.5, 1, 11), 3)
-        )
+        less_items = list(np.round(np.linspace(0, 1, 21), 3))
         biases = [a["bias"] for a in alldata]
         datas = [
             list(
@@ -106,15 +104,16 @@ def sum_it(datas, func):
     ]
 
 
-def ground_truth_plot(path, factor, m_type="mlc", num_it=4):
+def ground_truth_plot(path, factor, m_type="mlc", layer="linear", num_it=4):
     datas, filtbiases, biases, alldata = data_iterations(
         path, biascut=0.0, num_it=num_it
     )
+    feat = f"crp_{m_type}_{layer}"
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     lrindex = 0
-    n_neurons = len(datas[0][0][f"crp_{m_type}"][factor])
-    lrs = [i + 1 for i in range(len(datas))]  # [0.0005, 0.001, 0.0015, 0.002]
+    n_neurons = len(datas[0][0][feat][factor])
+    lrs = [i for i in range(len(datas))]  # [0.0005, 0.001, 0.0015, 0.002]
     lr = lrs[lrindex]
     its = len(lrs)
 
@@ -128,9 +127,7 @@ def ground_truth_plot(path, factor, m_type="mlc", num_it=4):
 
         fig.set_facecolor(FACECOL)
         for l in range(its):
-            allneurons = np.array(
-                [np.array(a[f"crp_{m_type}"][factor]) for a in datas[l]]
-            )
+            allneurons = np.array([np.array(a[feat][factor]) for a in datas[l]])
             sums = np.sum(allneurons, 0)
             summed_neurons = np.sum(allneurons, 1) / n_neurons
             summed_prediction = [
@@ -144,7 +141,7 @@ def ground_truth_plot(path, factor, m_type="mlc", num_it=4):
             for i in range(n_neurons):
                 n = orders[i]
                 label = f"{latents_names[factor]} {m_type} neuron {i}" if l == 0 else ""
-                axs[0, l].set_title(f"iteration {lrs[l]}")
+                axs[0, l].set_title(f"seed {lrs[l]}")
                 axs[3, l].set_xlabel("bias a")
                 axs[0, l].scatter(
                     filtbiases,
@@ -159,12 +156,7 @@ def ground_truth_plot(path, factor, m_type="mlc", num_it=4):
                 if l == 0:
                     sum_per_neuron = np.array(
                         [
-                            np.sum(
-                                [
-                                    datas[a][x][f"crp_{m_type}"][factor][n]
-                                    for a in range(4)
-                                ]
-                            )
+                            np.sum([datas[a][x][feat][factor][n] for a in range(4)])
                             / its
                             for x in range(len(datas[0]))
                         ]
@@ -200,7 +192,7 @@ def ground_truth_plot(path, factor, m_type="mlc", num_it=4):
                 label=f"{latents_names[factor]} prediction flip" if l == 0 else "",
             )
 
-        summed_neurons = sum_it(datas, lambda x: sum(x[f"crp_{m_type}"][factor]))
+        summed_neurons = sum_it(datas, lambda x: sum(x[feat][factor]))
         summed_prediction = sum_it(datas, lambda x: x[f"pred_{m_type}"][factor])
         prediction_flips = sum_it(datas, lambda x: x[f"pred_flip"][factor])
 
@@ -245,7 +237,9 @@ def ground_truth_plot(path, factor, m_type="mlc", num_it=4):
     plot_linear_layer(datas, filtbiases, factor)
 
 
-def max_neuron_ground_truth_plot(path, factor, m_type="mlc", bcut=-1.0, num_it=6):
+def max_neuron_ground_truth_plot(
+    path, factor, m_type="mlc", bcut=-1.0, layer="linear", num_it=6
+):
     titles = {
         "mrc": ["Mean Relevance Difference * 100", "Mean Relevance Change of Neurons"],
         "mlc": ["Mean Relevance Difference * 100", "Mean Relevance Change of Neurons"],
@@ -254,10 +248,11 @@ def max_neuron_ground_truth_plot(path, factor, m_type="mlc", bcut=-1.0, num_it=6
     datas, filtbiases, biases, alldata = data_iterations(
         path, biascut=bcut, num_it=num_it
     )
+    feat = f"crp_{m_type}_{layer}"
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     lrindex = 0
-    n_neurons = len(datas[0][0][f"crp_{m_type}"][factor])
+    n_neurons = len(datas[0][0][feat][factor])
     lrs = [i + 1 for i in range(len(datas))]  # [0.0005, 0.001, 0.0015, 0.002]
     lr = lrs[lrindex]
     its = len(lrs)
@@ -266,7 +261,7 @@ def max_neuron_ground_truth_plot(path, factor, m_type="mlc", bcut=-1.0, num_it=6
     allsums = np.zeros(len(filtbiases))
     for l in range(its):
         x_pos = np.array(filtbiases) + (0.006 * l)
-        allneurons = np.array([a[f"crp_{m_type}"][factor] for a in datas[l]])
+        allneurons = np.array([a[feat][factor] for a in datas[l]])
         sorted_neurons = np.sort(allneurons, 1)
         summed_neurons = np.sum(allneurons, 1) / n_neurons
         allsums += summed_neurons / its
@@ -307,12 +302,15 @@ def max_neuron_ground_truth_plot(path, factor, m_type="mlc", bcut=-1.0, num_it=6
     fig.savefig(f"outputs/imgs/{file_name}.png")
 
 
-def avg_max_neuron_ground_truth_plot(path, factor, m_type="mlc", bcut=0.0):
+def avg_max_neuron_ground_truth_plot(
+    path, factor, m_type="mlc", layer="linear", bcut=0.0
+):
     datas, filtbiases, biases, alldata = data_iterations(path, biascut=bcut)
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     lrindex = 0
-    n_neurons = len(datas[0][0][f"crp_{m_type}"][factor])
+    feat = f"crp_{m_type}_{layer}"
+    n_neurons = len(datas[0][0][feat][factor])
     lrs = [i + 1 for i in range(len(datas))]  # [0.0005, 0.001, 0.0015, 0.002]
     lr = lrs[lrindex]
     its = len(lrs)
@@ -321,7 +319,7 @@ def avg_max_neuron_ground_truth_plot(path, factor, m_type="mlc", bcut=0.0):
     sorted_neurons = np.zeros((len(filtbiases), 8))
     summed_neurons = np.zeros((len(filtbiases)))
     for l in range(its):
-        allneurons = np.array([a[f"crp_{m_type}"][factor] for a in datas[l]])
+        allneurons = np.array([a[feat][factor] for a in datas[l]])
         sorted_neurons_l = np.sort(allneurons, 1)
         summed_neurons_l = np.sum(allneurons, 1) / n_neurons
         sorted_neurons += sorted_neurons_l / its
@@ -426,7 +424,16 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
         path, biascut=bcut, num_it=num_it
     )
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
-    shapes = ["8", "s", "P", "*", "X", "d", "v", ">", ]
+    shapes = [
+        "8",
+        "s",
+        "P",
+        "*",
+        "X",
+        "d",
+        "v",
+        ">",
+    ]
     latents_names, latents_sizes, latents_bases = get_lat_names()
     fig = plt.figure(figsize=(10, 6))
     fig.set_facecolor(FACECOL)
@@ -434,7 +441,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
     for f in [2, 3, 4, 5, 1, 0]:
         lat_data = [
             np.mean([datas[a][i][f"pred_{m_type}"][f] for a in range(num_it)])
-            * 100  #  / 0.04  #
+            * 100  # type: ignore
             for i in range(len(datas[0]))
         ]
         plt.plot(
@@ -453,7 +460,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
                 color=colors[colind[f]],
                 s=20,
                 alpha=0.5,
-                marker=shapes[f], # type: ignore
+                marker=shapes[f],  # type: ignore
             )
     plt.legend(loc="upper left")
     plt.ylabel(titles[m_type][0])

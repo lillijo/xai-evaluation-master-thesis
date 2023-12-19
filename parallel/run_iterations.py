@@ -19,6 +19,7 @@ FV_NAME = "fv_model"
 IMAGE_PATH = "images/"
 LAYER_NAME = "linear_layers.0"
 SEED = 431
+ITERATIONS = range(10)
 
 
 def to_name(b, i):
@@ -28,12 +29,20 @@ def to_name(b, i):
     )
 
 
-def train_model_evaluate(bias, strength, allwm, nowm, lr, load_model, num_it, rand_gen):
+def train_model_evaluate(
+    bias,
+    strength,
+    allwm,
+    nowm,
+    lr,
+    load_model,
+    num_it,
+    rand_gen,
+    testds,
+    train_loader,
+):
     res = {}
     name = to_name(bias, num_it)
-    ds = BiasedNoisyDataset(bias, strength, img_path=IMAGE_PATH)
-    trainds, testds, _ = random_split(ds, [0.3, 0.03, 0.67], generator=rand_gen)
-    train_loader = DataLoader(trainds, batch_size=128, shuffle=True, generator=rand_gen)
     model = train_network(
         train_loader,
         bias,
@@ -75,7 +84,7 @@ def train_model_evaluate(bias, strength, allwm, nowm, lr, load_model, num_it, ra
     return (name, res)
 
 
-def compute_with_param(bias, num_it):
+def compute_with_param(bias, start_it, end_it):
     accuracies = {}
     """ with open("parallel_accuracies.json", "r") as f:
         accuracies = json.load(f) """
@@ -98,23 +107,39 @@ def compute_with_param(bias, num_it):
         img_path=IMAGE_PATH,
     )
     nowm = DataLoader(nowm_dataset, batch_size=128, shuffle=True, generator=rand_gen)
-
-    name = to_name(bias, num_it)
-    if not (name in accuracies and accuracies[name]["train_accuracy"][2] > 80):
-        load_model = False if (name in accuracies) else True
-        (name, result) = train_model_evaluate(
-            bias, STRENGTH, allwm, nowm, LEARNING_RATE, load_model, num_it, rand_gen
-        )
-        print(f"(((({name}:{result}))))")
-        accuracies[name] = result
-    else:
-        print("model exists")
-        # print(f"(((({name}:{accuracies[name]}))))")
+    ds = BiasedNoisyDataset(bias, STRENGTH, img_path=IMAGE_PATH)
+    trainds, testds, _ = random_split(ds, [0.2, 0.03, 0.77], generator=rand_gen)
+    train_loader = DataLoader(trainds, batch_size=128, shuffle=True, generator=rand_gen)
+    for num_it in range(start_it, end_it):
+        name = to_name(bias, num_it)
+        if not (name in accuracies and accuracies[name]["train_accuracy"][2] > 80):
+            load_model = False if (name in accuracies) else True
+            (name, result) = train_model_evaluate(
+                bias,
+                STRENGTH,
+                allwm,
+                nowm,
+                LEARNING_RATE,
+                load_model,
+                num_it,
+                rand_gen,
+                testds,
+                train_loader,
+            )
+            print(f"(((({name}:{result}))))")
+            accuracies[name] = result
+        else:
+            print("model exists:")
+            print(f"(((({name}:{accuracies[name]}))))")
+    """ with open(f"accuracies_{bias}_{end_it}.json", "w") as f:
+        json.dump(accuracies, f, indent=2) """
+    
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("script_parallel")
     parser.add_argument("bias", help="bias float", type=float)
-    parser.add_argument("num_it", help="num_it integer", type=int)
+    parser.add_argument("start_it", help=" float", type=int)
+    parser.add_argument("end_it", help=" float", type=int)
     args = parser.parse_args()
-    compute_with_param(args.bias, args.num_it)
+    compute_with_param(args.bias, args.start_it, args.end_it)
