@@ -38,7 +38,7 @@ Although this is not the first work using a toy dataset with known generating fa
     \centering
     \includegraphics[width=0.9\textwidth]{pics/simple_scm.png}
     \caption{Structural causal model generating the dataset DSPRITESNEWNAME.\\
-    In the top right corner the distribution of \textit{Has Watermark} and \textit{Is Shape} are plotted against each other to explain the effect of $a$}
+        In the top right corner the distribution of \textit{Has Watermark} and \textit{Is Shape} are plotted against each other to explain the effect of $\rho$}
     \label{fig:simple_scm}
 \end{figure}
 
@@ -56,35 +56,35 @@ The aim of this new dataset is, to create the simplest possible scenario with kn
 \subsection{Causal Model}
 The process with which samples are constructed from the new dataset is a structural causal model.
 
-For the first extensive comparison the SCM as seen in \autoref{fig:simple_scm} serves as a starting point. Explicitly using a generating SCM as previously done by \cite{Parafita2019, Yang2019, Wilming2023} enables us to study the effects of interventions on the model and the explanations. The \textit{spurious-to-core ratio} variable $a$ adjusts how much information is shared between the true class information (shape), which we name \textit{core feature} following \cite{Singla2022} and the watermark or \textit{spurious feature} through a shared common ancestor $g$. A second parameter $p$ (= prevalence) determines how prevalent the spurious/ watermark feature is in the data. It is important to note that this particular SCM is just one of many possible ways to model how spurious features might interact with core features. It tries to follow the logic of how images are selected in real datasets: Choosing images that have a certain object/feature (here shape), without being aware of some photographers adding watermarks to their images. By some unknown confounding factor (for example personal preference) photographers who add watermarks to their images mostly upload photos of one class of objects.
+For the first extensive comparison the SCM as seen in \autoref{fig:simple_scm} serves as a starting point. Explicitly using a generating SCM as previously done by \cite{Parafita2019, Yang2019, Wilming2023} enables us to study the effects of interventions on the model and the explanations. The \textit{spurious-to-core ratio} variable $\rho$ adjusts how much information is shared between the true class information (shape), which we name \textit{core feature} following \cite{Singla2022} and the watermark or \textit{spurious feature} through a shared common ancestor $g$. A second parameter $p$ (= prevalence) determines how prevalent the spurious/ watermark feature is in the data. It is important to note that this particular SCM is just one of many possible ways to model how spurious features might interact with core features. It tries to follow the logic of how images are selected in real datasets: Choosing images that have a certain object/feature (here shape), without being aware of some photographers adding watermarks to their images. By some unknown confounding factor (for example personal preference) photographers who add watermarks to their images mostly upload photos of one class of objects.
 The same SCM applies to many realistic cases of spurious correlations in computer vision tasks. Think of, for example, cows mostly being photographed on pastures or halloween pumpkins mostly at night, creating correlations between the object and background. However a multitude of SCMs potentially act as simplifications of real world spurious correlation scenarios. Selection bias (see bottom picture in \autoref{fig:possible_scms}), where a certain combination of features is more likely selected into the dataset and hence makes the data distribution less generalizable to the true distribution, is arguably another often occuring type of bias in computer vision datasets. The direction of causal links for photographs is highly debatable and shall not be the focus of this work. Instead, we only want to find to what degree a neural network learns and attribution method explaind a particular generating SCM.
 
 
-{\color{red}
-\begin{itemize}
-    \item have latent factors - can intervene on each factor extensively, expand on usefullness of SCM
-    \item for model we can also assume SCM??? all connected neurons are causally connected
-    \item in given example prediction has shape AND watermark as causal ancestors
-    \item but in real world example spurious feature is only selection bias?
-    \item need to find good causal covering for what i am doing here
-\end{itemize}}
+    {\color{red}
+        \begin{itemize}
+            \item have latent factors - can intervene on each factor extensively, expand on usefullness of SCM
+            \item for model we can also assume SCM??? all connected neurons are causally connected
+            \item in given example prediction has shape AND watermark as causal ancestors
+            \item but in real world example spurious feature is only selection bias?
+            \item need to find good causal covering for what i am doing here
+        \end{itemize}}
 
 \begin{figure}[H]
     \centering
     \includegraphics[height=0.7\textheight]{pics/different_possible_scms.png}
-    \caption{SCMs typically found in image datasets. 
-    1. Our SCM with counfounder $g$, 
-    2. spurious feature has direct causal effect on core feature, 
-    3. core feature has direct causal effect on spurious feature 4. Selection Bias chooses certain combinations of spurious and core feature with higher probability}
+    \caption{SCMs typically found in image datasets.
+        1. Our SCM with counfounder $g$,
+        2. spurious feature has direct causal effect on core feature,
+        3. core feature has direct causal effect on spurious feature 4. Selection Bias chooses certain combinations of spurious and core feature with higher probability}
     \label{fig:possible_scms}
 \end{figure}
 \todo{more diverse SCMs, simplified, akin to real world scenarios}
 
 \section{CNN Model Zoo}
 \subsection{Model Architecture}
-To evaluate explanations, the model to test on can neither be to simple and therefore easy to explain, nor too large for the simple dataset at hand. 
-Through a simple search the architecture detailed in \autoref{lst:cnnmodel} with 3 convolutional layer a 8 channels, one linear \textit{concept} layer with 6 neurons and finally the output linear layer was deemed most fitting for the task. While less convolutional channels or layers often resulted in the model not converging at all, having more neurons or potentially \textit{concepts} did not seem to add information but just redundancy. 
-This model reliably yielded test accuracies over 99\% when using the same spurious-to-core feature ratio $a$ as used for training.
+To evaluate explanations, the model to test on can neither be to simple and therefore easy to explain, nor too large for the simple dataset at hand.
+Through a simple search the architecture detailed in \autoref{lst:cnnmodel} with 3 convolutional layer a 8 channels, one linear \textit{concept} layer with 6 neurons and finally the output linear layer was deemed most fitting for the task. While less convolutional channels or layers often resulted in the model not converging at all, having more neurons or potentially \textit{concepts} did not seem to add information but just redundancy.
+This model reliably yielded test accuracies over 99\% when using the same spurious-to-core feature ratio $\rho$ as used for training.
 
 \begin{lstlisting}[language=bash, label=lst:cnnmodel]
 
@@ -107,13 +107,19 @@ linear_layers:
 \todo{maybe show little example of what purely linear model can achieve?}
 
 \subsection{Hyperparameter Choice}
-Similar to the size of the model, other hyperparameters are optimized for accuracy. 
+Similar to the size of the model, other hyperparameters are optimized for accuracy.
 Finally we train all models using the \verb|Adam| optimizer \todo{cite} with a learning rate of \verb|0.001| using \verb|cross-entropy| loss \todo{cite} as the objective to minimize.
-It is interesting to note that the learning rate has significantly different optimal values for highly biased models than unbiased ones and we therefore have to chose a compromise. We assume this to be due to the problem becoming information-theoretically simpler as the trivial watermark feature gains importance. 
-But importantly, those hyperparameters including the learning rate should not be changed over the course of training our set of models because it has been shown that explanation can causally depend on hyperparameters quite strongly \cite{Karimi2023}. In our experiment we want to keep hyperparameters fixed and only intervene on the spurious-to-core feature ration $a$ or later on all generating factors for establishing ground-truth importance. 
+It is interesting to note that the learning rate has significantly different optimal values for highly biased models than unbiased ones and we therefore have to chose a compromise. We assume this to be due to the cost function becoming less complex as the trivial watermark feature gains importance.
+But importantly, those hyperparameters including the learning rate should not be changed over the course of training our set of models because it has been shown that explanation can causally depend on hyperparameters quite strongly \cite{Karimi2023}. In our experiment we want to keep hyperparameters fixed and only intervene on the spurious-to-core feature ratio $\rho$ or later on all generating factors for establishing ground-truth importance. Another note is that as we are not evaluating the learning process or the model itself but the explanation. The hyperparameters were therefore not in focus of this thesis and chosen rather quickly through some trial-and-error.
 
 \subsection{Training and Accuracy}
-We generate datasets by sampling the spurious-to-core feature ratio $a$ in 0.02 steps and training 4 \todo{how many iterations} models with different random initializations on the same dataset. In total, 224 \todo{how many models total} models are trained. The training dataset contains 30\% of samples and the validation set the other 70\%. Experimentally, much fewer samples seemed to be enough to achieve high accuracies, however there is no need to fear overfitting as we are aware of the true causal generative process. 
+We generate datasets by sampling the spurious-to-core feature ratio $\rho$ in 0.05 steps and training on the same dataset while initializing the model with 10 different seeds.
+Previously, the experiment did not control the influence of the random seed, but after observing strong variations of importance depending on the seed, we decided to always use the same 10 seeds for every dataset. This way it is theoretically possible to marginalize out the effect of the seed on the importance of the spurious feature, however this was done only through averaging of the 10 models results.
+In total, 210 models are trained. The training dataset contains 30\% of all samples. Experimentally, much fewer samples seemed to be enough to achieve high accuracies, however there is no need to fear overfitting as it should if anything increase importance of the most important features even more.
+
+Due to the low complexity of this benchmark dataset, very high accuracies of over 99\% are to be expected and also occured after short training for most models.
+
+\todo{Talk more about seed, say that importance strongly changes with seed }
 
 
 \begin{itemize}
@@ -166,8 +172,11 @@ We generate datasets by sampling the spurious-to-core feature ratio $a$ in 0.02 
 \subsection{Interpreting Mean Logit Change as Causal Intervention}
 \begin{itemize}
     \item it is basically the causal effect of intervening on a latent factor on the models output
-    \item theoretically the interventio must have exactly the same causal effect on the explanation as on the mean logit change???
+    \item theoretically the intervention must have exactly the same causal effect on the explanation as on the mean logit change???
 \end{itemize}
+
+\subsection{Relevance Mass Accuracy (RMA) and Relevance Rank Accuracy (RRA)}
+In \cite{Arras2022} two metrics for the analysis of importance in pixel maps are introduced. Relevance Mass Accuracy (RMA) measures the ratio of relevance within a bounding box around a feature to total relevance. Relevance Rank Accuracy (RRA) the percentage of pixels in such a bounding box that fall within the $n$ most important pixels in the heatmap.
 
 \section{Measuring Biasedness for Heatmaps}
 \begin{itemize}
@@ -208,3 +217,48 @@ We generate datasets by sampling the spurious-to-core feature ratio $a$ in 0.02 
 
 \todo{make sure to not refer to results section too much. rather leave info out if it cannot explained well without looking at the results}
 
+
+
+\section{LATEX FOR FIGMA}
+blub
+\begin{center}
+    Average Causal Effect of Latent Factor on Output
+
+    $\displaystyle ACE = \mathbb{E} [ y \ | \ do(x=1) ] - \mathbb{E} [ y \ | \ do(x=0) ]$
+    \vspace{0.5cm}
+
+    $y = \vec{y} = (y_0, y_1), \ \ x = \mathrm{has\_watermark} \ or \ \mathrm{is\_ellipse}$
+    \vspace{0.5cm}
+
+    Mean Absolute Logit Change
+
+    $\displaystyle MLC = \sum_{i \in n} \frac{|\vec{y}_{i, (x=1)}- \vec{y}_{i, (x=0)} |}{n}$
+
+
+\end{center}
+
+
+\begin{center}
+    Average Causal Effect of Latent Factor on Explanation
+
+    $\displaystyle ACE = \mathbb{E} [ y \ | \ do(x=1) ] - \mathbb{E} [ y \ | \ do(x=0) ]$
+    \vspace{0.5cm}
+    
+    $x = \mathrm{has\_watermark} \ or \ \mathrm{is\_ellipse}$ \\
+    But what is explanation $y$ or explanation change $|y_{x=1} - y_{x=0}|$?  \\
+    For each neuron/concept in a layer: 
+    \vspace{0.4cm}
+
+    Relevance Mass Accuracy: $\displaystyle RMA = \frac{\sum rel_{watermark}}{\sum rel_{total}}$
+    \vspace{0.4cm}
+
+    Relevance Rank Accuracy: $\displaystyle RRA = \frac{\# top-k \ rel \ in \ watermark}{\# watermark}$
+    \vspace{0.4cm}
+
+    Absolute Relevance Change: $\displaystyle \sum_{i \in layer} |rel_{i, (x=1)}- rel_{i, (x=0)} | $
+    \vspace{0.4cm}
+
+    $\mathrm{crp}  \independent \rho \ | \ gt $ ?
+
+
+\end{center}

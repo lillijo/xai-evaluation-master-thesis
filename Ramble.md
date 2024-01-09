@@ -81,7 +81,7 @@ What do i want to measure?
 
 - disentangledness - can CRP differentiate between watermark and shape?
 - importance of watermark feature, in relation to shape feature
-- negative vs positive relevance - does class speficific approach fail?
+- negative vs positive relevance - does class specific approach fail?
 - 
 
 what is "good" outcome?
@@ -100,6 +100,3 @@ MEASURES FOR CRP:
 - mean activation change vs mean relevance change for watermark?
 - relevance mass accuracy (percentage of relevance within bbox) (clever-xai)
 - relevance rank accuracy (#pixels in bbox which are within n most important pixels)
-
-
-- questions
