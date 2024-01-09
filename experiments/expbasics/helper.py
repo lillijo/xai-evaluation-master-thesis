@@ -21,7 +21,7 @@ def to_name(b, i):
 
 
 def get_model_etc(bias, num_it=0):
-    NAME = "../clustermodels/model"
+    NAME = "../clustermodels/model_seeded"
     model = load_model(NAME, bias, num_it)
     test_ds, test_loader = get_test_dataset()
     gm_dataset = BiasedNoisyDataset()

@@ -98,7 +98,7 @@ def load_model(name, bias, num_it=0):
         model.load_state_dict(torch.load(path, map_location=torch.device(device)))
         return model
     warnings.warn(
-        "[model not found] model path not found, returning random initialized model"
+        f"[model not found] model path '{path}' not found, returning random initialized model"
     )
     model.eval()
     return model

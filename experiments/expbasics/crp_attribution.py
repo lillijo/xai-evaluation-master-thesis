@@ -286,17 +286,13 @@ class CRPAttribution:
             # attr.relevances[layer_name][0]
         return relevances, pred, datum[1], watermark
 
-    def get_reference_scores(self, img, label, layer, neurons):
-        conditions = [{"y": [label]}]
+    def get_reference_scores(self, index, wm, layer_name):
+        image = self.dataset.load_image_wm(index, wm)
         attr = self.attribution(
-            img,
-            [{}],
-            self.composite,
-            record_layer=self.layer_names,
-            start_layer="linear_layers.2",
+            image, [{}], self.composite, start_layer=layer_name  # , init_rel=act
         )
-        rel_c = self.cc.attribute(attr.relevances[layer], abs_norm=True)  #  activations
-        return [rel_c[0][i] for i in neurons]
+        rel_c = self.cc.attribute(attr.relevances[layer_name], abs_norm=True)
+        return rel_c[0].tolist()
 
     def attribute_images(self, imgs, layer_name):
         imgs.requires_grad = True
@@ -483,18 +479,25 @@ class CRPAttribution:
             mask=mask,
         )
 
-    def crp_wm_bbox_layer(self, index, layer_name):
-        img, label = self.dataset[index]
-        _, watermark, offset = self.dataset.get_item_info(index)
+    def crp_wm_bbox_layer(self, index, layer_name, absolute=False, onlyone=None):
+        if onlyone is not None:
+            sample = self.dataset.load_image_wm(index, bool(onlyone))
+            _, label = self.dataset[index]
+            watermark = onlyone
+            _, _, offset = self.dataset.get_item_info(index)
+        else:
+            img, label = self.dataset[index]
+            _, watermark, offset = self.dataset.get_item_info(index)
+
+            sample = img.view(1, 1, 64, 64)
+            sample.requires_grad = True
         mask = torch.zeros(64, 64)
         mask[
             max(0, 57 + offset[0]) : max(0, 58 + offset[0]) + 5,
             max(offset[1] + 3, 0) : max(offset[1] + 4, 0) + 10,
         ] = 1
-        mask_size = mask.sum()
+        mask_size = int(mask.sum())
         # antimask = (mask + 1) % 2
-        sample = img.view(1, 1, 64, 64)
-        sample.requires_grad = True
         nlen = len(self.layer_id_map[layer_name])
 
         output = self.model(sample)
@@ -516,12 +519,18 @@ class CRPAttribution:
             verbose=False,
             batch_size=nlen,
         ):
-            masked = attr.heatmap * mask
-
-            # relevance rank accuracy:
-            cutoffs = torch.sort(
-                attr.heatmap.view(nlen, -1), dim=1, descending=True
-            ).values[:, 300]
+            if absolute:
+                masked = (attr.heatmap * mask).abs()
+                # relevance rank accuracy:
+                cutoffs = torch.sort(
+                    attr.heatmap.view(nlen, -1).abs(), dim=1, descending=True
+                ).values[:, mask_size]
+            else:
+                masked = attr.heatmap * mask
+                # relevance rank accuracy:
+                cutoffs = torch.sort(
+                    attr.heatmap.view(nlen, -1), dim=1, descending=True
+                ).values[:, mask_size]
             cutoffs = torch.where(cutoffs > 0, cutoffs, 100)
             rrank = masked >= cutoffs[:, None, None]
             rank_counts = torch.count_nonzero(rrank, dim=(1, 2))
@@ -545,7 +554,7 @@ class CRPAttribution:
             pred=pred,
             label=label,
             output=output.data.tolist(),
-            #mask=mask,
+            # mask=mask,
         )
 
     def old_wm_importance(self, index):
@@ -556,7 +565,7 @@ class CRPAttribution:
         output = self.model(sample)
         pred = int(output.data.max(1)[1][0])
 
-        conditions = [{"y": [pred]}]  # pred label
+        conditions = [{"y": [pred]}]
 
         attr = self.attribution(
             sample,

@@ -19,7 +19,7 @@ class BiasedNoisyDataset(Dataset):
     def __init__(
         self,
         bias=0.0,
-        strength=0.0,
+        strength=0.5,
         verbose=False,
         length=None,
         img_path=IMG_PATH_DEFAULT,

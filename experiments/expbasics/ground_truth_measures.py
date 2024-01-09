@@ -25,10 +25,12 @@ LAYER_ID_MAP = {
 
 
 class GroundTruthMeasures:
-    def __init__(self, dataset: BiasedNoisyDataset) -> None:
+    def __init__(self, dataset: BiasedNoisyDataset, step_size=STEP_SIZE) -> None:
         self.dataset = dataset
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.tdev = torch.device(self.device)
+        self.max_index = MAX_INDEX
+        self.step_size = step_size
 
     def get_output(self, index, model, wm):
         image = self.dataset.load_image_wm(index, wm)
@@ -51,7 +53,7 @@ class GroundTruthMeasures:
                 max(0, 57 + offset[0]) : max(0, 58 + offset[0]) + 5,
                 max(offset[1] + 3, 0) : max(offset[1] + 4, 0) + 10,
             ] = 1
-            mask_size = mask.sum()
+            mask_size = int(mask.sum())
             nlen = LAYER_ID_MAP[layer_name]
 
             output = model(image)
@@ -73,12 +75,13 @@ class GroundTruthMeasures:
                 verbose=False,
                 batch_size=nlen,
             ):
-                masked = attr.heatmap * mask
+                heatmap = attr.heatmap.abs()
+                masked = heatmap * mask
 
                 # relevance rank accuracy:
                 cutoffs = torch.sort(
-                    attr.heatmap.view(nlen, -1), dim=1, descending=True
-                ).values[:, 300]
+                    heatmap.view(nlen, -1), dim=1, descending=True
+                ).values[:, mask_size]
                 cutoffs = torch.where(cutoffs > 0, cutoffs, 100)
                 rrank = masked >= cutoffs[:, None, None]
                 rank_counts = torch.count_nonzero(rrank, dim=(1, 2))
@@ -86,7 +89,7 @@ class GroundTruthMeasures:
 
                 # antimasked = attr.heatmap * antimask
                 rel_within.append(torch.sum(masked, dim=(1, 2)))
-                rel_total.append(torch.sum(attr.heatmap, dim=(1, 2)))
+                rel_total.append(torch.sum(heatmap, dim=(1, 2)))
             # relevance mass accuracy: R_within / R_total
             rel_within = torch.cat(rel_within)  # abs_norm* 100
             rel_total = torch.cat(rel_total)
@@ -143,7 +146,7 @@ class GroundTruthMeasures:
 
         apply_func = self.get_value_computer(layer_name, model, func_type)
 
-        indices = range(0, MAX_INDEX, STEP_SIZE)
+        indices = range(0, self.max_index, self.step_size)
         everything = []
         for index in tqdm(indices, disable=disable):
             latents = self.dataset.index_to_latent(index)
@@ -179,17 +182,17 @@ class GroundTruthMeasures:
         """
 
         apply_func = self.get_value_computer(layer_name, model, func_type="bbox_all")
-        indices = range(0, MAX_INDEX, STEP_SIZE)
+        indices = range(0, self.max_index, self.step_size)
         everything_rma = []
         everything_rra = []
         for index in tqdm(indices, disable=disable):
             no_wm = apply_func(index, False)
             with_wm = apply_func(index, True)
             # latent type, latent index, value, is original, index
-            everything_rma.append([0, 0, no_wm["rma"], False, index])  # type: ignore
-            everything_rma.append([0, 1, with_wm["rma"], True, index])  # type: ignore
-            everything_rra.append([0, 0, no_wm["rra"], False, index])  # type: ignore
-            everything_rra.append([0, 1, with_wm["rra"], True, index])  # type: ignore
+            everything_rma.append([0, 0, no_wm["rma"], False, index, no_wm["pred"]])  # type: ignore
+            everything_rma.append([0, 1, with_wm["rma"], True, index, with_wm["pred"]])  # type: ignore
+            everything_rra.append([0, 0, no_wm["rra"], False, index, no_wm["pred"]])  # type: ignore
+            everything_rra.append([0, 1, with_wm["rra"], True, index, with_wm["pred"]])  # type: ignore
         return everything_rma, everything_rra
 
     def ordinary_least_squares(self, everything):
@@ -210,7 +213,7 @@ class GroundTruthMeasures:
         return results
 
     def mean_logit_change(self, everything, n_latents=6):
-        indices = range(0, MAX_INDEX, STEP_SIZE)
+        indices = range(0, self.max_index, self.step_size)
         n_neur = len(everything[0][2])
         index_results = np.zeros((len(indices), n_latents, n_neur))
         for count, index in enumerate(indices):
@@ -235,7 +238,7 @@ class GroundTruthMeasures:
         * SAME FOR MODELS PREDICTION
         """
 
-        indices = range(0, MAX_INDEX, STEP_SIZE)
+        indices = range(0, self.max_index, self.step_size)
         everything = []
         for index in indices:
             latents = self.dataset.index_to_latent(index)
@@ -254,7 +257,8 @@ class GroundTruthMeasures:
                         flip_latents = copy.deepcopy(latents)
                         flip_latents[lat] = j
                         flip_index = self.dataset.latent_to_index(flip_latents)
-                        flip_pred = self.get_output(flip_index, model, False)
+                        flip_pred = self.get_output(flip_index, model, True)
+                        # latent, latent index, value, is original, index
                         everything.append([lat, j, flip_pred, False, index])
                     else:
                         everything.append([lat, j, original_output, True, index])
@@ -266,7 +270,8 @@ class GroundTruthMeasures:
             results.append([])
             vals = list(filter(lambda x: x[0] == latent, everything))
             predict = torch.tensor([torch.tensor(x[1]) for x in vals])
-            actual = torch.tensor([x[2].max(0, keepdim=True).indices for x in vals])
+            actual = torch.tensor([x[2][0] - x[2][1] for x in vals])
+            #print(actual.shape, predict.shape, [(x[2][0] - x[2][1]) for x in vals])
             corr_matrix = np.corrcoef(actual, predict)
             corr = corr_matrix[0, 1]
             R_sq = corr**2
@@ -279,7 +284,7 @@ class GroundTruthMeasures:
         """
         * same as for neurons but with output value
         """
-        indices = range(0, MAX_INDEX, STEP_SIZE)
+        indices = range(0, self.max_index, self.step_size)
         index_results = np.zeros((len(indices), 6))
         for count, index in enumerate(indices):
             vals_index = list(filter(lambda x: x[4] == index, everything))
@@ -299,7 +304,7 @@ class GroundTruthMeasures:
         return results
 
     def prediction_flip(self, everything):
-        indices = range(0, MAX_INDEX, STEP_SIZE)
+        indices = range(0, self.max_index, self.step_size)
         index_results = np.zeros((len(indices), 6))
         for count, index in enumerate(indices):
             vals_index = list(filter(lambda x: x[4] == index, everything))
