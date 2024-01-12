@@ -104,6 +104,35 @@ class GroundTruthMeasures:
                 pred=pred,
             )
 
+        if func_type == "complete_heatmaps":
+
+            def complete_heatmaps(index: int, wm: bool):
+                image = self.dataset.load_image_wm(index, wm)
+                nlen = LAYER_ID_MAP[layer_name]
+
+                output = model(image)
+                pred = int(output.data.max(1)[1][0])
+                conditions = [
+                    {layer_name: [i], "y": [pred]}
+                    for i in range(LAYER_ID_MAP[layer_name])
+                ]
+                if layer_name == "linear_layers.2":
+                    conditions = [{"y": [pred]}]
+                heatmaps = np.zeros((nlen, 64, 64))
+                for attr in attribution.generate(
+                    image,
+                    conditions,
+                    composite,
+                    record_layer=layer_names,
+                    verbose=False,
+                    batch_size=nlen,
+                ):
+                    heatmaps = attr.heatmap
+
+                return heatmaps
+
+            return complete_heatmaps
+
         if func_type == "default_relevance":
             # return normed relevances of given layer
             def default_relevance(index: int, wm: bool) -> List[float]:
@@ -271,7 +300,7 @@ class GroundTruthMeasures:
             vals = list(filter(lambda x: x[0] == latent, everything))
             predict = torch.tensor([torch.tensor(x[1]) for x in vals])
             actual = torch.tensor([x[2][0] - x[2][1] for x in vals])
-            #print(actual.shape, predict.shape, [(x[2][0] - x[2][1]) for x in vals])
+            # print(actual.shape, predict.shape, [(x[2][0] - x[2][1]) for x in vals])
             corr_matrix = np.corrcoef(actual, predict)
             corr = corr_matrix[0, 1]
             R_sq = corr**2

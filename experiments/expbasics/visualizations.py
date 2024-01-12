@@ -36,7 +36,7 @@ def data_per_lr(path, biascut=-1):
         analysis_data = json.load(f)
         alldata = sorted(analysis_data.values(), key=lambda x: x["bias"])
         biases = [a["bias"] for a in alldata]
-        filtbiases = [
+        bis = [
             a["bias"]
             for a in list(
                 filter(
@@ -69,7 +69,7 @@ def data_per_lr(path, biascut=-1):
                 lambda x: x["learning_rate"] == 0.0005 and x["bias"] > biascut, alldata
             )
         )
-    return datas, filtbiases
+    return datas, bis
 
 
 def data_iterations(path, biascut=-1.0, num_it=4):
@@ -92,9 +92,9 @@ def data_iterations(path, biascut=-1.0, num_it=4):
             )
             for n in range(num_it)
         ]
-        filtbiases = [a["bias"] for a in datas[0]]
+        bis = [a["bias"] for a in datas[0]]
 
-    return datas, filtbiases, biases, alldata
+    return datas, bis, biases, alldata
 
 
 def sum_it(datas, func):
@@ -107,9 +107,7 @@ def sum_it(datas, func):
 def ground_truth_plot(
     path, factor, m_type="mlc", layer="linear", num_it=4, r_type="crp"
 ):
-    datas, filtbiases, biases, alldata = data_iterations(
-        path, biascut=0.0, num_it=num_it
-    )
+    datas, bis, biases, alldata = data_iterations(path, biascut=0.0, num_it=num_it)
     feat = f"{r_type}_{m_type}_{layer}"
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
@@ -119,14 +117,14 @@ def ground_truth_plot(
     lr = lrs[lrindex]
     its = len(lrs)
 
-    def plot_linear_layer(datas, filtbiases, factor=0):
+    def plot_linear_layer(datas, bis, factor=0):
         fig, axs = plt.subplots(
             3,
             its + 1,
             figsize=(its * 3, 10),
             gridspec_kw={"wspace": 0.1, "hspace": 0.1},
         )
-        sum_per_neuron = np.zeros((len(filtbiases), n_neurons))
+        sum_per_neuron = np.zeros((len(bis), n_neurons))
         fig.set_facecolor(FACECOL)
         for l in range(its):
             allneurons = np.array([np.array(a[feat][factor]) for a in datas[l]])
@@ -145,7 +143,7 @@ def ground_truth_plot(
                 axs[0, l].set_title(f"seed {lrs[l]}")
                 axs[2, l].set_xlabel("bias a")
                 axs[0, l].scatter(
-                    filtbiases,
+                    bis,
                     allneurons[:, n],
                     color=colors[i],
                     label=label,
@@ -163,7 +161,7 @@ def ground_truth_plot(
                     )"""
                     sum_per_neuron = sum_per_neuron / its
                     axs[0, its].scatter(
-                        filtbiases,
+                        bis,
                         sum_per_neuron[:, n],
                         color=colors[i],
                         alpha=0.3,
@@ -179,13 +177,13 @@ def ground_truth_plot(
                         axs[p, l].yaxis.set_visible(False)
                         axs[p, l].set_ylim([0, 1])
             axs[1, l].scatter(
-                filtbiases,
+                bis,
                 summed_neurons,
                 color=colors[7],
                 label=f"{latents_names[factor]} {m_type} sum neurons" if l == 0 else "",
             )
             axs[2, l].scatter(
-                filtbiases,
+                bis,
                 summed_prediction,
                 color=colors[9],
                 label=f"{latents_names[factor]} prediction {m_type}" if l == 0 else "",
@@ -204,12 +202,12 @@ def ground_truth_plot(
             axs[o, its].xaxis.set_visible(False)
             axs[o, its].yaxis.set_visible(False)
         axs[1, its].scatter(
-            filtbiases,
+            bis,
             summed_neurons,
             color=colors[7],
         )
         axs[2, its].scatter(
-            filtbiases,
+            bis,
             summed_prediction,
             color=colors[9],
         )
@@ -218,7 +216,7 @@ def ground_truth_plot(
         file_name = f"{factor}_{m_type}"
         fig.savefig(f"outputs/imgs/{file_name}.png")
 
-    plot_linear_layer(datas, filtbiases, factor)
+    plot_linear_layer(datas, bis, factor)
 
 
 def max_neuron_ground_truth_plot(
@@ -230,9 +228,7 @@ def max_neuron_ground_truth_plot(
     num_it=6,
     r_type="crp",
 ):
-    datas, filtbiases, biases, alldata = data_iterations(
-        path, biascut=bcut, num_it=num_it
-    )
+    datas, bis, biases, alldata = data_iterations(path, biascut=bcut, num_it=num_it)
     feat = f"{r_type}_{m_type}_{layer}"
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
@@ -263,9 +259,9 @@ def max_neuron_ground_truth_plot(
     its = len(lrs)
     fig = plt.figure(figsize=(12, 7))
     fig.set_facecolor(FACECOL)
-    allsums = np.zeros(len(filtbiases))
+    allsums = np.zeros(len(bis))
     for l in range(its):
-        x_pos = np.array(filtbiases) + (0.001 * l)
+        x_pos = np.array(bis) + (0.001 * l)
         allneurons = np.array([a[feat][factor] for a in datas[l]])
         sorted_neurons = np.sort(allneurons, 1)
         summed_neurons = np.sum(allneurons, 1) / n_neurons
@@ -288,7 +284,7 @@ def max_neuron_ground_truth_plot(
             marker="_",  # type: ignore
         )
     plt.plot(
-        filtbiases,
+        bis,
         allsums,
         color="#000",
         label="average all seeds",
@@ -308,7 +304,7 @@ def max_neuron_ground_truth_plot(
 def avg_max_neuron_ground_truth_plot(
     path, factor, m_type="mlc", layer="linear", bcut=0.0
 ):
-    datas, filtbiases, biases, alldata = data_iterations(path, biascut=bcut)
+    datas, bis, biases, alldata = data_iterations(path, biascut=bcut)
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     lrindex = 0
@@ -319,8 +315,8 @@ def avg_max_neuron_ground_truth_plot(
     its = len(lrs)
     fig = plt.figure(figsize=(11, 7))
     fig.set_facecolor(FACECOL)
-    sorted_neurons = np.zeros((len(filtbiases), 8))
-    summed_neurons = np.zeros((len(filtbiases)))
+    sorted_neurons = np.zeros((len(bis), 8))
+    summed_neurons = np.zeros((len(bis)))
     for l in range(its):
         allneurons = np.array([a[feat][factor] for a in datas[l]])
         sorted_neurons_l = np.sort(allneurons, 1)
@@ -330,14 +326,14 @@ def avg_max_neuron_ground_truth_plot(
     for n in range(n_neurons):
         nd = sorted_neurons[:, n]
         plt.scatter(
-            filtbiases,
+            bis,
             nd,
             color=colors[n_neurons - n],
             label=f"{latents_names[factor]} {m_type} neuron rank {n_neurons - n}",
             alpha=0.5,
         )
     plt.scatter(
-        filtbiases,
+        bis,
         summed_neurons,
         color=colors[0],
         label=f"{latents_names[factor]} {m_type} sum neurons",
@@ -350,57 +346,57 @@ def avg_max_neuron_ground_truth_plot(
 
 
 def plot_accuracies(path, treshold=90, num_it=6):
-    datas, filtbiases, biases, alldata = data_iterations(path, num_it=num_it)
-    rcol = matplotlib.cm.winter(np.linspace(0, 1, 4))
-    ecol = matplotlib.cm.cool(np.linspace(0, 1, 4))
+    datas, bis, biases, alldata = data_iterations(path, num_it=num_it)
+    rcol = matplotlib.cm.winter(np.linspace(0, 1, 4))  # type: ignore
+    ecol = matplotlib.cm.cool(np.linspace(0, 1, 4))  # type: ignore
     fig = plt.figure(figsize=(8, 5))
     fig.set_facecolor(FACECOL)
     plt.ylim([0, 100])
     print(sum_it(datas, lambda x: x["test_accuracy"][0] / 10))
     plt.plot(
-        filtbiases,
+        bis,
         sum_it(datas, lambda x: x["test_accuracy"][0] / 10),
         c=rcol[0],
         label="unbiased rectangles",
         linestyle=(0, (4, 3)),
     )
     plt.plot(
-        filtbiases,
+        bis,
         sum_it(datas, lambda x: x["all_wm_accuracy"][0] / 10),
         c=rcol[2],
         label="only rectangles with watermark",
         linestyle="dashed",
     )
     plt.plot(
-        filtbiases,
+        bis,
         sum_it(datas, lambda x: x["no_wm_accuracy"][0] / 10),
         c=rcol[3],
         label="only rectangles without watermark",
         linestyle="dotted",
     )
     plt.plot(
-        filtbiases,
+        bis,
         sum_it(datas, lambda x: x["test_accuracy"][1] / 10),
         c=ecol[0],
         label="unbiased ellipses",
         linestyle=(0, (5, 3)),
     )
     plt.plot(
-        filtbiases,
+        bis,
         sum_it(datas, lambda x: x["all_wm_accuracy"][1] / 10),
         c=ecol[2],
         label="only ellipses with watermark",
         linestyle="dashed",
     )
     plt.plot(
-        filtbiases,
+        bis,
         sum_it(datas, lambda x: x["no_wm_accuracy"][1] / 10),
         c=ecol[3],
         label="only ellipses without watermark",
         linestyle=(0, (1, 1)),
     )
     plt.plot(
-        filtbiases,
+        bis,
         sum_it(datas, lambda x: x["train_accuracy"][2] / 10),
         c="#000",
         label="training accuracy all",
@@ -425,9 +421,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
         "mlc": ["Mean Logit Difference", "Mean Logit Change When Changing Factor"],
         "ols": ["Correlation Coefficient", "R2 Score"],
     }
-    datas, filtbiases, biases, alldata = data_iterations(
-        path, biascut=bcut, num_it=num_it
-    )
+    datas, bis, biases, alldata = data_iterations(path, biascut=bcut, num_it=num_it)
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
     shapes = [
         "8",
@@ -450,7 +444,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
             for i in range(len(datas[0]))
         ]
         plt.plot(
-            filtbiases,
+            bis,
             lat_data,
             color=colors[colind[f]],
             label=latents_names[f],
@@ -460,7 +454,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
         for l in range(num_it):
             lat_data = [a[f"pred_{m_type}"][f] for a in datas[l]]
             plt.scatter(
-                filtbiases,
+                bis,
                 lat_data,
                 color=colors[colind[f]],
                 s=20,
@@ -470,20 +464,126 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
     plt.legend(loc="center left")
     plt.ylabel(titles[m_type][0])
     plt.xlabel("Bias")
-    #plt.title(titles[m_type][1])
+    # plt.title(titles[m_type][1])
     # plt.legend(bbox_to_anchor=(1.01, 0.7))
 
-def plot_3d(path, m_type=lambda x:x, bcut=0.5, num_it=6):
-    fig = plt.figure()
-    datas, filtbiases, biases, alldata = data_iterations(
-        path, biascut=bcut, num_it=num_it
+
+def plot_measures(path):
+    datas, bis, biases, alldata = data_iterations(path, biascut=0.0, num_it=10)
+    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
+    lat_data = [
+        np.mean([datas[a][i]["pred_mlc"][0] for a in range(10)])
+        # * 100  # type: ignore
+        for i in range(len(datas[0]))
+    ]
+    ols = np.array(
+        [
+            np.mean([datas[a][i]["pred_ols"][0] for a in range(10)])
+            # * 100  # type: ignore
+            for i in range(len(datas[0]))
+        ]
     )
+    ols = ols / ols.max()
+    flip = np.array(
+        [
+            np.mean([datas[a][i]["pred_flip"][0] for a in range(10)])
+            # * 100  # type: ignore
+            for i in range(len(datas[0]))
+        ]
+    )
+    flip = flip / flip.max()
+    rra_mlc_conv = [
+        np.mean([np.mean(datas[a][i]["rra_mlc_conv"][0]) for a in range(10)])
+        # * 100  # type: ignore
+        for i in range(len(datas[0]))
+    ]
+    rma_mlc_conv = [
+        np.mean([np.mean(datas[a][i]["rma_mlc_conv"][0]) for a in range(10)])
+        # * 100  # type: ignore
+        for i in range(len(datas[0]))
+    ]
+    rma_mlc_conv = [
+        np.mean([np.mean(datas[a][i]["rma_mlc_conv"][0]) for a in range(10)])
+        # * 100  # type: ignore
+        for i in range(len(datas[0]))
+    ]
+    crp_mlc_conv = [
+        np.mean([np.mean(datas[a][i]["crp_mlc_linear"][0]) for a in range(10)])
+        # * 100  # type: ignore
+        for i in range(len(datas[0]))
+    ]
+    total_effect = np.array(
+        [
+            np.mean([datas[a][i]["total_effect"] for a in range(10)])
+            # * 100  # type: ignore
+            for i in range(len(datas[0]))
+        ]
+    )
+    total_effect = total_effect / total_effect.max()
+
+    mlc = np.array(
+        [
+            np.mean([datas[a][i]["mlc"] for a in range(10)])
+            # * 100  # type: ignore
+            for i in range(len(datas[0]))
+        ]
+    )
+    mlc = mlc / mlc.max()
+    coeff = np.load("phi_coefficients.npy")
+    plt.plot(bis, ols, color=colors[3], label="ols")
+    plt.plot(bis, flip, color=colors[4], label="flip")
+    plt.plot(bis, coeff, color=colors[0], label="m0 (phi-coefficient wm/shape)")
+    # plt.plot(bis, lat_data, color=colors[9], label="m1 (mlc)")
+    plt.plot(bis, mlc, color=colors[1], label="m1 (true mlc)")
+    # plt.plot(bis, crp_mlc_conv, color=colors[5], label="m2 (total relevance change)")
+    # plt.plot(bis, rra_mlc_conv, color=colors[6], label="m2 (relevance rank accuracy)")
+    # plt.plot(bis, rma_mlc_conv, color=colors[7], label="m2 (relevance mass accuracy)")
+    plt.plot(bis, total_effect, color=colors[8], label="m2 (total effect)")
+    plt.ylabel("correlation/gt/relevance")
+    plt.xlabel("bias")
+
+    plt.legend(loc="center left")
+
+
+def scatter_measures(path):
+    datas, bis, biases, alldata = data_iterations(path, biascut=0.0, num_it=10)
+    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
+    for a in range(10):
+        total_effect = np.array(
+            [datas[a][i]["total_effect"] for i in range(len(datas[a]))]
+        )
+        total_effect = total_effect / total_effect.max()
+        mlc = np.array(
+            [datas[a][i]["mlc"] for i in range(len(datas[a]))]
+        )
+        mlc = mlc / mlc.max()
+        if a == 0:
+            plt.scatter(bis, mlc, color=colors[3], alpha=0.5, label="m1 (mlc)")
+            plt.scatter(bis, total_effect, color=colors[6], alpha=0.5, label="m2 (total effect)")
+        else:
+            plt.scatter(bis, mlc, color=colors[3], alpha=0.5)
+            plt.scatter(bis, total_effect, color=colors[6], alpha=0.5)
+
+    coeff = np.load("phi_coefficients.npy")
+    # plt.scatter(bis, ols, color=colors[3], label="ols")
+    # plt.scatter(bis, flip, color=colors[4], label="flip")
+    plt.scatter(bis, coeff, color=colors[0], label="m0 (phi-coefficient wm/shape)")
+    plt.ylabel("correlation/gt/relevance")
+    plt.xlabel("bias")
+
+    plt.legend(loc="center left")
+
+
+def plot_3d(path, m_type=lambda x: x,c="red", bcut=0.5, num_it=6):
+    fig = plt.figure()
+    datas, bis, biases, alldata = data_iterations(path, biascut=bcut, num_it=num_it)
     bias = [a["bias"] for a in alldata]
     seed = [a["num_it"] for a in alldata]
     value = [m_type(a) for a in alldata]
-    ax = fig.add_subplot(projection='3d')
+    ax = fig.add_subplot(projection="3d")
     ax.view_init(10, 290, 0)
-    ax.scatter(bias, seed, value, c=seed)
+    ax.scatter(bias, seed, value, c=c)
+
 
 def plot_corr_factors(path, m_type="flip", bcut=0.5, num_it=6):
     titles = {
@@ -491,9 +591,7 @@ def plot_corr_factors(path, m_type="flip", bcut=0.5, num_it=6):
         "mlc": ["Mean Logit Difference * 100", "Mean Logit Change Watermark and Shape"],
         "ols": ["Correlation Coefficient * 100", "R2 Watermark and Shape"],
     }
-    datas, filtbiases, biases, alldata = data_iterations(
-        path, biascut=bcut, num_it=num_it
-    )
+    datas, bis, biases, alldata = data_iterations(path, biascut=bcut, num_it=num_it)
     colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     fig = plt.figure(figsize=(10, 6))
@@ -529,7 +627,7 @@ def plot_corr_factors(path, m_type="flip", bcut=0.5, num_it=6):
     ]
     print(len(ratio), len(shape_values[indices]))
     plt.plot(
-        filtbiases,
+        bis,
         ratio,
         color=colors[5],
         label=f"{latents_names[0]} vs. {latents_names[1]} ratio",
@@ -570,12 +668,6 @@ def plot_fancy_distribution(dataset=None, s=[], w=[]):
         w = dataset.bias * generator + (1 - dataset.bias) * dataset.rng.uniform(
             0, 1, TOTAL
         )
-    print(
-        {
-            0: Counter(dataset.watermarks[np.where(dataset.labels[:, 1] == 0)]),
-            1: Counter(dataset.watermarks[np.where(dataset.labels[:, 1] == 1)]),
-        }
-    )
     plt.scatter(s[:TOTAL], w[:TOTAL], color="#C8D672", s=16)
     plt.ylabel(
         "watermark",

@@ -5,7 +5,7 @@ import os
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 
-from crp.image import vis_opaque_img, plot_grid
+from crp.image import vis_opaque_img, plot_grid, imgify
 
 from zennit.canonizers import SequentialMergeBatchNorm
 from zennit.composites import EpsilonPlusFlat
@@ -18,6 +18,7 @@ from crp.graph import trace_model_graph
 from crp.attribution import AttributionGraph
 
 from expbasics.biased_noisy_dataset import BiasedNoisyDataset
+from expbasics.test_dataset import TestDataset
 
 
 def vis_simple(
@@ -34,6 +35,17 @@ def vis_relevances(
     return vis_opaque_img(
         data_batch, heatmaps, rf=rf, alpha=0.1, vis_th=0.0, crop_th=0.0
     )
+
+def vis_heat(data_batch, heatmaps, rf=True, alpha=1.0, vis_th=0.0, crop_th=0.0, kernel_size=9, cmap="bwr", vmin=None, vmax=None, symmetric=True):
+    heat_list = []
+    for i in range(len(data_batch)):
+
+        heat = heatmaps[i]
+
+        heat = imgify(heat, cmap=cmap, vmin=vmin, vmax=vmax, symmetric=symmetric)
+        heat_list.append(heat)
+        
+    return heat_list
 
 
 class CRPAttribution:
@@ -56,8 +68,9 @@ class CRPAttribution:
         path = f"crp-data/{name}_{model_name}_fv"
         self.fv_path = path
         self.cache = ImageCache(path=path + "-cache")
+        ds = TestDataset(length=3000, im_dir="testdata")
         self.fv = FeatureVisualization(
-            self.attribution, dataset, self.layer_map, path=self.fv_path, cache=self.cache  # type: ignore
+            self.attribution, ds, self.layer_map, path=self.fv_path, cache=self.cache  # type: ignore
         )
 
         self.output_shape = get_output_shapes(
@@ -78,7 +91,7 @@ class CRPAttribution:
 
     def compute_feature_vis(self):
         print("computing feature vis")
-        saved_files = self.fv.run(self.composite, 0, len(self.dataset), 128, 500)
+        saved_files = self.fv.run(self.composite, 0, 3000, 128, 500)
         self.fv.precompute_ref(
             self.layer_id_map,
             plot_list=[vis_simple],
@@ -104,8 +117,8 @@ class CRPAttribution:
                 "relevance",
                 (0, no_ref_samples),
                 composite=self.composite,
-                rf=True,
-                # plot_fn=vis_simple,
+                rf=False,
+                plot_fn=vis_heat,
             )
             all_refs[f"{i}:{targets}"] = ref_c[f"{i}:{targets}"]
         plot_grid(
@@ -289,10 +302,10 @@ class CRPAttribution:
     def get_reference_scores(self, index, wm, layer_name):
         image = self.dataset.load_image_wm(index, wm)
         attr = self.attribution(
-            image, [{}], self.composite, start_layer=layer_name  # , init_rel=act
+            image, [{"y": [int(wm)]}], self.composite, record_layer=self.layer_names # , start_layer=layer_name , init_rel=act
         )
         rel_c = self.cc.attribute(attr.relevances[layer_name], abs_norm=True)
-        return rel_c[0].tolist()
+        return rel_c[0]
 
     def attribute_images(self, imgs, layer_name):
         imgs.requires_grad = True

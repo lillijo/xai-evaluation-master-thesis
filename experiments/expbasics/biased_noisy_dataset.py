@@ -68,9 +68,18 @@ class BiasedNoisyDataset(Dataset):
         TOTAL = len(self.labels)
         ITEM_L = len(self.labels) // 3
 
-        generator = self.rng.uniform(0, 1, TOTAL)
+        # original
+        """ generator = self.rng.uniform(0, 1, TOTAL)
         s = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL)
-        w = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL)
+        w = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL) """
+        # normal noise
+        """ generator = self.rng.normal(0.5, 0.1, TOTAL)
+        s = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.1, TOTAL)
+        w = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.1, TOTAL) """
+        # test
+        generator = self.rng.normal(0.5, 0.02, TOTAL)
+        s = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.02, TOTAL)
+        w = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.02, TOTAL)
         shape = s <= self.cutoff
         watermark = w > self.strength
         shape_r = np.asarray(shape == True).nonzero()
@@ -93,7 +102,11 @@ class BiasedNoisyDataset(Dataset):
 
         if self.verbose:
             # print("verbose")
-            plot_fancy_distribution(self, s, w)
+            self.counts = {
+                0: Counter(self.watermarks[np.where(self.labels[:, 1] == 0)]),
+                1: Counter(self.watermarks[np.where(self.labels[:, 1] == 1)]),
+            }
+            #plot_fancy_distribution(self, s, w)
 
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
