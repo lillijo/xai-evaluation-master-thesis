@@ -219,8 +219,8 @@ In \cite{Arras2022} two metrics for the analysis of importance in pixel maps are
 
 
 
-\section{LATEX FOR FIGMA}
-blub
+\section{Measures Temp Latex Notation}
+
 \begin{center}
     Average Causal Effect of Latent Factor on Output
 
@@ -243,10 +243,10 @@ blub
 
     $\displaystyle ACE = \mathbb{E} [ y \ | \ do(x=1) ] - \mathbb{E} [ y \ | \ do(x=0) ]$
     \vspace{0.5cm}
-    
+
     $x = \mathrm{has\_watermark} \ or \ \mathrm{is\_ellipse}$ \\
     But what is explanation $y$ or explanation change $|y_{x=1} - y_{x=0}|$?  \\
-    For each neuron/concept in a layer: 
+    For each neuron/concept in a layer:
     \vspace{0.4cm}
 
     Relevance Mass Accuracy: $\displaystyle RMA = \frac{\sum rel_{watermark}}{\sum rel_{total}}$
@@ -259,6 +259,15 @@ blub
     \vspace{0.4cm}
 
     $\mathrm{crp}  \independent \rho \ | \ gt $ ?
+\end{center}
+\newpage
 
-
+\begin{center}
+    Relevance Maximization:  $\mathcal{T}_{\max}^{rel}(x) = \max_i R_i(x|\theta)$ \\
+    produces reference set of k-most relevant targets: $\mathcal{X}_k^{rel}i$ \\
+    Ratio of watermark to shape overlap in sample space: $\displaystyle o_i =  \{
+        \frac{\#  w_a = w_b}{\#  s_a = s_b} \ | \  a, b \in \mathcal{X}_k^{rel}i
+        \}   $ \\
+    RMA in reference set: $\displaystyle rma_i = \sum_{a \in \mathcal{X}_k^{rel}i} \frac{\sum rel_{watermark_a}}{\sum rel_{total_a}}$ \\
+    proposed CRP relevance measure: $\displaystyle \max_i \ (o_i \cdot rma_i)$
 \end{center}

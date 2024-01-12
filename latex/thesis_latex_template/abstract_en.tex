@@ -15,8 +15,9 @@
     \item however there have been many criticisms and some argue that the XAI methods don't show what is actually seen by the NN and rely more on hyperparameters or the data itself.
     \item For example, it is known that some attribution methods do not react well to constant vector shifts in the data which do not affect prediction.
     \item it is especially unclear how the explanation method deals with causal constructs: is there a difference between how it displays cause and effect, can it find important interactions between 2 variables or find spurious correlations?
-    \item we want to identify how the ground truth biasedness of a dataset interacts with the biasedness of the model and the biasedness of the explanation
-    \item for general attribution methods it has been shown that heatmaps can be misleading. If the spurious feature has any correlation with the core feature, it will often have importance assigned. In many instances, the spurious feature comes as a watermark which is easy to identify for humans and usually spatial compact. Consequently its importance can be overestimated when looking at a general heatmap of an image.
+    \item we want to identify how the ground truth causal model of a dataset interacts with the model and its explanation
+    \item for general attribution methods it has been shown that heatmaps can be misleading. If the spurious feature has any correlation with the core feature, it will often have importance assigned. In many instances, the spurious feature comes as a watermark which is easy to identify for humans and usually spatially compact. Consequently its importance can be overestimated when looking at a general heatmap of an image.
+    \item The new extension of LRP termed concept relevance propagation (CRP) looks at neurons in hidden layers of the network as concepts, which can help identify the true importants of e.g. watermarks or other types of spuriously correlated features. 
     \item Looking at individual concepts with their relevances and specific heatmaps has the potential to identify which of the features (core or spurious) is actually most relevant.
 \end{itemize}
 

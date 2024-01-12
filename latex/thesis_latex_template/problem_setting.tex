@@ -1,7 +1,7 @@
 \chapter{Problem Setting}\label{chapter:problem_setting}
 { \color{red}
 
-about 1-2 pages
+    about 1-2 pages
 
     \begin{itemize}
         \item what is the defined goal of this thesis? what are sub-goals and what are side-products
@@ -9,14 +9,52 @@ about 1-2 pages
         \item coarse overview of steps
     \end{itemize}
 }
+Old:
 
-Examine one XAI methods potential of disentangling spurious from core features. 
 Does CRP attribute a relevance to the spurious feature that is in accordance with the ground truth importance of this feature, learned by the model?
 How does the correlation to the actual data and the correlation to the model relate to each other?
 Can Concept-Finding methods recover the concepts actually learned by the model?
-More principally: should the explanation identify spurious correlations in the data or only the ones actually learned? 
+More principally: should the explanation identify spurious correlations in the data or only the ones actually learned?
+Examine CRPs potential of disentangling spurious from core features.
+
+
+\textit{Are We Explaining the Data or the Model?
+Concept-Based Methods and Their Fidelity in Presence of Spurious Features Under a Causal Lense.}
+
+just a ramble: 
+
+In recent years a plethora of benchmarks for the evaluation of explanation methods of neural networks have been introduced \todo{cite}.
+The methodological definition of what a successful explanation does often lacks a clear definition of which importance it should follow. The majority of work introducing benchmark datasets tacitly accepts the feature importance or distribution as found in the data or the data generating process to be the ground truth importance \todo{cite}. However this approach is not considering the multitude of potential strategies a neural network can use to learn this distribution. 
+In preliminary experiments and also previous works it has become clear that the same model architecture, with all hyperparameters fixed can apply wildly different strategies when initializing the weights and parameters with a different seed. For example, when there is a strong spurious feature present, one instance might learn only this spurious feature while the other ignores it completely. 
+Additionally, current saliency-based and concept-based explanation methods have a tendency to overstate positive relevance while treating negative relevance as a side-product. While we know that human understanding of an explanation benefits from simpler \textit{"this is there because that is there"} constructs\todo{cite}, models can potentially use the missingness of a feature as a main guide for decision too, as well as dealing with suppressor variables, which they can learn to substract from the true information. After all, the robustness of modern neural networks, especially for computer vision tasks, is what made them so successful in application, in many cases they  \textit{just work} and learn to overcome biases in data, when given enough of it. 
+
+
+Another often used approach for the evaluation of explanations is feature ablation (i.e. pixel flipping) and related methods. While this does to some degree follow a causal idea, it ignores the generating factors which do not necessary surface within single pixels and is prone to errors because the choice of a proper baseline is in itself a hard causal task. 
+
+
+We add to the field of evaluating explanation methods for neural networks by systemically comparing the explanation importance of a feature with the ground truth importance in the trained model as well as the data generating ground truth. To achieve this, we intervene on a generating factor in an underlying causal model of a toy dataset, namely the coupling ratio between a core feature and a spurious feature. By doing this we can establish a ground truth of how much a model actually uses a spurious feature in relation to how coupled that spurious feature is in the data. This then helps, to investigate how an explanation method follows the models importance versus how much it explains the underlying data distribution. While some authors argue that an explanation should give insight into the underlying data \todo{cite} to possibly deal with artifacts such as a false-positive importance in presence of vector shifts \todo{cite}, we believe that a good explanation shows what a model has made of this data distribution. 
+An explanation method is good, if it mirrors the reaction that the model has to the intervention on generative factors as closely as possible. The reaction to intervention on generative factors a model has, must not be exactly proportionate (or even clearly causal?) to the generative pathways. 
+
+One might hold against our approach that most current saliency based explanation methods are deterministic with regard to a given sample and the trained parameters of a model. Therefore comparing the causal effect of an intervention on the model to the effect on the explanation seems to be a futile experiment. While this deterministic relationshop is certainly true for most techniques, they often have many hyperparameters and modes and of course human perception adds a layer of uncertainty and noise to the explanation. A worrying number of works \todo{cite} have also shown that their resulting heatmaps are often close to trivial edge detection images \todo{cite} and that the locality and size of important features strongly determines how well humans can decipher their imporance \todo{cite, crp}. 
+
+
+Synthetic dataset using SCM with known ground truth
+-> Bias as generative factor
+-> Intervention on generative factors
+Measure of alignment between ground truth, importance for model and explanation
+-> Find an appropriate explanation method for testing our hypothesis : CRP
+-> Find appropriate measures for each quantity
+-> Possible challenges: entanglement,
+
+
+
+Does the additional information of concept importances potentially aid in estimating
+relevance of spurious features  more accurately (to the ground truth importance than a single heatmap would)?
+
+
+(When varying the feature coupling ratio of the dataset, keeping all other factors fixed, is there a clear relationship between the true model importance of the spurious feature and the CRP importance of the feature?)
 
 
 \begin{itemize}
-    \item 
+    \item
 \end{itemize}
