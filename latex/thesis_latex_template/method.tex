@@ -218,6 +218,18 @@ In \cite{Arras2022} two metrics for the analysis of importance in pixel maps are
 \todo{make sure to not refer to results section too much. rather leave info out if it cannot explained well without looking at the results}
 
 
+\section{Baseline Explanation Importance}
+most "simple" and closest to "true causal effect" measure:
+summed (weighted) full difference in heatmaps for crp and one full difference of heatmap for lrp
+
+-> is super true to ground truth, oh shit, all i did was for nothing???
+but: changes might be subtle and hard to understand, i.e. the snout/fur problem: although there might be subtle reductions in importance of the shape, it is only visible when the reductions are stronger? 
+- isn't it a problem that there seems to be lots of change in the whole image but not due to the part where the watermark is? 
+- not applicable to "human understanding"
+- try out: weighted sum of neurons heatmap causal effects vs lrp heatmap effect 
+- works just as well, but overestimates effect of spurious feature for lower biases
+
+
 
 \section{Measures Temp Latex Notation}
 

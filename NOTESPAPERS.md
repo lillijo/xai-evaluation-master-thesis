@@ -436,7 +436,7 @@ Hurley and Rickard, 2009 -> gini index
 - partial explanations: victoria went to the canary islands and it was sunny there
 - dominant in AI: maximum a posteriori (MAP) approach: best explanation for an observation is the state of the world that is most probable given the evidence
 
-## Determining the Relevance of Features for Deep Neural Networks
+## Determining the Relevance of Features for Deep Neural Networks (Reimers2020)
 
 - often used correlation between feature and output -> problems: nn non-linear, confounding
 - to mitigate problem of confounding: gradient between input and output instead of correlation -> only single examples

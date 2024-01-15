@@ -19,24 +19,33 @@ Examine CRPs potential of disentangling spurious from core features.
 
 
 \textit{Are We Explaining the Data or the Model?
-Concept-Based Methods and Their Fidelity in Presence of Spurious Features Under a Causal Lense.}
+    Concept-Based Methods and Their Fidelity in Presence of Spurious Features Under a Causal Lense.}
 
-just a ramble: 
+just a ramble:
 
 In recent years a plethora of benchmarks for the evaluation of explanation methods of neural networks have been introduced \todo{cite}.
-The methodological definition of what a successful explanation does often lacks a clear definition of which importance it should follow. The majority of work introducing benchmark datasets tacitly accepts the feature importance or distribution as found in the data or the data generating process to be the ground truth importance \todo{cite}. However this approach is not considering the multitude of potential strategies a neural network can use to learn this distribution. 
-In preliminary experiments and also previous works it has become clear that the same model architecture, with all hyperparameters fixed can apply wildly different strategies when initializing the weights and parameters with a different seed. For example, when there is a strong spurious feature present, one instance might learn only this spurious feature while the other ignores it completely. 
-Additionally, current saliency-based and concept-based explanation methods have a tendency to overstate positive relevance while treating negative relevance as a side-product. While we know that human understanding of an explanation benefits from simpler \textit{"this is there because that is there"} constructs\todo{cite}, models can potentially use the missingness of a feature as a main guide for decision too, as well as dealing with suppressor variables, which they can learn to substract from the true information. After all, the robustness of modern neural networks, especially for computer vision tasks, is what made them so successful in application, in many cases they  \textit{just work} and learn to overcome biases in data, when given enough of it. 
+The methodological definition of what a successful explanation does often lacks a clear definition of which importance it should follow. The majority of work introducing benchmark datasets tacitly accepts the feature importance or distribution as found in the data or the data generating process to be the ground truth importance \todo{cite}. However this approach is not considering the multitude of potential strategies a neural network can use to learn this distribution.
+In preliminary experiments and also previous works it has become clear that the same model architecture, with all hyperparameters fixed can apply wildly different strategies when initializing the weights and parameters with a different seed. For example, when there is a strong spurious feature present, one instance might learn only this spurious feature while the other still learns to ignore it completely, depending on the closest local minimum of their cost function.
+Additionally, current saliency-based and concept-based explanation methods have a tendency to overstate positive relevance while treating negative relevance as a side-product. While we know that human understanding of an explanation benefits from simpler \textit{"this is there because that is there"} constructs\todo{cite}, models can potentially use the missingness of a feature as a main guide for decision too, as well as dealing with suppressor variables, which they can learn to substract from the true information. After all, the robustness of modern neural networks, especially for computer vision tasks, is what made them so successful in application, in many cases they \textit{just work} and learn to overcome biases in distributions, given enough instances. 
 
 
-Another often used approach for the evaluation of explanations is feature ablation (i.e. pixel flipping) and related methods. While this does to some degree follow a causal idea, it ignores the generating factors which do not necessary surface within single pixels and is prone to errors because the choice of a proper baseline is in itself a hard causal task. 
+Another often used approach for the evaluation of explanations is feature ablation (i.e. pixel flipping) and related methods \todo{cite}. While this does to some degree follow a causal idea, it ignores the generating factors which do not necessarily surface within single pixels and is prone to errors because the choice of a proper baseline is in itself a hard task as the true causal pathways in the data distribution are usually not known. 
+%When chosing the baseline by averaging over the existing training set, one might introduce biases, but just greying out pixels is out of the distribution of true images too. 
 
 
-We add to the field of evaluating explanation methods for neural networks by systemically comparing the explanation importance of a feature with the ground truth importance in the trained model as well as the data generating ground truth. To achieve this, we intervene on a generating factor in an underlying causal model of a toy dataset, namely the coupling ratio between a core feature and a spurious feature. By doing this we can establish a ground truth of how much a model actually uses a spurious feature in relation to how coupled that spurious feature is in the data. This then helps, to investigate how an explanation method follows the models importance versus how much it explains the underlying data distribution. While some authors argue that an explanation should give insight into the underlying data \todo{cite} to possibly deal with artifacts such as a false-positive importance in presence of vector shifts \todo{cite}, we believe that a good explanation shows what a model has made of this data distribution. 
-An explanation method is good, if it mirrors the reaction that the model has to the intervention on generative factors as closely as possible. The reaction to intervention on generative factors a model has, must not be exactly proportionate (or even clearly causal?) to the generative pathways. 
+We add to the field of evaluating explanation methods for neural networks by systemically comparing the explanation importance of a feature with the ground truth importance in the trained model as well as the data generating ground truth. To achieve this, we intervene on a generating factor in an underlying causal model of a toy dataset, namely the coupling ratio between a core feature and a spurious feature. By doing this we can establish a ground truth of how much a model actually uses a spurious feature in relation to how correlated that spurious feature is to the core feature in the data. This then helps, to investigate how an explanation method follows the models importance versus how much it explains the underlying data distribution. While Sundararajan et al. \cite{Sundararajan2017} propose \textit{implementation invariance}, stating that 2 networks producing equal outputs for all inputs should attribute identically too, Kindermans et al. \cite{Kindermans2019} argue for \textit{input invariance} requiring that ''the saliency method mirror the sensitivity of the model with respect to transformations of the input''.
+We however argue that both of those axiomatic requirements are based on a flawed idea of what a causal explanation should explain. 
+The view that a correlation between an ''unimportant'' and ''important'' feature should be completely ignored by the explanation regardless of whether the model has truely learned to overcome that bias has to do with seeing neural network learning as a purely statistical task and ignoring the underyling causal pathways of a dataset. 
+Features that are deemed unimportant because they have no causal relationship with the true labels of instances must still have a causal relationship with the core feature as stated by Reichenbachs Common Cause Principle. 
 
-One might hold against our approach that most current saliency based explanation methods are deterministic with regard to a given sample and the trained parameters of a model. Therefore comparing the causal effect of an intervention on the model to the effect on the explanation seems to be a futile experiment. While this deterministic relationshop is certainly true for most techniques, they often have many hyperparameters and modes and of course human perception adds a layer of uncertainty and noise to the explanation. A worrying number of works \todo{cite} have also shown that their resulting heatmaps are often close to trivial edge detection images \todo{cite} and that the locality and size of important features strongly determines how well humans can decipher their imporance \todo{cite, crp}. 
+%to possibly deal with artifacts such as a false-positive importance in presence of vector shifts \todo{cite}, we believe that a good explanation shows what a model has made of this data distribution.
+An explanation method is good, if it mirrors the reaction that the model has to the intervention on generative factors as closely as possible. The reaction to intervention on generative factors a model has, must not be exactly proportionate (or even clearly causal?) to the generative pathways.
 
+One might hold against our approach that most current saliency based explanation methods are deterministic with regard to a given sample and the trained parameters of a model. Therefore comparing the causal effect of an intervention on the model to the effect on the explanation seems to be a futile experiment. While this deterministic relationshop is certainly true for most techniques, they often have many hyperparameters and modes and of course human perception adds a layer of uncertainty and noise to the explanation. A worrying number of works \todo{cite} have also shown that their resulting heatmaps are often close to trivial edge detection images \todo{cite} and that the locality and size of important features strongly determines how well humans can decipher their imporance \todo{cite, crp}.
+
+
+Our experiment is similar in nature to the experiment of Karimi et. al. \cite{Karimi2023} studying the causal effect of hyperparameters on the explanation.
+There a
 
 Synthetic dataset using SCM with known ground truth
 -> Bias as generative factor
@@ -47,7 +56,6 @@ Measure of alignment between ground truth, importance for model and explanation
 -> Possible challenges: entanglement,
 
 
-
 Does the additional information of concept importances potentially aid in estimating
 relevance of spurious features  more accurately (to the ground truth importance than a single heatmap would)?
 
@@ -55,6 +63,46 @@ relevance of spurious features  more accurately (to the ground truth importance 
 (When varying the feature coupling ratio of the dataset, keeping all other factors fixed, is there a clear relationship between the true model importance of the spurious feature and the CRP importance of the feature?)
 
 
+
+Problem Setting in Short:
+
 \begin{itemize}
-    \item
+    \item evidence that explanation methods not as close to true workings of model
+    \item constant vector shift is handled weirdly in XAI-TRIS: if you correlate noise: it is correlated as expected
 \end{itemize}
+
+
+main questions?
+\begin{itemize}
+    \item Are explanations closer to the learned models understanding of the generating causal model or closer to the training data/ causal model itself?
+    \item Which measure most accurately describes the true importance of a feature in a model?
+    \item How does the explanation change with regards to the models ground truth when generating factors are intervened on?
+    \item Does looking inside of the model with concept-based approaches have the potential to more accurately disentangle and tell which features are actually important for the model?
+    \item Which artifacts in the explanation might hinder or help understanding the workings of the model
+    \item Which qualities of an explanation do we want?
+    \item Are the more human-understandable explanations on par with the purely causal-effect like measurement?
+    \item Do the findings for one generating causal model translate to other ground-truths and forms of biasing?
+    \item How do other measures introduced in recent work align with the curve? (RMA, RRA, self-made, earth-movers-distance?, )
+\end{itemize}
+
+(another ramble:
+What do I feel is missing or ill-defined with current explanation methods and their evaluation attempts?
+- it is hard for humans to understand a heatmap without having a comparison (or a counterfactual)
+- snout-fur problem: smaller more localized features seemingly have larger importance than spread out features
+- missingness as a feature is always ignored, in my example there is evidence that it is indeed used as a strategy (rectangle is red, but ellipse will be equally red when watermark is missing but identify the wrong thing: impression is that the shape itself is important, however the missingness of the watermark seems to just value the other feature higher as an artifact)
+- the whole constant vector shift problem is kinda nonsensical, we cannot expect AI models to accurately predict out-of-distribution so why should we expect the explanation to be accurate. Its like saying: "explain to me why you dont like tomatoes" to a person loving tomatoes. The answer to an ill-posed question is per-se ill-defined
+- that is actually something that might be more generalizable to saliency maps in general: maybe the question "Which pixels positively influenced your decision?" can be ill-posed too, or might not give an answer well suited as the explanation to a models decision
+- example: when I accidentally normalized the images after adding the noise, some models seemed to just learn the class by looking at the average over the whole image or something like that. The heatmaps could not tell me what feature was important because the feature is not "visible" like that
+and again the example with the rectangle as well as ellipse shape both being seemingly positive for the rectangle class, when in reality the only telling feature is the watermark itself
+- therefore just taking the "causal effect" of X on explanation does not do human perception as well as a good explanation justice.
+- instead in this case something like RMA or earth mover's distance might be more accurate at testing the successfullness of an explanation even if the measure might relate less to the ground-truth importance
+)
+
+
+\section{Nicely written}
+
+We want to create a benchmark problem to measure how closely a (concept-based) local explanation method follows the causal ground truth of feature importance for a trained model. 
+To be able to differentiate between the true causal relationships between generating factors in a toy dataset and the relationships of features learned by the model, we train many models while intervening on the value of a latent factor. 
+Our goal is to more closely investigate how explanation methods might over- or underestimate importances of spurious features depending on how strongly those spurious features correlate with the core features of a dataset. 
+
+...
