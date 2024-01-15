@@ -225,7 +225,10 @@ what else CRP could potentially be used for
 \end{itemize}
 
 \subsection{Interpretation as Interventions}
-???
+There is no problem in defining the neural network as a causal model. 
+Also, in principle it does not matter which layer we pick out to quantify importance, as the whole importance has to flow through this layer. This is only true for neural network architectures that have no skip-connections or are recurrent and has to be viewed differently in other cases as has already been approached by \cite{Chattopadhyay2019}. However we know, that while the earlier layers of the neural network are more localized and have lower-level features / interpretations, the opposite is true for later layers, encoding more abstract not necessarily localized concepts. 
+So when trying to disentangle one features importance from other, one has to find a trade-off between disentanglement and abstraction/conceptual interpretability.
+ 
 
 \subsection{Data Generation Process}
 

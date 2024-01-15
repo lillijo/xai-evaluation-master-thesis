@@ -19,6 +19,21 @@
   url       = {https://doi.org/10.1145/2939672.2939778},
 }
 
+@InBook{Hooker2019,
+  title         = {A Benchmark for Interpretability Methods in Deep Neural Networks},
+  publisher     = {Curran Associates Inc.},
+  year          = {2019},
+  author        = {Hooker, Sara and Erhan, Dumitru and Kindermans, Pieter-Jan and Kim, Been},
+  address       = {Red Hook, NY, USA},
+  __markedentry = {[lilli:3]},
+  abstract      = {We propose an empirical measure of the approximate accuracy of feature importance estimates in deep neural networks. Our results across several large-scale image classification datasets show that many popular interpretability methods produce estimates of feature importance that are not better than a random designation of feature importance. Only certain ensemble based approaches—VarGrad and SmoothGrad-Squared—outperform such a random assignment of importance. The manner of ensembling remains critical, we show that some approaches do no better then the underlying method but carry a far higher computational burden.},
+  articleno     = {873},
+  booktitle     = {Proceedings of the 33rd International Conference on Neural Information Processing Systems},
+  keywords      = {rank5},
+  numpages      = {12},
+  url           = {https://ar5iv.labs.arxiv.org/html/1806.10758},
+}
+
 @InProceedings{Alvarez-Melis2017,
   author        = {Alvarez-Melis, David and Jaakkola, Tommi},
   title         = {A causal framework for explaining the predictions of black-box sequence-to-sequence models},
@@ -1272,17 +1287,18 @@ A novel causal discovery method for estimating nonlinear interdependency network
 }
 
 @Article{Samek2017a,
-  author   = {Samek, Wojciech and Binder, Alexander and Montavon, Grégoire and Lapuschkin, Sebastian and Müller, Klaus-Robert},
-  title    = {Evaluating the Visualization of What a Deep Neural Network Has Learned},
-  journal  = {IEEE Transactions on Neural Networks and Learning Systems},
-  year     = {2017},
-  volume   = {28},
-  number   = {11},
-  pages    = {2660-2673},
-  doi      = {10.1109/TNNLS.2016.2599820},
-  file     = {:Samek2017a - Evaluating the Visualization of What a Deep Neural Network Has Learned.pdf:PDF},
-  groups   = {relevant},
-  keywords = {rank4},
+  author        = {Samek, Wojciech and Binder, Alexander and Montavon, Grégoire and Lapuschkin, Sebastian and Müller, Klaus-Robert},
+  title         = {Evaluating the Visualization of What a Deep Neural Network Has Learned},
+  journal       = {IEEE Transactions on Neural Networks and Learning Systems},
+  year          = {2017},
+  volume        = {28},
+  number        = {11},
+  pages         = {2660-2673},
+  __markedentry = {[lilli:3]},
+  doi           = {10.1109/TNNLS.2016.2599820},
+  file          = {:Samek2017a - Evaluating the Visualization of What a Deep Neural Network Has Learned.pdf:PDF},
+  groups        = {relevant},
+  keywords      = {rank4},
 }
 
 @Article{Szabo2007,
@@ -1362,6 +1378,20 @@ A novel causal discovery method for estimating nonlinear interdependency network
   groups        = {relevant},
   keywords      = {rank5},
   url           = {https://ieeexplore.ieee.org/document/9369420},
+}
+
+@Article{Aas2021,
+  author   = {Kjersti Aas and Martin Jullum and Anders Løland},
+  title    = {Explaining individual predictions when features are dependent: More accurate approximations to Shapley values},
+  journal  = {Artificial Intelligence},
+  year     = {2021},
+  volume   = {298},
+  pages    = {103502},
+  issn     = {0004-3702},
+  abstract = {Explaining complex or seemingly simple machine learning models is an important practical problem. We want to explain individual predictions from such models by learning simple, interpretable explanations. Shapley value is a game theoretic concept that can be used for this purpose. The Shapley value framework has a series of desirable theoretical properties, and can in principle handle any predictive model. Kernel SHAP is a computationally efficient approximation to Shapley values in higher dimensions. Like several other existing methods, this approach assumes that the features are independent. Since Shapley values currently suffer from inclusion of unrealistic data instances when features are correlated, the explanations may be very misleading. This is the case even if a simple linear model is used for predictions. In this paper, we extend the Kernel SHAP method to handle dependent features. We provide several examples of linear and non-linear models with various degrees of feature dependence, where our method gives more accurate approximations to the true Shapley values.},
+  doi      = {https://doi.org/10.1016/j.artint.2021.103502},
+  keywords = {Feature attribution, Shapley values, Kernel SHAP, Dependence, rank5},
+  url      = {https://www.sciencedirect.com/science/article/pii/S0004370221000539},
 }
 
 @Article{Montavon2017,
@@ -2075,12 +2105,21 @@ A novel causal discovery method for estimating nonlinear interdependency network
   pages         = {15861--15883},
   month         = {23--29 Jul},
   publisher     = {PMLR},
-  __markedentry = {[lilli:2]},
+  __markedentry = {[lilli:4]},
   abstract      = {Being able to provide explanations for a model’s decision has become a central requirement for the development, deployment, and adoption of machine learning models. However, we are yet to understand what explanation methods can and cannot do. How do upstream factors such as data, model prediction, hyperparameters, and random initialization influence downstream explanations? While previous work raised concerns that explanations (E) may have little relationship with the prediction (Y), there is a lack of conclusive study to quantify this relationship. Our work borrows tools from causal inference to systematically assay this relationship. More specifically, we study the relationship between E and Y by measuring the treatment effect when intervening on their causal ancestors, i.e., on hyperparameters and inputs used to generate saliency-based Es or Ys. Our results suggest that the relationships between E and Y is far from ideal. In fact, the gap between ’ideal’ case only increase in higher-performing models — models that are likely to be deployed. Our work is a promising first step towards providing a quantitative measure of the relationship between E and Y, which could also inform the future development of methods for E with a quantitative metric.},
   file          = {:Karimi2023 - On the Relationship Between Explanation and Prediction_ A Causal View.pdf:PDF;karimi23a.pdf:https\://proceedings.mlr.press/v202/karimi23a/karimi23a.pdf:PDF},
   groups        = {relevant},
   keywords      = {rank5},
   url           = {https://proceedings.mlr.press/v202/karimi23a.html},
+}
+
+@Misc{Agarwal2023,
+  author        = {Chirag Agarwal and Satyapriya Krishna and Eshika Saxena and Martin Pawelczyk and Nari Johnson and Isha Puri and Marinka Zitnik and Himabindu Lakkaraju},
+  title         = {OpenXAI: Towards a Transparent Evaluation of Model Explanations},
+  year          = {2023},
+  archiveprefix = {arXiv},
+  eprint        = {2206.11104},
+  primaryclass  = {cs.LG},
 }
 
 @InProceedings{Chickering2002,

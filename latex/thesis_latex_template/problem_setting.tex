@@ -24,12 +24,12 @@ Examine CRPs potential of disentangling spurious from core features.
 just a ramble:
 
 In recent years a plethora of benchmarks for the evaluation of explanation methods of neural networks have been introduced \todo{cite}.
-The methodological definition of what a successful explanation does often lacks a clear definition of which importance it should follow. The majority of work introducing benchmark datasets tacitly accepts the feature importance or distribution as found in the data or the data generating process to be the ground truth importance \todo{cite}. However this approach is not considering the multitude of potential strategies a neural network can use to learn this distribution.
+The methodological definition of what a successful explanation does often lacks a clear definition of which importance it should follow. A big part of previous work introducing benchmark datasets tacitly accepts the feature importance or distribution as found in the data or the data generating process to be the ground truth importance \todo{cite}. However this approach is not considering the multitude of potential strategies a neural network can use to learn this distribution.
 In preliminary experiments and also previous works it has become clear that the same model architecture, with all hyperparameters fixed can apply wildly different strategies when initializing the weights and parameters with a different seed. For example, when there is a strong spurious feature present, one instance might learn only this spurious feature while the other still learns to ignore it completely, depending on the closest local minimum of their cost function.
 Additionally, current saliency-based and concept-based explanation methods have a tendency to overstate positive relevance while treating negative relevance as a side-product. While we know that human understanding of an explanation benefits from simpler \textit{"this is there because that is there"} constructs\todo{cite}, models can potentially use the missingness of a feature as a main guide for decision too, as well as dealing with suppressor variables, which they can learn to substract from the true information. After all, the robustness of modern neural networks, especially for computer vision tasks, is what made them so successful in application, in many cases they \textit{just work} and learn to overcome biases in distributions, given enough instances. 
 
 
-Another often used approach for the evaluation of explanations is feature ablation (i.e. pixel flipping) and related methods \todo{cite}. While this does to some degree follow a causal idea, it ignores the generating factors which do not necessarily surface within single pixels and is prone to errors because the choice of a proper baseline is in itself a hard task as the true causal pathways in the data distribution are usually not known. 
+Another often used approach for the evaluation of explanations is feature ablation (i.e. pixel flipping) and related methods \cite{Samek2017a, } \todo{cite}. While this does to some degree follow a causal idea, it ignores the generating factors which do not necessarily surface within single pixels and is prone to errors because the choice of a proper baseline is in itself a hard task as the true causal pathways in the data distribution are usually not known. 
 %When chosing the baseline by averaging over the existing training set, one might introduce biases, but just greying out pixels is out of the distribution of true images too. 
 
 
@@ -98,6 +98,17 @@ and again the example with the rectangle as well as ellipse shape both being see
 - instead in this case something like RMA or earth mover's distance might be more accurate at testing the successfullness of an explanation even if the measure might relate less to the ground-truth importance
 )
 
+\section{Other Stuff I still somehow want to put in problem setting or related work???}
+
+This thesis finds a new approach to answer the question of faithfullness of a local explanation method to the model. 
+Instead of an axiomatic definition of input invariance or even implementation invariance, or broader measures of feature ablation
+
+Find a measure to test benchmarks on that works for both: toy datasets with known ground truths and therefore clearly defined features that can be intervened on, and large realistic datasets where feature are pixels and have to somehow be found/ordered using e.g. Relevance Scores.
+
+Same Measure should work when intervening on any upstream parameter/feature. Stop seeing certain features as "important" and other then *have to be* irrelevant. Instead, find a way to include all in causal model, or fix features completely.
+
+Most benchmarks that have ground truth information use something like Relevance Rank Accuracy (RMA) as a measure to get close to. So most importance should lay in the feature that is deemed relevant. While this is closer to the way humans truely understand models, it is not necessarily close to the ground truth importance of a feature. This is due to possible coupling of the feature and because some models learn something like a constant vector shift. 
+As can be seen in my graphs: RMAs curve is not nearly as sharp as the M1 measure. As they are not measuring the same thing, normalizing both to the interval [0,1] does not necessarily make them comparable so the shape is more important. So either, RMA overestimates the importance of the watermark feature, where it actually isn't that important yet, or it underestimates it because it does not look at how intervening on the watermark feature changes the rest of the images relevance, ignoring the "negative" strategy. 
 
 \section{Nicely written}
 
@@ -106,3 +117,4 @@ To be able to differentiate between the true causal relationships between genera
 Our goal is to more closely investigate how explanation methods might over- or underestimate importances of spurious features depending on how strongly those spurious features correlate with the core features of a dataset. 
 
 ...
+
