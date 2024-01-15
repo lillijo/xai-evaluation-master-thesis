@@ -470,12 +470,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
 
 def plot_measures(path):
     datas, bis, biases, alldata = data_iterations(path, biascut=0.0, num_it=10)
-    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
-    lat_data = [
-        np.mean([datas[a][i]["pred_mlc"][0] for a in range(10)])
-        # * 100  # type: ignore
-        for i in range(len(datas[0]))
-    ]
+    colors = matplotlib.cm.tab20([i for i in range(20)])  # type: ignore
     ols = np.array(
         [
             np.mean([datas[a][i]["pred_ols"][0] for a in range(10)])
@@ -492,7 +487,7 @@ def plot_measures(path):
         ]
     )
     flip = flip / flip.max()
-    rra_mlc_conv = [
+    """ rra_mlc_conv = [
         np.mean([np.mean(datas[a][i]["rra_mlc_conv"][0]) for a in range(10)])
         # * 100  # type: ignore
         for i in range(len(datas[0]))
@@ -511,16 +506,28 @@ def plot_measures(path):
         np.mean([np.mean(datas[a][i]["crp_mlc_linear"][0]) for a in range(10)])
         # * 100  # type: ignore
         for i in range(len(datas[0]))
-    ]
-    total_effect = np.array(
+    ] """
+    mrc = np.array(
         [
-            np.mean([datas[a][i]["total_effect"] for a in range(10)])
-            # * 100  # type: ignore
+            np.mean([datas[a][i]["mrc"] for a in range(10)])
             for i in range(len(datas[0]))
         ]
     )
-    total_effect = total_effect / total_effect.max()
-
+    mrc = mrc / mrc.max()
+    mrc_separate_weight = np.array(
+        [
+            np.mean([datas[a][i]["mrc_separate_weight"] for a in range(10)])
+            for i in range(len(datas[0]))
+        ]
+    )
+    mrc_separate_weight = mrc_separate_weight / mrc_separate_weight.max()
+    mrc_weighted = np.array(
+        [
+            np.mean([datas[a][i]["mrc_weighted"] for a in range(10)])
+            for i in range(len(datas[0]))
+        ]
+    )
+    mrc_weighted = mrc_weighted / mrc_weighted.max()
     mlc = np.array(
         [
             np.mean([datas[a][i]["mlc"] for a in range(10)])
@@ -530,15 +537,13 @@ def plot_measures(path):
     )
     mlc = mlc / mlc.max()
     coeff = np.load("phi_coefficients.npy")
-    plt.plot(bis, ols, color=colors[3], label="ols")
-    plt.plot(bis, flip, color=colors[4], label="flip")
     plt.plot(bis, coeff, color=colors[0], label="m0 (phi-coefficient wm/shape)")
-    # plt.plot(bis, lat_data, color=colors[9], label="m1 (mlc)")
-    plt.plot(bis, mlc, color=colors[1], label="m1 (true mlc)")
-    # plt.plot(bis, crp_mlc_conv, color=colors[5], label="m2 (total relevance change)")
-    # plt.plot(bis, rra_mlc_conv, color=colors[6], label="m2 (relevance rank accuracy)")
-    # plt.plot(bis, rma_mlc_conv, color=colors[7], label="m2 (relevance mass accuracy)")
-    plt.plot(bis, total_effect, color=colors[8], label="m2 (total effect)")
+    plt.plot(bis, ols, color=colors[2], label="(m1?) ols coefficient of determination")
+    plt.plot(bis, flip, color=colors[4], label="(m1?) prediction flip")
+    plt.plot(bis, mlc, color=colors[6], label="m1 (true mlc)", linewidth=2)
+    plt.plot(bis, mrc_weighted, color=colors[8], label="m2 (mrc simple weighted)", linewidth=2)
+    plt.plot(bis, mrc_separate_weight, color=colors[10], label="m2 (separate weight for measures)", linewidth=2)
+    plt.plot(bis, mrc, color=colors[12], label="m2 (mrc unweighted)", linewidth=2)
     plt.ylabel("correlation/gt/relevance")
     plt.xlabel("bias")
 
@@ -553,13 +558,13 @@ def scatter_measures(path):
             [datas[a][i]["total_effect"] for i in range(len(datas[a]))]
         )
         total_effect = total_effect / total_effect.max()
-        mlc = np.array(
-            [datas[a][i]["mlc"] for i in range(len(datas[a]))]
-        )
+        mlc = np.array([datas[a][i]["mlc"] for i in range(len(datas[a]))])
         mlc = mlc / mlc.max()
         if a == 0:
             plt.scatter(bis, mlc, color=colors[3], alpha=0.5, label="m1 (mlc)")
-            plt.scatter(bis, total_effect, color=colors[6], alpha=0.5, label="m2 (total effect)")
+            plt.scatter(
+                bis, total_effect, color=colors[6], alpha=0.5, label="m2 (total effect)"
+            )
         else:
             plt.scatter(bis, mlc, color=colors[3], alpha=0.5)
             plt.scatter(bis, total_effect, color=colors[6], alpha=0.5)
@@ -574,7 +579,7 @@ def scatter_measures(path):
     plt.legend(loc="center left")
 
 
-def plot_3d(path, m_type=lambda x: x,c="red", bcut=0.5, num_it=6):
+def plot_3d(path, m_type=lambda x: x, c="red", bcut=0.5, num_it=6):
     fig = plt.figure()
     datas, bis, biases, alldata = data_iterations(path, biascut=bcut, num_it=num_it)
     bias = [a["bias"] for a in alldata]
