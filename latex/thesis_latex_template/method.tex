@@ -24,7 +24,7 @@
 
 
 \todo{find good name for adapted benchmark dataset}
-\section{Causal Benchmark Dataset DSPRITESNEWNAME}
+\section{Causal Benchmark Dataset DSPRITESNEWNAME}\label{section:causal_model}
 Although this is not the first work using a toy dataset with known generating factors to evaluate attribution methods, it still uses a new adaptation of the dSprites dataset \cite{dsprites17}. This dataset was originally constructed as a means for testing the degree of disentanglement a method has achieved. It originally contains 737280 64x64 pixel binary images with rectangles, ellipses or hearts in varying positions, scales and rotations. The generating factors \verb|shape|, \verb|scale|, \verb|rotation|, \verb|x position| and \verb|y position| are known for each sample.
 
 \begin{figure}[H]
@@ -80,7 +80,7 @@ The same SCM applies to many realistic cases of spurious correlations in compute
 \end{figure}
 \todo{more diverse SCMs, simplified, akin to real world scenarios}
 
-\section{CNN Model Zoo}
+\section{CNN Model Zoo}\label{section:training}
 \subsection{Model Architecture}
 To evaluate explanations, the model to test on can neither be to simple and therefore easy to explain, nor too large for the simple dataset at hand.
 Through a simple search the architecture detailed in \autoref{lst:cnnmodel} with 3 convolutional layer a 8 channels, one linear \textit{concept} layer with 6 neurons and finally the output linear layer was deemed most fitting for the task. While less convolutional channels or layers often resulted in the model not converging at all, having more neurons or potentially \textit{concepts} did not seem to add information but just redundancy.
@@ -175,10 +175,13 @@ Due to the low complexity of this benchmark dataset, very high accuracies of ove
     \item theoretically the intervention must have exactly the same causal effect on the explanation as on the mean logit change???
 \end{itemize}
 
+
 \subsection{Relevance Mass Accuracy (RMA) and Relevance Rank Accuracy (RRA)}
 In \cite{Arras2022} two metrics for the analysis of importance in pixel maps are introduced. Relevance Mass Accuracy (RMA) measures the ratio of relevance within a bounding box around a feature to total relevance. Relevance Rank Accuracy (RRA) the percentage of pixels in such a bounding box that fall within the $n$ most important pixels in the heatmap.
 
-\section{Measuring Biasedness for Heatmaps}
+\section{Measure}\label{section:measure}
+
+
 \begin{itemize}
     \item this is a more general approach of measuring the biasedness of a saliency methods explanation
     \item good about it: humans look at the heatmaps and only see whether the watermark is colored or not to identify its importance.

@@ -50,15 +50,15 @@ In other words: Does CRP learn the causal effect of the spurious feature on the 
 \section{Strategy}
 \todo{refine strategy based on what i actually did}
 \begin{itemize}
-    \item use very simple artificial disentangling benchmarking dataset DSPRITES
-    \item add artificial watermark to artificial benchmark... because we need ground truth
-    \item create dataset with biased and with unbiased watermark distribution
-    \item train very small convolutional neural networks on recognizing shapes while intervening on biasedness
-    \item establish ground-truth of model accuracy and importance of generating factors
-    \item evaluate CRP on neural network trained dataset with intervened biasedness
-    \item disentangle and identify learned concepts
-    \item evaluate fidelity of CRP to causal model and to learned model
+    \item Construct a causal generating model on top of the existing artificial disentangling benchmarking dataset DSPRITES
+    \item Intervene on a latent factor in this causal model to generate a succession of training datasets
+    \item Train small convolutional neural networks with 10 different random initializations on the intervened-on datasets
+    \item Establish a ground-truth of model accuracy and importance in relationship to the intervened factor
+    \item Evaluate feature importance in a concept-based approach using concept relevance propagation (CRP)
+    \item Construct a metric that accurately describes the effect of the intervention on perceivable explanation importance 
+    \item Evaluate the fidelity of this measure for CRP to the trained models feature importance
+    \item Examine the approach using different generating structural causal models and interventions
 \end{itemize}
 
 \section{Outline}
-To further motivate this approach I will in the following summarize previous work on causal XAI, evaluation of XAI and local attribution methods in \cref{chapter:related_work}. Then I will lay down the theoretical framework of structural causal models and the used XAI method and evaluation in \cref{chapter:background}. \Cref{chapter:method} introduces the benchmark inspired by causal models and the convolutional neural network model. It also describes the methods used to establish ground-truth \textit{biasedness} of the models as well as of their explanations. Finally the performances are compared in \cref{chapter:results} and discussed in \cref{chapter:conclusion}.
+To further motivate this approach we will in the following summarize previous work on causal XAI, evaluation of XAI and local attribution methods in \cref{chapter:related_work}. Then we will lay down the theoretical framework of the studied XAI method, on structural causal models and on evaluation measures in \cref{chapter:background}. \Cref{chapter:method} introduces the benchmark dataset and its causal generation process and the architecture and trianing of the tested convolutional neural network model. It also describes the methods used to establish a ground-truth \textit{feature importance} as well as metrics for measuring feature importance in our explanation. Finally their performances are compared and visualized in \cref{chapter:results} and discussed in \cref{chapter:conclusion}.

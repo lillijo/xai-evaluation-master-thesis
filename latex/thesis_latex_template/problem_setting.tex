@@ -9,14 +9,37 @@
         \item coarse overview of steps
     \end{itemize}
 }
-Old:
+The aim of this thesis is to create a new benchmark for concept-based local explanation methods. This benchmark problem shall be used to compare the causal effect of intervening on latent factors in the data generation process on the output of the trained model to the effect on the explanation.
+To this end, we devise a structural causal model reflecting realistic causal pathways in image data to generate a toy dataset, which is detailed in \autoref{section:causal_model} .
+If an explanation is good, the effect the intervention on latent factors has on the model output should match the effect on the explanation closely.
 
-Does CRP attribute a relevance to the spurious feature that is in accordance with the ground truth importance of this feature, learned by the model?
-How does the correlation to the actual data and the correlation to the model relate to each other?
-Can Concept-Finding methods recover the concepts actually learned by the model?
+
+We intervene on our latent factor by training multiple models with data generated using a discrete number of values. We repeat this multiple times for each value, while intervening on the random initialization of the model, to rule out the effect of initial weights and biases (see \autoref{section:training}).  
+The value of our latent factor, whose effect is measured can be thought of as a coupling ratio between the truely important feature and a spuriously correlated feature in our first experiment. We formally name this the \textit{measure} $m_0$ which is used as a comparison against our ground truth model importance measure $m_1$ and our explanation importance measure $m_2$. 
+
+
+If the conditional mutual information of $m_1$ and $m_2$ is high, we have potentially found a good measure of explanation fidelity and can also make claims to the explanation being good. However, this can only be confirmed by studying further generating causal models and interventions with a different causal baseline. 
+
+
+To give justice to the potential of the concept-based method we investigate and also to human perception and intuition, our goal is to develop a measure that not only as accurately as possible describes the effect of the intervention on the explanation, but also measures how well that effect can be interpreted. This objective requires us to incorporate notions of \textit{disentanglement, robustness} and \textit{usefulness} into the metric and shift away from the idea of a purely local explanation to a \textit{glocal} one \cite{Achtibat2022}. Comparing only the total numerical change of our explanations relevance values when intervening, while it might be accurate, does not necessarily represent the understandable effect of our intervention. 
+This measure of Feature Importance is formally constructed in \autoref{section:measure}.
+
+
+{ \color{gray}
+
+
+\section{Other Stuff I still somehow want to put in problem setting or related work???}
+
 More principally: should the explanation identify spurious correlations in the data or only the ones actually learned?
 Examine CRPs potential of disentangling spurious from core features.
 
+
+relate more to the title of the thesis, explain each word in it (might still have to be changed):
+- data vs model
+- concept-based methods and their potential benefits
+- fidelity - closeness of explanation importance to ground truth importance
+- spurious features: here coupled watermark, in other cases suppressor, background etc not necessarily need to be learned
+- causal: generating model is causal, measure causal effect of interventions
 
 \textit{Are We Explaining the Data or the Model?
     Concept-Based Methods and Their Fidelity in Presence of Spurious Features Under a Causal Lense.}
@@ -98,7 +121,6 @@ and again the example with the rectangle as well as ellipse shape both being see
 - instead in this case something like RMA or earth mover's distance might be more accurate at testing the successfullness of an explanation even if the measure might relate less to the ground-truth importance
 )
 
-\section{Other Stuff I still somehow want to put in problem setting or related work???}
 
 This thesis finds a new approach to answer the question of faithfullness of a local explanation method to the model. 
 Instead of an axiomatic definition of input invariance or even implementation invariance, or broader measures of feature ablation
@@ -110,11 +132,6 @@ Same Measure should work when intervening on any upstream parameter/feature. Sto
 Most benchmarks that have ground truth information use something like Relevance Rank Accuracy (RMA) as a measure to get close to. So most importance should lay in the feature that is deemed relevant. While this is closer to the way humans truely understand models, it is not necessarily close to the ground truth importance of a feature. This is due to possible coupling of the feature and because some models learn something like a constant vector shift. 
 As can be seen in my graphs: RMAs curve is not nearly as sharp as the M1 measure. As they are not measuring the same thing, normalizing both to the interval [0,1] does not necessarily make them comparable so the shape is more important. So either, RMA overestimates the importance of the watermark feature, where it actually isn't that important yet, or it underestimates it because it does not look at how intervening on the watermark feature changes the rest of the images relevance, ignoring the "negative" strategy. 
 
-\section{Nicely written}
+we are also dealing with something like negative/class sensitivity issue here: watermark / shape often have differing sign
 
-We want to create a benchmark problem to measure how closely a (concept-based) local explanation method follows the causal ground truth of feature importance for a trained model. 
-To be able to differentiate between the true causal relationships between generating factors in a toy dataset and the relationships of features learned by the model, we train many models while intervening on the value of a latent factor. 
-Our goal is to more closely investigate how explanation methods might over- or underestimate importances of spurious features depending on how strongly those spurious features correlate with the core features of a dataset. 
-
-...
-
+}

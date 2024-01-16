@@ -437,6 +437,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
     fig = plt.figure(figsize=(10, 6))
     fig.set_facecolor(FACECOL)
     colind = [0, 3, 5, 2, 7, 1]
+    diff_lat = []
     for f in [2, 3, 4, 5, 1, 0]:
         lat_data = [
             np.mean([datas[a][i][f"pred_{m_type}"][f] for a in range(num_it)])
@@ -451,6 +452,10 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
             alpha=0.9,
             # s=25,
         )
+        if f == 2:
+            diff_lat = lat_data
+        elif f == 0:
+            diff_lat = [(1 - lat_data[i] ) for i in range(len(lat_data))] #diff_lat[i]
         for l in range(num_it):
             lat_data = [a[f"pred_{m_type}"][f] for a in datas[l]]
             plt.scatter(
@@ -461,6 +466,15 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
                 alpha=0.5,
                 marker=shapes[f],  # type: ignore
             )
+
+    plt.plot(
+        bis,
+        diff_lat,
+        color=colors[9],
+        label="sum all MLCs",
+        alpha=0.9,
+        # s=25,
+    )
     plt.legend(loc="center left")
     plt.ylabel(titles[m_type][0])
     plt.xlabel("Bias")
@@ -508,10 +522,7 @@ def plot_measures(path):
         for i in range(len(datas[0]))
     ] """
     mrc = np.array(
-        [
-            np.mean([datas[a][i]["mrc"] for a in range(10)])
-            for i in range(len(datas[0]))
-        ]
+        [np.mean([datas[a][i]["mrc"] for a in range(10)]) for i in range(len(datas[0]))]
     )
     mrc = mrc / mrc.max()
     mrc_separate_weight = np.array(
@@ -541,8 +552,20 @@ def plot_measures(path):
     plt.plot(bis, ols, color=colors[2], label="(m1?) ols coefficient of determination")
     plt.plot(bis, flip, color=colors[4], label="(m1?) prediction flip")
     plt.plot(bis, mlc, color=colors[6], label="m1 (true mlc)", linewidth=2)
-    plt.plot(bis, mrc_weighted, color=colors[8], label="m2 (mrc simple weighted)", linewidth=2)
-    plt.plot(bis, mrc_separate_weight, color=colors[10], label="m2 (separate weight for measures)", linewidth=2)
+    plt.plot(
+        bis,
+        mrc_weighted,
+        color=colors[8],
+        label="m2 (mrc simple weighted)",
+        linewidth=2,
+    )
+    plt.plot(
+        bis,
+        mrc_separate_weight,
+        color=colors[10],
+        label="m2 (separate weight for measures)",
+        linewidth=2,
+    )
     plt.plot(bis, mrc, color=colors[12], label="m2 (mrc unweighted)", linewidth=2)
     plt.ylabel("correlation/gt/relevance")
     plt.xlabel("bias")
