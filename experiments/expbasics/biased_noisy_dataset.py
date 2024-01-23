@@ -69,19 +69,22 @@ class BiasedNoisyDataset(Dataset):
         ITEM_L = len(self.labels) // 3
 
         # original
-        """ generator = self.rng.uniform(0, 1, TOTAL)
+        generator = self.rng.uniform(0, 1, TOTAL)
         s = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL)
-        w = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL) """
+        w = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL)
         # normal noise
         """ generator = self.rng.normal(0.5, 0.1, TOTAL)
         s = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.1, TOTAL)
         w = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.1, TOTAL) """
         # test
-        generator = self.rng.normal(0.5, 0.02, TOTAL)
-        s = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.02, TOTAL)
-        w = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.02, TOTAL)
+        """ generator = self.rng.normal(0.5, 0.02, TOTAL)
+        n_s = self.rng.normal(0.5, 0.02, TOTAL)
+        n_w = self.rng.normal(0.5, 0.02, TOTAL)
+        s = self.bias * (generator) + (1 - self.bias) * n_s
+        w = self.bias * (generator) + (1 - self.bias) * n_w """
         shape = s <= self.cutoff
         watermark = w > self.strength
+
         shape_r = np.asarray(shape == True).nonzero()
         shape_e = np.asarray(shape == False).nonzero()
         wms_r = watermark[shape_r[0][:ITEM_L]]
@@ -106,7 +109,8 @@ class BiasedNoisyDataset(Dataset):
                 0: Counter(self.watermarks[np.where(self.labels[:, 1] == 0)]),
                 1: Counter(self.watermarks[np.where(self.labels[:, 1] == 1)]),
             }
-            #plot_fancy_distribution(self, s, w)
+            print(self.counts)
+            plot_fancy_distribution(self, s, w)
 
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")

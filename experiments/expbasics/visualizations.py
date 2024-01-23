@@ -501,6 +501,8 @@ def plot_measures(path):
         ]
     )
     flip = flip / flip.max()
+    with open("gt_flip.npy", "wb") as f:
+        np.save(f, flip)
     """ rra_mlc_conv = [
         np.mean([np.mean(datas[a][i]["rra_mlc_conv"][0]) for a in range(10)])
         # * 100  # type: ignore
@@ -521,7 +523,7 @@ def plot_measures(path):
         # * 100  # type: ignore
         for i in range(len(datas[0]))
     ] """
-    mrc = np.array(
+    """ mrc = np.array(
         [np.mean([datas[a][i]["mrc"] for a in range(10)]) for i in range(len(datas[0]))]
     )
     mrc = mrc / mrc.max()
@@ -537,22 +539,25 @@ def plot_measures(path):
             np.mean([datas[a][i]["mrc_weighted"] for a in range(10)])
             for i in range(len(datas[0]))
         ]
-    )
-    mrc_weighted = mrc_weighted / mrc_weighted.max()
+    ) 
+    mrc_weighted = mrc_weighted / mrc_weighted.max()"""
     mlc = np.array(
         [
-            np.mean([datas[a][i]["mlc"] for a in range(10)])
+            np.mean([datas[a][i]["pred_mlc"][0] for a in range(10)])
             # * 100  # type: ignore
             for i in range(len(datas[0]))
         ]
     )
     mlc = mlc / mlc.max()
+    with open("gt_mlc.npy", "wb") as f:
+        np.save(f, mlc)
     coeff = np.load("phi_coefficients.npy")
+    #cmi = np.load("")
     plt.plot(bis, coeff, color=colors[0], label="m0 (phi-coefficient wm/shape)")
     plt.plot(bis, ols, color=colors[2], label="(m1?) ols coefficient of determination")
     plt.plot(bis, flip, color=colors[4], label="(m1?) prediction flip")
     plt.plot(bis, mlc, color=colors[6], label="m1 (true mlc)", linewidth=2)
-    plt.plot(
+    """ plt.plot(
         bis,
         mrc_weighted,
         color=colors[8],
@@ -566,7 +571,7 @@ def plot_measures(path):
         label="m2 (separate weight for measures)",
         linewidth=2,
     )
-    plt.plot(bis, mrc, color=colors[12], label="m2 (mrc unweighted)", linewidth=2)
+    plt.plot(bis, mrc, color=colors[12], label="m2 (mrc unweighted)", linewidth=2) """
     plt.ylabel("correlation/gt/relevance")
     plt.xlabel("bias")
 
@@ -674,8 +679,8 @@ def plot_fancy_distribution(dataset=None, s=[], w=[]):
     from collections import Counter
     from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 
-    lim_x = [np.min(s), np.max(s)]
-    lim_y = [np.min(w), np.max(w)]
+    lim_x = [0,1]# [np.min(s), np.max(s)]
+    lim_y = [0,1]# [np.min(w), np.max(w)]
 
     fig = plt.figure(figsize=(7, 5))
     fig.set_facecolor(FACECOL)

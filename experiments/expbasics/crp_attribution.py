@@ -443,7 +443,6 @@ class CRPAttribution:
                     edges[source][target] = (
                         edges[source][target] / in_counts[source[:-2]]
                     )
-        print(edges)
         node_labels = list(used_nodes)
         return node_labels, edges, images
 

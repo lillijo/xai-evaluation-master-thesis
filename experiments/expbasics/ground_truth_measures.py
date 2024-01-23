@@ -224,6 +224,28 @@ class GroundTruthMeasures:
             everything_rra.append([0, 1, with_wm["rra"], True, index, with_wm["pred"]])  # type: ignore
         return everything_rma, everything_rra
 
+    def prediction_watermark(
+        self,
+        model,
+        disable=False,
+    ):
+        """
+        * This is just the computation of lots of values when intervening on the generating factors
+        """
+        indices = range(0, self.max_index, self.step_size)
+        everything = []
+        for index in tqdm(indices, disable=disable):
+            lat, wm, offset = self.dataset.get_item_info(index)
+            no_wm = self.get_output(index, model, False)
+            no_wm = int(no_wm.data.max(0, keepdim=True)[1])
+            with_wm = self.get_output(index, model, True)
+            with_wm = int(with_wm.data.max(0, keepdim=True)[1])
+
+            # latent type, latent index, latents, index, prediction
+            everything.append([0, 0, lat, index, no_wm])  # type: ignore
+            everything.append([0, 1, lat, index, with_wm])  # type: ignore
+        return everything
+
     def ordinary_least_squares(self, everything):
         results = []
         n_neur = len(everything[0][2])
