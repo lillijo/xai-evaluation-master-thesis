@@ -41,4 +41,22 @@
 	)
 \end{lstlisting}
 
+\section{Details on Adapted dSprites Dataset}\label{appendix:dsprites}
+Has 737280 64x64 pixel binary images, only take rectangles and ellipses (Heart is to easy to distinguish?). so 419.. images.
+
+The generating factors \verb|shape|, \verb|scale|, \verb|rotation|, \verb|x position| and \verb|y position| are known for each sample.
+
+To adapt the benchmark for our purpose, only the first two shape classes (rectangle and ellipse) are used. A watermark in the form of a small \textit{w} was initially added to the lower-left corner of some images. During initial testing with only these adaptations it became clear that even the small convolutional neural network employed here is too powerful for this task as effectively dividing the image into two parts solves the problem and most neurons became irrelevant.
+To make the spurious feature, which is the watermark \textit{w} more difficult to learn, its position is therefore varied across the edges of the image. Further a small uniform noise term is added to make the problem more realistic and the saliency maps more convincing and informative.
+The aim of this new dataset is, to create the simplest possible scenario with known generating factors, while keeping it as realistic or close to real world application cases of attribution methods as possible. In \autoref{fig:dsprites_examples} the resulting images are visualized.
+
+
+
+\todo{why the heck new dataset???}
+\begin{itemize}
+    \item why do we need another dataset for benchmarking watermark bias??
+    \item some other benchmarks that deal with similar questions are...
+    \item why am i not just using 3d shapes dataset? \url{https://github.com/deepmind/3dshapes-dataset/} (C. Burgess and H. Kim)
+\end{itemize}
+
 \section{Further Plots Groud Truth}

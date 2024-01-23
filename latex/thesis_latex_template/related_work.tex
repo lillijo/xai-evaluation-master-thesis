@@ -13,11 +13,8 @@
       \item Current XAI evaluation methods - Feature Ablation, Visual Inspection, TCAV
       \item Current Criticism of BP methods and lack of methodical evaluation
       \item \cite{Sixt2020}, \cite{Wilming2023}, \cite{Kindermans2019} select criticism to look at
-      \item XAI Methods, Criticism and Evaluation methods using Causality
-      \item Use of causal methods in XAI and unused potential for evaluation
+      \item XAI Methods, Criticism and Evaluation methods using Causality  and unused potential for evaluation
       \item Other benchmark datasets that have been used for evaluation, why need a new one?
-      \item dsprites dataset? or in method
-      \item why do we want to look at models reaction to bias-to-core-ratio?
 \end{enumerate}
 
 
@@ -26,7 +23,7 @@ With the field of machine learning and particularly complex deep neural network 
 As especially neural networks are so called \textit{black boxes} that inhibit a human understanding of their results, plenty of explanation methods have been developed, summarized under the term \textit{explainable AI} or short \textit{XAI}. 
 \todo{more on why XAI is necessary in general}
 \todo{post-hoc vs. interpretable models vs. ?}
-Those methods can generally be divided into local and global approaches. While local methods aim to explain the decision making for one specific example, for example in computer vision tasks one image, typically by attributing importance to input features like pixels, global methods make more general interpretations of a model, for example, which features are identified in the decision-making process. The first category prominently includes saliency map methods \todo{cite}, which are most often tested on computer-vision tasks, where they assign importance to pixels or regions of a sample image, creating a heatmap. The importance is in most cases computed through forms of backpropagation \todo{cite} or with the help of gradients \todo{cite}. The resulting saliency maps may generate insight into the locality of important objects, however this is usually only one facet of understanding the decision-making, especially for people not familiar with the data domain.
+Those methods can generally be divided into local and global approaches. While local methods aim to explain the decision making for one specific example, for example in computer vision tasks one image, typically by attributing importance to input features like pixels, global methods make more general interpretations of a model, for example, which features are identified in the decision-making process. The first category prominently includes saliency map methods \todo{cite}, which are most often tested on computer-vision tasks, where they assign importance to pixels or regions of a sample image, creating a heatmap. The importance is in most cases computed through forms of back-propagation \todo{cite} or with the help of gradients \todo{cite}. The resulting saliency maps may generate insight into the locality of important objects, however this is usually only one facet of understanding the decision-making, especially for people not familiar with the data domain.
 
 ...
 
@@ -37,7 +34,7 @@ Those methods can generally be divided into local and global approaches. While l
 
 \todo{LRP and surroundings: also other applications like pruning (if you can "prune" certain neurons, their causal effect must be none or extremely small \cite{Yeom2019})}
 
-Concept Relevance Propagation, a recent method by \cite{Achtibat2022}, claims to be a \textit{glocal} XAI method, extending on the established local attribution method Layerwise Relevance Propagation (LRP) \cite{Bach2015} with more global methods like activation maximization \todo{cite and more}.
+Concept Relevance Propagation, a recent method by \cite{Achtibat2022}, claims to be a \textit{glocal} XAI method, extending on the established local attribution method Layerwise Relevance Propagation (LRP) \cite{Bach2015} with more global methods like \textit{relevance maximization}. 
 Layerwise Relevance Propagation, as a local XAI method, produces saliency maps for single data samples through a modified backpropagation process further described in \autoref{chapter:background}. By filtering on subsets of latent features within the layers of the model during this modified backpropagation, CRP yields saliency maps, which could in principle produce more specific explanations. With the help of feature visualization methods CRP's authors try to go beyond the pure \textit{"where"} of saliency maps, towards a \textit{what}, explaining which (human understandable?) concepts a model has recognized in a specific image region. This more global idea is integrating into a growing field of \textit{concept-based} explanation methods \todo{cite}.
 These have in common that they try to disentangle the large latent feature space of models into human-understandable concepts.
 
@@ -47,7 +44,7 @@ which papers have been published on this
 \begin{itemize}
       \item reveal to revise: whole framework for XAI using CRP as one of the methods for concept/bias discovery \cite{Pahde2023}
       \item using CRP to identify and unlearn bias 'Right Reason Class Artifact Compensation (RR-ClArC)' \cite{Dreyer2023a}
-      \item newest summary paper \cite{Achtibat2023}
+      \item newest summary paper, saying basically the same thing as old one, but with a (not so great) human evaluation study \cite{Achtibat2023}
       \item disentangle representations, similar to PCA, uses LRP \cite{Chormai2022}
 \end{itemize}
 
@@ -56,57 +53,61 @@ categorization \cite{Samek2021}
 
 
 \section{Evaluation of XAI Methods}
+The research on quantification and evaluation of XAI methods has increased with their rising popularity. 
+Explainable AI method's purpose is to describe the decision strategies of a machine learning model to ensure it is safe and fair to deploy for an application. 
+Unless we can guarantee that an explanation indeed accurately identifies \textit{why} a decision has been made, it can not be used as a justification. We further undermine the link between causality research and XAI below \cref{section:causal_xai}.
+A successful explanation is not only correct (i.e. faithful to the model), but also sufficient, technically applicable and understandable by humans \cite{Samek2021}. Work on evaluating XAI methods can therefore be generally divided into these categories, with different metrics or experiments to measure respective performance. One can try to measure those factors on real problems, create benchmarks with known ground truth explanations or conduct human studies. Within these possibilities we focus on evaluation methods for local attribution methods, back-propagation methods and concept-based methods, applicable to our study subject \textit{CRP}.
 
-\todo{more general what evaluation methods exist, which apply to CRP etc.}
+\subsection{Fidelity,Correctness, Faithfulness}
+
+Recently, a multitude of benchmarks and theoretical analyses have examined the fidelity, especially of local attribution methods, to the model they are trying to explain. Evaluations commonly used by authors of new XAI methods include feature ablation \cite{Samek2017} and data randomization (e.g. pixel flipping) \cite{Adebayo2018}. 
 
 
-\subsection{Evaluating Back-Propagation Methods}
-\label{subsection:evaluation_critique}
-The research on quantification and evaluation of XAI methods has increased with their rising popularity. Recently, a plethora of benchmarks and theoretical analyses have examined the fidelity, especially of feature importance methods, to the model they are trying to explain. Evaluations commonly used by authors of new XAI methods include feature ablation and data randomization (e.g. pixel flipping) \todo{cite}. Additionally, more complex benchmarks \cite{Kim2018, Arras2022, Bau2017, Singla2022} which are often human-supervised aim at comparing XAI outputs to human-understandable concepts.
+\cite{Bluecher2022}
+- interactions of different concepts with each other
+- close / similar to shapely values
+-
 
-In the quantitative evaluation of \cite{Kim2018} a similar approach to ours is put into action:
-a noise parameter controls the correlation of an image and a label on it and the accuracy for images without the label is tested. If the label was not learned as an important feature, the TCAV score should be low. User study showed that saliency maps for TCAVs did not help in identifying the important feature. This is an important insight and corresponds with \cite{Sixt2022a}. It seems that saliency maps are misleading more often than not. If there is no additional insight as with CRPs relevance images or similar, one can not expect to tell spurious from core features only using saliency maps.
+\cite{Rong2022}
+- eliminates problem that perturbing "important" pixels has information leakage as shape is visible
+- ROAD
+- new evaluation strategy for attribution methods: remove and debias
 
+
+\subsection{Sensitivity, Sufficiency}
+\cite{Wilming2023, Clark2023}
+
+
+
+\paragraph*{XAI-TRIS:}
+(could also fit into "with known ground truth importance" category)
+\cite{Clark2023}
+Gleich
 \begin{itemize}
-      \item differentiate between numerical evaluation and evaluation through user studies
-      \item examples of often used evaluations for local attribution methods and concept-based methods:
-            \begin{itemize}
-                  \item feature ablation and related methods
-                  \item TCAVs \cite{Kim2018} with benchmark feature set (hard and often not applicable)
-                  \item clevr-xai? \cite{Arras2022}
-            \end{itemize}
-      \item clever XAI artificial benchmark dataset \cite{Arras2022}
-      \item NetDissect dataset with concept-segmented images \cite{Bau2017}
-      \item also other concept/neuron dissection by same authors, similar idea to CRP \cite{Bau2020}
-      \item creates new dataset (human-supervised) to detect core vs spurious features \cite{Singla2022}
-\end{itemize}
-{\color{red} outline which problems CRP solves well, draw connections between unsolved criticism and causal perspective}
-
-\subsubsection{Recent Critique of Saliency Maps}
-
-Although a general lack of dependence between explanations and their model \cite{Adebayo2018,Karimi2023} has so far only been studied for less complex attribution methods, current research still draws a less than ideal picture of XAI's fidelity.
-Kindermans et. al. \cite{Kindermans2019} show that a constant vector shift on the input data, which is not affecting the performance of the model, can lead to misleading explanations. \cite{Sixt2020} finds the class insensitivity of some back-propagation methods to be due to their improper use of negative relevance.
-While authors of new methods often underline their results with user studies \todo{cite}, Sixt et. al. \cite{Sixt2022a} among others \todo{cite} show that XAI methods do not necessarily increase humans skill at identifying relevant features.
-
-Constructing a test which is neither too simple and therefore too far away from realistic application scenarios nor not quantifiable empirically due to its \textit{human} component or unidentifiable ground truth, poses a challenge which \cite{Clark2023} tries to tackle. This benchmark is based on recent analysis \cite{Wilming2023} of suppressor variables, which can be for example the background color of an image, that are used by the model without having an association to the core features to normalize the image and improve the prediction.
-They introduce a generation process for mixing the suppressor and real features which serves as inspiraiton for the structural causal model applied here.
-
-\begin{itemize}
-      \item explanations are independent of later layers (no negative relevance) \cite{Sixt2020}
-      \item suppressor variable "in practice, XAI methods do not distinguish whether a feature is a confounder or a suppressor, which can lead to misunderstandings about a model's performance and interpretation"
-      \item kinda stupid, because nueral network also does not make a difference between suppressors and confounders \cite{Wilming2023}
-      \item the (un-)reliability of saliency methods: should fulfill 'input invariance'
-      \item saliency method mirrors sensitivity of model with respect to transformations of the input
-      \item normal LRP root point (zero) not working
-      \item pattern attribution reference point works (direction of variation in data, determined by covariances) \cite{Kindermans2019}
+      \item similar "causal" model for benchmarks
+      \item idea of signal-to-noise ratio style setup from here
 \end{itemize}
 
+Anders
+\begin{itemize}
+      \item they say suppressor variables should not be important. However if they have a causal effect on the model (which they do, cause prediction is worse without them) in our opinion they should be important.
+      \item question is: what should the correct explanation be, when constant vector shift or out-of-distribution sample makes good prediction impossible?
+      \item in my opinion: putting attention onto the suppressor feature is a good way to show that the model can't deal with it well
+      \item Performance Metrics: Precision? / Earth Mover's Distance (Wasserstein) between binary gt and heatmap
+\end{itemize}
+
+
+\subsection{Human Interpretability}
+
+
+{\color{gray} 
+evaluation studies, old notes:
 \begin{enumerate}
       \item \cite{Sixt2022a}: evaluation of heatmaps/saliency methods not enough based on actual user studies and human performance / explanation quality
             \\ task: look at explanation and rate, weather each feature is relevant or irrelevant
       \item \cite{Wilming2023}: explanation of suppressor variables (that have no statistical association with target) gives false impression that of dependency if their inclusion into the model improves it
             \\ task: linear model with 1 real and 1 suppressor variable, saliency methods mark both suppressor variable and core variable as important
-      \item \cite{Sixt2020}: because matrix is converging to rank 1 in BP methods that dont use negative relevance scores appropriatly, heatmaps are not class sensitive
+      \item \cite{Sixt2020}: because matrix is converging to rank 1 in BP methods that dont use negative relevance scores appropriately, heatmaps are not class sensitive
             \\ task: randomize more and more network parameters, look at heatmap for and against class
       \item \cite{Kindermans2019}: heatmap methods are sensitive to constant shift in input data, but should fulfill input invariance
             \\ task: add “watermark style” input shift, test if model still predicts accurately and then if heatmap does same as model
@@ -121,9 +122,53 @@ They introduce a generation process for mixing the suppressor and real features 
             \\ task: treat Model as SCM and calculate interventional expectations and average causal effect
       \item \cite{Sixt2022}: deep taylor decomposition fails, when only positive relevance taken into account, matrix falls to rank 1 \\ task: theoretical analysis
 \end{enumerate}
+}
 
-\subsection{Other Similar works (todo)}
-\todo{read again and summarize}
+
+From \cite{Yang2019}:
+\begin{itemize}
+    \item Sensitivity and Robustness: explanation changes same as model/output changes \cite{Adebayo2018,Ghorbani2019a}
+    \item Correctness: e.g. feature ablation (=faithfulness, fidelity) \cite{Samek2017a,Fong2017,Hooker2019} Hooker use retraining, others don't
+    \item with ground truth knowledge of feature importance \cite{Kim2018, Yang2019, Clark2023,Arras2022,Bau2017,Parafita2019,Singla2022}
+    \item with humans in the loop \cite{Singla2022, Ribeiro2016, Rong2023,Kim2018}
+\end{itemize}
+
+From \cite{Samek2021}:
+\begin{itemize}
+    \item Faithfulness/Sufficiency: 'pixel-flipping' \cite{Samek2017}
+    \item Human Interpretability \cite{Kim2018}, file size of explanation
+    \item Applicability and Runtime
+\end{itemize}
+
+From \cite{Arras2022}:
+\begin{itemize}
+    \item Pixel Perturbation == feature ablation pixel flipping \cite{Samek2017a, Samek2021, Bach2015, Lundberg2017}
+    \item Data Randomization \cite{Adebayo2018}
+    \item Model Randomization \cite{Adebayo2018,Sixt2020}
+    \item Remove and Retrain \cite{Hooker2019}
+    \item Object Localization / Segmentation \cite{Simonyan2014}
+    \item Pointing Game
+\end{itemize}
+
+
+\subsection{With Known Ground Truth}
+Additionally, more complex benchmarks \cite{Kim2018, Arras2022, Bau2017, Singla2022} which are often human-supervised aim at comparing XAI outputs to human-understandable concepts.
+
+In the quantitative evaluation of \cite{Kim2018} a similar approach to ours is put into action:
+a noise parameter controls the correlation of an image and a label on it and the accuracy for images without the label is tested. If the label was not learned as an important feature, the TCAV score should be low. User studies showed that saliency maps for TCAVs did not help in identifying the important feature. This is an important insight and corresponds with \cite{Sixt2022a}. It seems that saliency maps are misleading more often than not. If there is no additional insight as with CRPs relevance images or similar, one can not expect to tell spurious from core features only using saliency maps.
+
+\begin{itemize}
+      \item examples of often used evaluations for local attribution methods and concept-based methods:
+            \begin{itemize}
+                  \item feature ablation and related methods
+                  \item TCAVs \cite{Kim2018} with benchmark feature set (hard and often not applicable)
+                  \item clevr-xai? \cite{Arras2022}
+            \end{itemize}
+      \item clever XAI artificial benchmark dataset \cite{Arras2022}
+      \item NetDissect dataset with concept-segmented images \cite{Bau2017}
+      \item also other concept/neuron dissection by same authors, similar idea to CRP \cite{Bau2020}
+      \item creates new dataset (human-supervised) to detect core vs spurious features \cite{Singla2022}
+\end{itemize}
 
 \cite{Yang2019}
 - Common Feature Measure -> how many of the (10) classes have this feature in background (e.g. dog)
@@ -131,60 +176,57 @@ They introduce a generation process for mixing the suppressor and real features 
 - measure MCS = Model Contrast Score = how different is importance of cf in different models
 
 \cite{Arras2022}
+- clevr-xai = known ground truth importance
 - Mass Accuracy = relevance within feature bounding box / total relevance in image
 - Rank Accuracy = how many of the pixels inside bounding box are in K most important pixels
 
 
-\cite{Bluecher2022}
-- interactions of different concepts with each other
-- close / similar to shapely values
--
+{\color{red} outline which problems CRP solves well, draw connections between unsolved criticism and causal perspective}
+
+\subsection{Shortcomings of Current XAI Methods}
+
+Although a general lack of dependence between explanations and their model \cite{Adebayo2018,Karimi2023} has so far only been studied for attribution methods that are not concept-based, current research still draws a less than ideal picture of their fidelity.
+Kindermans et al. \cite{Kindermans2019} show that a constant vector shift on the input data, which is not affecting the performance of the model, can lead to misleading explanations. The theoretical and empirical analysis of \cite{Sixt2020} finds the class insensitivity of some back-propagation methods to be due to their improper use of negative relevance.
+While authors of new methods often underline their applicability with user studies \cite{Achtibat2023,Fel2023,Ghorbani2019,Zhang2021}, Sixt et al. \cite{Sixt2022a} among others \cite{Singla2022} show that XAI methods do not necessarily increase humans skill at identifying relevant features. Similarly, Rong et al. \cite{Rong2023} criticizes a lack of comparability between user studies in the field of XAI. 
+
+Constructing an evaluation test which is neither too simple and therefore too far away from realistic application scenarios nor not quantifiable empirically due to its \textit{human} component or unidentifiable ground truth, poses a challenge which \cite{Clark2023} tries to tackle. This benchmark is based on recent analysis \cite{Wilming2023} of suppressor variables, which can be for example the background color of an image, that are used by the model without having an association to the core features to normalize the image and improve the prediction.
+They introduce a generation process for mixing the suppressor and real features which serves as inspiration for the structural causal model applied in our case.
+
+\begin{itemize}
+      \item explanations are independent of later layers (no negative relevance) \cite{Sixt2020}
+      \item suppressor variable "in practice, XAI methods do not distinguish whether a feature is a confounder or a suppressor, which can lead to misunderstandings about a model's performance and interpretation"
+      \item kinda stupid, because neural network also does not make a difference between suppressors and confounders \cite{Wilming2023}
+      \item the (un-)reliability of saliency methods: should fulfill 'input invariance'
+      \item saliency method mirrors sensitivity of model with respect to transformations of the input
+      \item normal LRP root point (zero) not working
+      \item pattern attribution reference point works (direction of variation in data, determined by covariances) \cite{Kindermans2019}
+\end{itemize}
 
 
-\cite{Rong2022}
-- new evaluation strategy for attribution methods: remove and debias
-
-\subsubsection{Human User Studies stuff}
-do i need to say something about this? at least i should mention that it actually the most important but hard and expensive to measure
-\cite{Rong2023, }
-
-
-\subsection{Causality and XAI (on Evaluation and Benchmarking of XAI)}
-The link an explanation and its model should have, has come under the causal lense both for developing new XAI methods and their evaluation  \todo{cite}. Counterfactual explanations
+\subsection{Causality and XAI (on Evaluation of XAI)}\label{section:causal_xai}
+Explaining a models decision is an intrinsically causal task. Naturally, a few overview papers have structured and incorporated this task with language from the field of causality. Motivated by a philosophical and theoretical foundation \cite{Woodward2004, Halpern2005, Schoelkopf2019} many authors have already set to using more causal language when describing the goals of explanation methods. Moraffah et al. \cite{Moraffah2020a} survey current causal XAI methods as well as their (potentially causal) evaluation. Beckers \cite{Beckers2022} formally defines \textit{sufficient} and \textit{counterfactual explanations} as well as \textit{actual causation} in the 'action-guiding' setting that is XAI. He argues that a good explanation not only shows which things ought to be changed for a different outcome (\textit{counterfactuals}) but also which ''\textit{may not be manipulated}'' (page 5). 
 
 
       {
-            \color{red}
-            quote from \cite{Goyal2019}:
-
-            \begin{quote}
-                  The relationship between causality and explainability has a
-                  long history, see (Woodward, 2005 \textit{making things happen: a theory of causal explanation}) for a discussion from
-                  a philosophy of science point of view. Halpern \& Pearl
-                  (2005 \textit{Causes and Explanations: a structural-model approach}) give a formal causal theory of what constitutes an
-                  explanation, in terms of what is known as "actual causality"
-            \end{quote}
-
+            \color{gray}
+            Goyal:
             \begin{quote}
                   We note that this problem does not exist as such for most
                   local interpretation methods: because for a given image,
                   the pixels deterministically cause the output of a model,
                   there is no notion of probability or confounding. However,
-                  confounding might affect local models where pixels are per-
-                  turbed based on data-dependent models....
+                  confounding might affect local models where pixels are perturbed based on data-dependent models....
 
                   Many interpretability methods developed to have causal-
                   flavor are for local explanations, such as removing and
                   adding pixels to generate counterfactual explanations for
                   images
             \end{quote}
-
-            The summary of \cite{Moraffah2020a} is really good for \"general map of XAI\" but also is a good summary on the existing causal stuff for XAI! \todo{base some of my related works section of \cite{Moraffah2020a}}
+            \begin{quote}
+                Prediction in its most natural application is a forward-looking notion, meaning one predicts an event before it takes place. Explanation on the other hand is a backward-looking notion, meaning that one explains an event after it has happened. Yet as many papers on XAI clearly illustrate, explanations about past events are often required precisely to inform predictions about future events
+            \end{quote}
 
             \begin{quote}
-                  Pearl [83] introduces different levels of said interpretability
-                  and argues that generating counterfactual explanations is
-                  the way to achieve the highest level of interpretability.
 
                   \begin{itemize}
                         \item statistical: how would seeing x change my belief in y?
@@ -204,22 +246,10 @@ The link an explanation and its model should have, has come under the causal len
                   \item how consistent are explanation?
                   \item metrics for evaluating counterfactual explanations: sparsity/size, interpretability, proximity, speed, diversity, visual-linguistic counterfactuals
             \end{itemize}
-
-            CLEVR-XAI \cite{Arras2022} is a well defined benchmark dataset with extensive ground-truth information.
-
-            similar: M. Schuessler, P. Weiß, L. Sixt, Two4two: Evaluating interpretable machine learning - a synthetic dataset for controlled experiments
-
-            good summary table of most commonly used evaluation methods:
-            - Pixel Perturbation
-            - Data Randomization Test
-            - Model Randomization Test
-            - Remove and Retrain
-            - Object Localization/Segmentation
-            - Pointing Game
-
-            Although the term \textit{causality} is not specifically mentioned in the paper, the CLEVR-XAI benchmark has potential for the causal evaluation of XAI methods. With (ground truth) generating factors available and a complex scene graph comparable to a structural causal model, it is straight-forward to measure causal effects or do counterfactual analysis. However the dataset requires quite a complex network architecture, which can read text (questions?) e.g. with a recurrent CNN and give not just a classification output but a set of output features.
       }
+      
       {\color{red} which other methods/approaches/papers are there that broadly connect explainable AI and causality }
+      
 \begin{itemize}
       \item general map of causality and XAI mixups
       \item counterfactual stuff
@@ -262,27 +292,57 @@ Anders
       \item Problem bei Karimi möglicherweise: teilweise "deterministische" verbindung zwischen model/output/explanation und hyperparametern macht explanation von model möglicherweise conditionally independent to output/model given hyperparameters
 \end{itemize}
 
-\paragraph*{XAI-TRIS:}
-\cite{Clark2023}
-Gleich
+\paragraph{Reread Karimi:}
 \begin{itemize}
-      \item similar "causal" model for benchmarks
-      \item idea of signal-to-noise ratio style setup from here
+    \item for high performing models, direct effect of hyperparameters stronger than effect of Y on E
+    \item influence of Y on E decreases for higher performing models
+    \item others argue that E should not just strongly correlate with Y but also reflect other features like data distribution
+    \item important also for my thesis: \textit{'Despite some methodological similarities, our work is fundamentally different from using causal inference to generate counterfactual explanations'}
+    \item while we do not keep the dataset constant, by keeping all other parameters in dataset constant (any hyperparameters) we create a similar experiment
+    \item $Y_h^*(x)$ and $E_h^*(x)$ are outcomes generated when hyperparameters set to $H= h$ on data point $X=x$
+    \item training procedure: $T: \mathcal{H} \times \mathcal{D} \rightarrow \mathcal{F}$ (training hyperparameters and dataset $\mathcal{D}:= (\mathcal{X,Y})$
+    \item prediction procedure: $P: \mathcal{F} \times \mathcal{X} \rightarrow \mathcal{Y}$
+    \item explanation procedure: $E: \mathcal{F} \times \mathcal{X} \times \mathcal{Y} \rightarrow \mathcal{E}$ 
+    \item potential outcomes framework Rubin 2005 \cite{Rubin2005}
+    \item they perform "observational study", we are able to measure everything
+    \item we have two "effects" we want to measure: locally: effect of having/removing watermark, globally effect of coupling ratio on this effect or something
+    \item reiterate over causal assumptions: \textit{exchangeability}
+    \item \textbf{Kernelized Treatment Effect (KTE)}: replace 'subtracting' with different dissimilarity measure: $
+    ||\psi(Y_h^*(x)) - \psi(Y_{h'}^*(x))||_{\mathcal{G}}^2 =   k(Y_h^*(x), Y_h^*(x)) - 2k(Y_h^*(x),Y_{h'}^*(x)) + k(Y_{h'}^*(x),Y_{h'}^*(x))  
+    $
+    \item \begin{quote}Applying kernel is especially important when we compare Eh∗ (x), as comparing each spatially-related pixel value across different images is likely to not lead to a meaningful result
+    \end{quote}
+    \item They compare the explanations (/predictions) of two different models directly with each other by using this kernelized method. I think this is not a good idea. The cost function is likely quite highly non-linear and has many local minima. Therefore it is very bold to assume that "similar" models must fall in similar local minima. We know that cost functions can be in a sense "chaotic" meaning that close starting points don't necessarily end up in similar end points. (do we?)
+    \item taking averages therefore seems to be the better option? If we can find good measure of importance
+    \item do I need to rethink my whole idea? But I cannot compare explanations of models with different bias or? 
+    \item only use some samples, therefore just \textit{observed} = empirical estimates (does not work if exchangeability does not hold)
+    \item direct vs. indirect influence: correlation on prediction and explanation, vs. when predictions are randomized, but just approximation because relationship can be non-linear.
+    \item hyper-parameter values are drawn independently at random from pre-specified ranges
+    \item random seed and base model architecture fixed
+    \item negative attribution is zeroed out
+    \item they need \textit{identity} (E = Y) to measure \textit{goodness}, we can use the \textit{ground truth importance}, or?
+    \item kernel choice seems to have no effect on distributions of ITEs (individual treatment effect)
+    \item they look at performance buckets, we look at $\rho$  buckets ? \textit{How does the relationship between E and Y change as a function of the performance of the model}
+    \item justify why I only use "high-performing" models? Although they show that there is unfavorable relationship between model performance and explanation \textit{goodness}, we believe that the selection bias for the highest performing models is inevitable for AI research practice. Therefore we implicitly select for performance by using well-performing hyper-parameters and by sorting out one seed that seemed to not converge (meaning our model is not stable?)
+    \item only compare to within-accuracy-bucket control group
+    \item use \textit{Spearman Rank Correlation} or \textit{Pearson Correlation} to compare effect on Y and E
+    \item $corr(ITE_Y, ITE_E)$ increases as performance increases
+    \item when randomizing Y, direct effect of H on E seems to increase when model performance does: I have good explanation: looking only at Y (binary) does not convey whole prediction, i.e. the more sophisticated the model, the more it reacts slightly to slight changes in image, without necessarily affecting overall decision.
+    \item criticism: only use pretty low performing models (57\% seems to be highest?)
+    \item mention in own limitations: their metric does not touch with other metrics for XAI: \textit{intelligibility, transparency, complexity, user-friendliness}
+    
+    
 \end{itemize}
 
-Anders
-\begin{itemize}
-      \item they say suppressor variables should not be important. However if they have a causal effect on the model (which they do, cause prediction is worse without them) in our opinion they should be important.
-      \item question is: what should the correct explanation be, when constant vector shift or out-of-distribution sample makes good prediction impossible?
-      \item in my opinion: putting attention onto the suppressor feature is a good way to show that the model can't deal with it well
-      \item Performance Metrics: Precision? / Earth Mover's Distance (Wasserstein) between binary gt and heatmap
-\end{itemize}
+nice formulation: \textit{elicited criticisms} and look at the cited work
 
+do what they do, replace hyperparameters with latent factors in data, test specifically for concept based methods. 
 
 \paragraph*{Reimers2020}
 \cite{Reimers2020}
-
 \begin{itemize}
-      \item intervention on image parts 
+      \item intervention on image parts or other "known features"
+      \item kind of motivating work to this thesis and other causal work: do independence test given ground truth 
       \item cites Kindermans, Adebayo constant vector shift and untrained models produce similar heatmaps to trained ones
 \end{itemize}
+

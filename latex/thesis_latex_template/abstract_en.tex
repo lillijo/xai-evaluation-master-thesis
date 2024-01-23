@@ -10,6 +10,9 @@
 \end{itemize}
 
 \subsubsection*{Motivation}
+
+% Comment Oana: motivation for causality is missing
+
 \begin{itemize}
     \item explainable AI shows great progress in visualizing how neural networks see/decide
     \item however there have been many criticisms and some argue that the XAI methods don't show what is actually seen by the NN and rely more on hyperparameters or the data itself.
@@ -21,6 +24,7 @@
     \item Looking at individual concepts with their relevances and specific heatmaps has the potential to identify which of the features (core or spurious) is actually most relevant.
 \end{itemize}
 
+
 \subsubsection*{Problem Statement}
 \begin{itemize}
     \item investigate the example of CRP, a recent method which takes the popular Layer-Wise Relevance Propagation to the next level, by producing conditional attributions for neurons or sets of neurons coined "concepts"
@@ -31,7 +35,7 @@
 \subsubsection*{Approach}
 \begin{itemize}
     \item for validation purposes very simple disentangling dataset DSPRITES
-    \item introduce "causal" biases into dataset, by adding small watermark not uniformly to certain images
+    \item introduce "causal" biases into dataset, by adding small watermark not uniformly to certain images % comment Oana: actually should be "generate data with known ground truth - use causality"
     \item use a very small neural network, which is strong enough to perform well at the task but learns the spurious feature once it becomes overwhelmingly correlated to the core feature.
     \item intervene on the bias strength to see how 
     \item \textit{do causality lol}
@@ -40,14 +44,14 @@
 \subsubsection*{Results}
 \begin{itemize}
     \item does CRP succeed in identifying the true biasedness of the model
-    \item what do we want to explain
+    \item what do we want to explain % comment Oana : this should be first, and i think it should be more like "a measure for quantifying influence of bias on explanation / model" 
     \item does this result generalize for other attribution methods, data, SCMs?
 \end{itemize}
 
 \subsubsection*{Conclusions}
 \begin{itemize}
-    \item found a new benchmark measure to combat the critique about the robustness and fidelity of especially concept-based methods.
-    \item from that new method a way to enrich or improve those methods arises
+    \item found a new benchmark measure to combat the critique about the robustness and fidelity of especially concept-based methods. % comment Oana - not sure exactly what you mean by this, but it sounds more than we actually do. is this more like future work?
+    \item from that new method a way to enrich or improve those methods arises % comment Oana - we don't actually do this
     \item it is important to look at explanations in a more causal light because that is what they are ought do be doing
     \item what else needs to be done especially
 \end{itemize}

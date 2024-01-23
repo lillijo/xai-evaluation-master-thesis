@@ -11,9 +11,18 @@
     \item Repeating the abstract in the introduction is a waste of space.
 \end{itemize}
 
+% what else to put in, reacting to Oana as well
+\begin{itemize}
+    \item start with general aim and state of XAI: Field is exploding, recently more work on evaluating XAI methods both on theoretical and practical level
+    \item more evaluation also led to more negative results, focus on BP methods (shortly embed into XAI taxonomy)
+    \item local (or 'glocal'), attribution methods have been criticized: general lack of difference to simple filters like 'Sobel', do not work in \textit{limit of simplicity}, are sensitive and lack faithfulness to model in case of constant vector shifts in data (not accurate in out-of-distribution cases), for BP methods heatmaps are class-insensitive due to negative relevance not being dealt with appropriately and matrix having rank 1
+\end{itemize}
+
 
 \todo{REFER MORE TO \textit{Are We Explaining The Data Or The Model?}}
 \section{Motivation and Context}
+% comment Oana: the start is too abrupt, start with the XAI setting and problems in XAI, then introduce CRP
+
 The recent method of Concept-Relevance-Propagation (CRP) introduced in \cite{Achtibat2022} has been developed for a more fine-grained explanation of a neural networks decisions. Instead of producing one saliency map explaining the overall prediction output such as LRP \cite{Bach2015} does, each \textit{concept} in some hidden layer of the network gets assigned a conditional relevance and its own saliency map. In addition to the saliency maps, the relevance scores also act as a metric to maximize when searching representative samples for each of the concepts. According to the authors, through this more detailed explanation one can not only understand \textit{where} a model sees the most relevant features, but also \textit{what} features are relevant in this area. Their claim is, that the deeper layers of models represent concepts which are human-understandable and therefore aid in the explanation of what the model predicts. 
 
 Some works have criticized local attribution methods, to which LRP counts, for their class-insensitivity due to the lack of negative explanations as well as overall subpar performance in the \textit{limit of simplicity} i.e. for very small linear datasets. 

@@ -12,22 +12,10 @@
 }
 
 \section{Neural Networks}
-\todo{General explanation of neural networks}
-\begin{itemize}
-    \item Explain all general concepts that are needed for understanding CRP etc. 
-    \item neurons and layers
-    \item convolutional layers and channels
-    \item linear layers and output layer
-    \item activation functions (especially ReLU)
-    \item MaxPooling layer 
-    \item backpropagation / forward
-    \item optimizers (specifically Adam) - learning rate
-    \item loss function (here CrossEntropyLoss)
-    \item training? batch size
-\end{itemize}
+Among the many machine learning approaches that have been developed, the most popular but also most opaque are deep neural networks. In general, a neural network consists of neurons, which are computational nodes organized in layers. In a forward pass, each neuron creates a weighted sum of its inputs, offsets it with a bias and then feeds it through a non-linear function. The result is fed to the next layer of neurons until the output layer is reached. During training, a loss function between the output for a data instance and its true label is optimized by back-propagating its gradient and updating the weights and biases. For specifics on successful architectures and training procedures we refer to text books on deep learning, for example by Goodfellow et al. \cite{Goodfellow2016}. When trained with enough data the weights and biases together approximate an often highly non-linear function describing the training data accurately. This function however is hard to analyze and interpret for humans, trying to understand the reasoning of the network. Hence the emergence of many explanation methods attempting to uncover those inner workings in a human-interpretable way.
 
-\section{Layerwise Relevance Propagation}
-Layer-wise relevance propagation \cite{Bach2015} is the basis for concept relevance propagation and is next to SHAP, LIME, Integrated Gradients \todo{cite} among the most highly cited local attribution methods in XAI. As other saliency methods, LRP is commonly used in computer vision tasks to attribute importance to each pixel in an image, which can then be visualized as a heatmap, but is also applicable to other data formats. In the following I will summarize the basic functioning of LRP for neural networks as described in \cite{Bach2015}:
+\section{Layer-wise Relevance Propagation}
+Layer-wise relevance propagation \cite{Bach2015} is the basis for concept relevance propagation and is among the most highly cited local attribution methods in XAI. After being introduced almost 10 year ago, it has been justified theoretically through Deep Taylor Decomposition \cite{Montavon2017}. It belongs to the class of modified back-propagation methods which propagate a custom value instead of a gradient back to the input. A visual representation of this strategy can be found in \cref{fig:crp_vs_lrp} \textbf{(a)}. As other saliency methods, LRP is commonly used in computer vision tasks to attribute importance to each pixel in an image, which can then be visualized as a heatmap, but is also applicable to other data formats. In the following I will summarize the basic functioning of LRP for neural networks as described in \cite{Bach2015}:
 
 LRP assumes that the model has multiple layers of computation it can be decomposed into, starting from the input layer, for example the pixels of an image, to all latent layers $l$ and finally to the output layer. Further each of those layers has $V(l)$ dimensions for which a Relevance Score $R^{(l)}_d$ could be determined so that the following equation holds:
 
@@ -36,20 +24,24 @@ LRP assumes that the model has multiple layers of computation it can be decompos
 \end{equation}
 
 In neural networks, the general forward step for one layer most often includes weighing the previous layers outputs $x_i$ with the current layers weights $z_{ij} = x_i w_{ij}$, summing the results for all connected neurons and their bias $z_{j} = \sum_{i} z_{ij} + b_j$ and running this through a non-linear activation function $x_j = \sigma (z_j)$.
-The idea then is to follow the flow of relevance from the output, where usually the prediction value is taken to initialize the relevance $R^(1)_d$, back to the input layer by decomposition. In the simplest case relevance is proportionally propagated back to the previous layer where the relevance of all connected neurons is aggregated in the following:
+The idea then is to follow the flow of relevance from the output, where usually the prediction value is taken to initialize the relevance $R^(1)_d$, back to the input layer by decomposition. In the simplest case relevance is proportionally propagated back to the previous layer where the relevance of all connected neurons is aggregated in the following way:
 \begin{equation}
     R_i = \sum_{j}  R_{i_j} = \sum_{j} \frac{z_{ij}}{z_j} R_j
 \end{equation}
 
-To apply LRP, best practices and rules have emerged \cite{Kohlbrenner2020, Montavon2019, Samek2021}. However in this thesis we stick to the propagation rule that the authors of CRP use, namely the composite $LRP_{\epsilon-z+-\flat}$-rule (or "epsilon-plus-flat"), which is recommended by \cite{Kohlbrenner2020} and uses different rules for different parts of the model, further described in the appendix \autoref{appendix:lrprules}.
+To apply LRP, best practices and rules have emerged \cite{Kohlbrenner2020, Montavon2019, Samek2021}. Depending on the type and location of a layer within a neural network the propagation rule can be varied. However in this thesis we stick to the propagation rule that the authors of CRP use, namely the composite $LRP_{\epsilon-z+-\flat}$-rule (or "epsilon-plus-flat"), which is recommended by \cite{Kohlbrenner2020} and uses different rules for different parts of the model, further described in the appendix \autoref{appendix:lrprules}.
 
-\todo{mention that it has been getting a mathematical background with Deep Taylor Decomposition  \cite{Montavon2017}}
-
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{thesis_latex_template/pics/crp_vs_lrp_from_paper.png}
+    \caption{\textbf{a}: output value back-propagated through network, \textbf{b} output conditioned on concepts, i.e. certain neurons are masked out in back-propagation (taken from Achtibat et al. Concept-Relevance Propagation paper \cite{Achtibat2023}) }
+    \label{fig:crp_vs_lrp}
+\end{figure}
 
 \section{Concept Relevance Propagation}
 
 LRP aggregates the significance of all latent layers and their neurons into one importance map, where the intermediate layers outputs are merely a side-product of the computation.
-Achtibat et. al. propose in their recent work \cite{Achtibat2022} to use those intermediate results to further disentangle the attributions. While in LRP the initialization at the output layer usually takes the value of one class output $y$ w.r.t input $\mathbf{x}$, all other output neurons set to zero, and thereby produces a class-conditional attribution ($R(\mathbf{x}|y)$), a similar thing can be done in latent layers too. Allthough it is yet unclear how to interpret the attribution to these hidden features, the authors of CRP propose to obtain importance scores for them by computing "(multi-)concept-conditional" relevances $R(\mathbf{x}|\theta)$. The variable $\theta$ here describes a set of conditions $c_l$ which in essence \textit{filters} for certain \textit{concepts} i.e. features in potentially mutliple layers by masking out all other features' contributions:
+Achtibat et. al. propose in their recent work \cite{Achtibat2022} to use those intermediate results to further disentangle the attributions. While in LRP the initialization at the output layer usually takes the value of one class output $y$ w.r.t input $\mathbf{x}$, all other output neurons set to zero, and thereby produces a class-conditional attribution ($R(\mathbf{x}|y)$), a similar thing can be done in latent layers too. Although it is yet unclear how to interpret the attribution to these hidden features, the authors of CRP propose to obtain importance scores for them by computing "(multi-)concept-conditional" relevances $R(\mathbf{x}|\theta)$. The variable $\theta$ here describes a set of conditions $c_l$ which in essence \textit{filters} for certain \textit{concepts} i.e. features in potentially multiple layers by masking out all other features' contributions:
 
 \begin{equation}
     R^{(l-1, l)}_{i_j} (\mathbf{x} | \theta \cup \theta_l) = \frac{z_{ij}}{z_j} \cdot \sum_{c_l \in \theta_l} \delta_{jc_l} \cdot R^{l}_j (\mathbf{x} | \theta )
@@ -170,7 +162,7 @@ $\delta_{jc_l}$ is the Kronecker-Delta selecting the relevance $R^l_j$ of featur
 \end{figure}
 
 \subsubsection*{Usage Scenarios}
-Heatmaps produced by conditional attribution could be analyzed in a similar fashion to the tradional class-specific heatmaps produced by LRP. The hinderance is that the meanings of the conditioned on latent features are not known, so it is unclear how to interpret the importance of some pixels for feature $i$ in layer $l$. For large, complex models some human-understandable concepts can emerge in hidden layers from simpler more local concepts in earlier and more abstract concepts in later layers \cite{Bau2017, Hohman2020, Olah2017, Bau2020}. However this is not a fact to rely on and seems to regularly fail for smaller models or simpler problems as noted before (\autoref{subsection:evaluation_critique}) and in other work \todo{cite}.
+Heatmaps produced by conditional attribution could be analyzed in a similar fashion to the traditional class-specific heatmaps produced by LRP. The hindrance is that the meanings of the conditioned on latent features are not known, so it is unclear how to interpret the importance of some pixels for feature $i$ in layer $l$. For large, complex models some human-understandable concepts can emerge in hidden layers from simpler more local concepts in earlier and more abstract concepts in later layers \cite{Bau2017, Hohman2020, Olah2017, Bau2020}. However this is not a fact to rely on and seems to regularly fail for smaller models or simpler problems as noted before and in other work \todo{cite}.
 
 CRP's authors therefore construct a framework for the understanding of these latent features. \textit{Activation Maximization} is used to find the samples for which the neuron (set) of a concept has the highest activation. They build on the idea of activation maximization when proposing \textit{Relevance Maximization}, where samples maximize the conditional relevance of a concept instead of the activation. Both methods yield a set of images or samples (see \autoref{fig:act_rel_max}), which can be enhanced further by masking out the irrelevant parts of the image, creating class specific reference samples and carefully selecting or extending the pool of samples to choose from. 
 
@@ -182,7 +174,7 @@ CRP's authors therefore construct a framework for the understanding of these lat
 \end{figure}
 \todo{image of ActMax and RelMax examples (using my dataset?)}
 
-The resulting interpretation tools for single concepts are combined with methods for a local explanation, i.e. the analysis of a single sample or image. A \textit{Concept Atlas} (\autoref{fig:concept_atlas}) inspired by Carter et. al.'s \textit{Activation Atlas} \todo{cite} colors parts of an image based on the most relevant concept in that region. \textit{Hierarchical attribution graphs} (\autoref{fig:attr_graph}) decompose the relevant concepts for an image into their lower layer subconcept channels. The presumption being that the spread of relevance into lower level features helps in the understanding of relevant concepts for a sample.
+The resulting interpretation tools for single concepts are combined with methods for a local explanation, i.e. the analysis of a single sample or image. A \textit{Concept Atlas} (\autoref{fig:concept_atlas}) inspired by Carter et. al.'s \textit{Activation Atlas} \todo{cite} colors parts of an image based on the most relevant concept in that region. \textit{Hierarchical attribution graphs} (\autoref{fig:attr_graph}) decompose the relevant concepts for an image into their lower layer sub-concept channels. The presumption being that the spread of relevance into lower level features helps in the understanding of relevant concepts for a sample.
 
 \begin{figure}[htbp]
     \centering
@@ -197,24 +189,42 @@ The resulting interpretation tools for single concepts are combined with methods
     \caption{Hierarchical attribution graph}
     \label{fig:attr_graph}
 \end{figure}
-\todo{image of Concept Atlas and hierarchical concept composition}
-
-From these local explanations ... 
-first experiments for a more global explanation
-
-\todo{global: Assessing Concept Similarity in Latent Space}
-
-\todo{papers with crp and more global explanation / concept clustering stuff}
-other papers (vielhaben, lapuschkin...) do more in this direction
-summarize work that builds on top of original CRP paper ?
-what else CRP could potentially be used for
-\cite{Dreyer2023,Pahde2023,Dreyer2023a,Vielhaben2022,Vielhaben2023,Achtibat2023}
-
-\section{Causal Framework}
-\subsection{Structural Causal Models}
 
 \begin{itemize}
-    \item Explain and define in detail Structural Causal Models
+    \item global: Assessing Concept Similarity in Latent Space
+    \item papers with crp and more global explanation / concept clustering stuff 
+\cite{Vielhaben2022,Vielhaben2023,Dreyer2023,Dreyer2023a,Fel2023,Fel2023a,Pahde2023}
+    \item user evaluation study of authors in next paper \cite{Achtibat2023}
+    \item 
+\end{itemize}
+
+
+\section{Causal Framework}
+\subsection{Ladder of Causation}
+\begin{itemize}
+    \item Associations
+    \item Interventions
+    \item Counterfactuals (do I even do anything counterfactual???)
+    \item definition of causal framework by Pearl et al. 
+    \item early and long-standing relationship between causality and AI research
+\end{itemize}
+
+\subsection{Structural Causal Models}
+\begin{itemize}
+    \item Probability Distributions
+    \item Bayesian Networks and Statistical Models
+    \item Causal Models: structural assignments/entailed distributions, parent variables are direct causes of variable 
+    \item causal graph: DAG with causal variables as vertex set and structural assignments as edges
+    \item effect of hard/soft intervention on graph and entailed distribution
+    \item total causal effect of x on y: p(do(X=x)) != p(do(X=x'))
+    \item Assumptions that need to hold: structural minimality, acyclicity
+    \item causal graph and entailed distribution are markov relative
+\end{itemize}
+
+\subsection{Causal Effect Estimation}
+
+\begin{itemize}
+    
     \item neural networks could be seen as SCMs \cite{Chattopadhyay2019}
     \item but AI / neural networks in general do not care about causation and work through finding useful correlations
     \item and that is good this way, otherwise they would never find anything useful, statistics and correlations are great
@@ -229,15 +239,6 @@ There is no problem in defining the neural network as a causal model.
 Also, in principle it does not matter which layer we pick out to quantify importance, as the whole importance has to flow through this layer. This is only true for neural network architectures that have no skip-connections or are recurrent and has to be viewed differently in other cases as has already been approached by \cite{Chattopadhyay2019}. However we know, that while the earlier layers of the neural network are more localized and have lower-level features / interpretations, the opposite is true for later layers, encoding more abstract not necessarily localized concepts. 
 So when trying to disentangle one features importance from other, one has to find a trade-off between disentanglement and abstraction/conceptual interpretability.
  
-
-\subsection{Data Generation Process}
-
-Other?
-
-\begin{itemize}
-    \item Short introduction to causal effects    \item counterfactuals
-    \item
-\end{itemize}
 
 
 \section{Evaluation of Explanations}
