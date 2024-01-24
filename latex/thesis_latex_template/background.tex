@@ -166,6 +166,13 @@ Heatmaps produced by conditional attribution could be analyzed in a similar fash
 
 CRP's authors therefore construct a framework for the understanding of these latent features. \textit{Activation Maximization} is used to find the samples for which the neuron (set) of a concept has the highest activation. They build on the idea of activation maximization when proposing \textit{Relevance Maximization}, where samples maximize the conditional relevance of a concept instead of the activation. Both methods yield a set of images or samples (see \autoref{fig:act_rel_max}), which can be enhanced further by masking out the irrelevant parts of the image, creating class specific reference samples and carefully selecting or extending the pool of samples to choose from. 
 
+talk about Band-aid usage scenario, which is kinda "watermark" scenario. Why is the "perturbation" of activations / filters not a good idea? or is it?
+
+is more of a \textit{human-in-the-loop} approach for finding/ removing Clever-Hans features. Example of actual watermark
+\begin{quote}
+From the graph, it can be inferred that the Clever Hans filters help the model in prediction, but they are not decisive for correct classification. Thus, the model relies on other potential non-Clever Hans features to detect the safe verifying the correct functioning of the model in cases of samples without watermarks.
+\end{quote}
+
 \begin{figure}[htbp]
     \centering
 	\includegraphics[width=0.3\textwidth]{pics/test.png}

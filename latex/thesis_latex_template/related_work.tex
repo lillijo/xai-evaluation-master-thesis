@@ -96,6 +96,20 @@ Anders
       \item Performance Metrics: Precision? / Earth Mover's Distance (Wasserstein) between binary gt and heatmap
 \end{itemize}
 
+\paragraph{Wilming, Suppressor Variables}
+\cite{Wilming2023,Clark2023}
+\begin{itemize}
+    \item their experiment is based on the idea that a model explanation should be able to distinguish between a \textit{spurious} (in their case \textit{suppressor} feature and a \textit{core} feature. 
+    \item in the simple model they create, $X_1$ is a collider for the core $Y$ and the other $X_2$ feature, so the SCM is not the same. But learning $X_2$ might still help.
+    \item in our example, the other generating factors such as scale and rotation are similar to the suppressor variable they propose. 
+    \item we believe that it would be strange to assume the model to assign 0 importance to those features, as they have to be learned to understand the model space
+    \item While the explanation in our experiment is not independent of the other generating factors, in general the causal effect of changing these is magnitudes lower than changing the core or spuriously correlated features. 
+    \item they only find methods which purposefully include the data distribution of the training data into the explanation to be successful
+    \item we argue that, while getting insights into that, it does not explain what the \textbf{model} itself is doing.
+    \item As we show in our experiment, the relationship between what is present in the data and what a model learns, while it generally follows a trend, is not exactly linear
+    \item hence our title \textit{are we explaining the data or the model?}
+    \item nothing wrong with explaining the underlying data too. but in application cases we don't have that information. Or we want good explanations independent on the data the model was trained on
+\end{itemize}
 
 \subsection{Human Interpretability}
 
@@ -310,7 +324,7 @@ Anders
     \item \textbf{Kernelized Treatment Effect (KTE)}: replace 'subtracting' with different dissimilarity measure: $
     ||\psi(Y_h^*(x)) - \psi(Y_{h'}^*(x))||_{\mathcal{G}}^2 =   k(Y_h^*(x), Y_h^*(x)) - 2k(Y_h^*(x),Y_{h'}^*(x)) + k(Y_{h'}^*(x),Y_{h'}^*(x))  
     $
-    \item \begin{quote}Applying kernel is especially important when we compare Eh∗ (x), as comparing each spatially-related pixel value across different images is likely to not lead to a meaningful result
+    \item \begin{quote}Applying kernel is especially important when we compare Eh (x), as comparing each spatially-related pixel value across different images is likely to not lead to a meaningful result
     \end{quote}
     \item They compare the explanations (/predictions) of two different models directly with each other by using this kernelized method. I think this is not a good idea. The cost function is likely quite highly non-linear and has many local minima. Therefore it is very bold to assume that "similar" models must fall in similar local minima. We know that cost functions can be in a sense "chaotic" meaning that close starting points don't necessarily end up in similar end points. (do we?)
     \item taking averages therefore seems to be the better option? If we can find good measure of importance
