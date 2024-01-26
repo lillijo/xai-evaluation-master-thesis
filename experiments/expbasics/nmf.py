@@ -242,6 +242,9 @@ def sample_all_relevances_cavs(
         pbar.close()
 
     os.makedirs("outputs/cavs", exist_ok=True)
+    with open(f"outputs/cavs/{layer_name}_{model_name}_info_all.pickle", "wb") as f:
+        infos = []
+        pickle.dump(infos, f)
     torch.save(
         torch.cat(cavs),
         f"outputs/cavs/{layer_name}_{model_name}_cav_all.pt",

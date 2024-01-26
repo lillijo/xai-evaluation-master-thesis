@@ -38,7 +38,7 @@ To apply LRP, best practices and rules have emerged \cite{Kohlbrenner2020, Monta
     \label{fig:crp_vs_lrp}
 \end{figure}
 
-\section{Concept Relevance Propagation}
+\section{Concept Relevance Propagation}\label{section:crp_background}
 
 LRP aggregates the significance of all latent layers and their neurons into one importance map, where the intermediate layers outputs are merely a side-product of the computation.
 Achtibat et. al. propose in their recent work \cite{Achtibat2022} to use those intermediate results to further disentangle the attributions. While in LRP the initialization at the output layer usually takes the value of one class output $y$ w.r.t input $\mathbf{x}$, all other output neurons set to zero, and thereby produces a class-conditional attribution ($R(\mathbf{x}|y)$), a similar thing can be done in latent layers too. Although it is yet unclear how to interpret the attribution to these hidden features, the authors of CRP propose to obtain importance scores for them by computing "(multi-)concept-conditional" relevances $R(\mathbf{x}|\theta)$. The variable $\theta$ here describes a set of conditions $c_l$ which in essence \textit{filters} for certain \textit{concepts} i.e. features in potentially multiple layers by masking out all other features' contributions:
@@ -161,6 +161,8 @@ $\delta_{jc_l}$ is the Kronecker-Delta selecting the relevance $R^l_j$ of featur
     \label{fig:crp_example_condition}
 \end{figure}
 
+\subsubsection{Interpretation Techniques}
+
 \subsubsection*{Usage Scenarios}
 Heatmaps produced by conditional attribution could be analyzed in a similar fashion to the traditional class-specific heatmaps produced by LRP. The hindrance is that the meanings of the conditioned on latent features are not known, so it is unclear how to interpret the importance of some pixels for feature $i$ in layer $l$. For large, complex models some human-understandable concepts can emerge in hidden layers from simpler more local concepts in earlier and more abstract concepts in later layers \cite{Bau2017, Hohman2020, Olah2017, Bau2020}. However this is not a fact to rely on and seems to regularly fail for smaller models or simpler problems as noted before and in other work \todo{cite}.
 
@@ -222,6 +224,7 @@ The resulting interpretation tools for single concepts are combined with methods
     \item Bayesian Networks and Statistical Models
     \item Causal Models: structural assignments/entailed distributions, parent variables are direct causes of variable 
     \item causal graph: DAG with causal variables as vertex set and structural assignments as edges
+    \item Markov Equivalence, Identifiability, Restricted SCMs vs Linear Additive-Gaussian-Noise models
     \item effect of hard/soft intervention on graph and entailed distribution
     \item total causal effect of x on y: p(do(X=x)) != p(do(X=x'))
     \item Assumptions that need to hold: structural minimality, acyclicity

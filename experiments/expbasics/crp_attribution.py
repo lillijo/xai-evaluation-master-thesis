@@ -36,15 +36,27 @@ def vis_relevances(
         data_batch, heatmaps, rf=rf, alpha=0.1, vis_th=0.0, crop_th=0.0
     )
 
-def vis_heat(data_batch, heatmaps, rf=True, alpha=1.0, vis_th=0.0, crop_th=0.0, kernel_size=9, cmap="bwr", vmin=None, vmax=None, symmetric=True):
+
+def vis_heat(
+    data_batch,
+    heatmaps,
+    rf=True,
+    alpha=1.0,
+    vis_th=0.0,
+    crop_th=0.0,
+    kernel_size=9,
+    cmap="bwr",
+    vmin=None,
+    vmax=None,
+    symmetric=True,
+):
     heat_list = []
     for i in range(len(data_batch)):
-
         heat = heatmaps[i]
 
         heat = imgify(heat, cmap=cmap, vmin=vmin, vmax=vmax, symmetric=symmetric)
         heat_list.append(heat)
-        
+
     return heat_list
 
 
@@ -68,7 +80,7 @@ class CRPAttribution:
         path = f"crp-data/{name}_{model_name}_fv"
         self.fv_path = path
         self.cache = ImageCache(path=path + "-cache")
-        ds = TestDataset(length=3000, im_dir="testdata")
+        ds = TestDataset(length=1000, im_dir="testdata")
         self.fv = FeatureVisualization(
             self.attribution, ds, self.layer_map, path=self.fv_path, cache=self.cache  # type: ignore
         )
@@ -103,7 +115,7 @@ class CRPAttribution:
         )
         return saved_files
 
-    def make_all_relevances(self, cond_layer, neurons):
+    def make_stats_references(self, cond_layer, neurons):
         no_ref_samples = 8
         all_refs = {}
         for i in neurons:
@@ -117,12 +129,30 @@ class CRPAttribution:
                 "relevance",
                 (0, no_ref_samples),
                 composite=self.composite,
-                rf=False,
-                plot_fn=vis_heat,
+                rf=True,
+                # plot_fn=vis_heat,
             )
             all_refs[f"{i}:{targets}"] = ref_c[f"{i}:{targets}"]
         plot_grid(
             all_refs,
+            figsize=(no_ref_samples, len(neurons)),
+            padding=True,
+            symmetric=True,
+        )
+
+    def make_all_references(self, cond_layer, neurons):
+        no_ref_samples = 8
+        ref_c = self.fv.get_max_reference(
+            neurons,
+            cond_layer,
+            "relevance",
+            (0, no_ref_samples),
+            composite=self.composite,
+            rf=True,
+            # plot_fn=vis_heat,
+        )
+        plot_grid(
+            ref_c,
             figsize=(no_ref_samples, len(neurons)),
             padding=True,
             symmetric=True,
@@ -166,8 +196,8 @@ class CRPAttribution:
         fig, axs = plt.subplots(
             lenl, 8, figsize=(10, 8), gridspec_kw={"wspace": 0.1, "hspace": 0.2}
         )
-        fig.suptitle("Conditional Heatmap per concept in layer")
-        fig.set_facecolor("#2BC4D9")
+        # fig.suptitle("Concept-Conditional Heatmap per concept in layer")
+        # fig.set_facecolor("#2BC4D9")
         fig.set_alpha(0.0)
         for il, l in enumerate(self.layer_id_map.keys()):
             for n in range(8):
@@ -175,7 +205,8 @@ class CRPAttribution:
                 axs[il, n].yaxis.set_visible(False)
                 if n < len(self.layer_id_map[l]):
                     axs[il, n].set_title(
-                        f"n:{n} {str(round(relevances[il][n],1))}%", fontsize=10
+                        f"c: {n}, {str(round(relevances[il][n],1))}%",
+                        fontsize=10,  # {str(round(relevances[il][n],1))}%
                     )  # ,
                     maxv = max(float(images[il, n].abs().max()), 0.0001)
                     # minv = min(float(images[il, n].min()), -0.0001)
@@ -188,7 +219,7 @@ class CRPAttribution:
                     axs[il, n].axis("off")
             axs[il, 0].yaxis.set_visible(True)
             axs[il, 0].set_yticks([])
-            axs[il, 0].set_ylabel(f"{l[:4]}_{l[-1]}")
+            axs[il, 0].set_ylabel(l.replace("_layers", ""))  # f"{l[:4]}_{l[-1]}")
         image.requires_grad = False
         axs[lenl - 1, 5].axis("on")
         lab = ["rectangle", "ellipse"]
@@ -201,10 +232,12 @@ class CRPAttribution:
         axs[lenl - 1, 5].imshow(image[0, 0], cmap="coolwarm", norm=divnorm)
         return fig
 
-    def image_info(self, index=None, verbose=False):
+    def image_info(self, index=None, verbose=False, onlywm=False):
         if index is None:
             index = np.random.randint(0, len(self.dataset))
         datum = self.dataset[index]
+        if onlywm:
+            datum = self.dataset.load_image_empty(index)
         label = datum[1]
         img = datum[0]
         latents, watermark, offset = self.dataset.get_item_info(index)
@@ -302,7 +335,10 @@ class CRPAttribution:
     def get_reference_scores(self, index, wm, layer_name):
         image = self.dataset.load_image_wm(index, wm)
         attr = self.attribution(
-            image, [{"y": [int(wm)]}], self.composite, record_layer=self.layer_names # , start_layer=layer_name , init_rel=act
+            image,
+            [{"y": [int(wm)]}],
+            self.composite,
+            record_layer=self.layer_names,  # , start_layer=layer_name , init_rel=act
         )
         rel_c = self.cc.attribute(attr.relevances[layer_name], abs_norm=True)
         return rel_c[0]

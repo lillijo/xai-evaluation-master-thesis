@@ -239,7 +239,7 @@ def draw_graph_with_images(nodes, connections, images, ax=None):
             G.nodes[n]["subset"] = subsets[n]
     pos = nx.multipartite_layout(G, subset_key="subset")
     # if ax is None:
-    fig = plt.figure(figsize=(16, 9))
+    fig = plt.figure(figsize=(16, 11))
     ax = fig.add_subplot(111, frame_on=False)
     # ax.set_aspect('equal')
     nx.draw_networkx(
@@ -248,7 +248,7 @@ def draw_graph_with_images(nodes, connections, images, ax=None):
         pos=pos,
         node_size=8000,
         linewidths=0,
-        width=7,
+        width=5,
         node_color="#bbb",
         node_shape="s",
         arrowstyle="->",
@@ -270,7 +270,7 @@ def draw_graph_with_images(nodes, connections, images, ax=None):
         pos=pos,
         edge_labels=labels,
         label_pos=0.59,
-        font_size=20,
+        font_size=10,
         clip_on=False,
         verticalalignment="baseline",
         bbox={"fc": "white", "alpha": 0.0, "ec": "white"},
@@ -281,7 +281,7 @@ def draw_graph_with_images(nodes, connections, images, ax=None):
     trans = ax.transData.transform
     trans2 = fig.transFigure.inverted().transform  # type: ignore
 
-    piesize = 0.18  # this is the image size
+    piesize = 0.1  # this is the image size
     p2 = piesize / 2.0
     for n in G.nodes:
         img, norm = images[n]

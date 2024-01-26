@@ -141,7 +141,7 @@ def ground_truth_plot(
                 n = orders[i]
                 label = f"{latents_names[factor]} {m_type} neuron {i}" if l == 0 else ""
                 axs[0, l].set_title(f"seed {lrs[l]}")
-                axs[2, l].set_xlabel("bias a")
+                axs[2, l].set_xlabel(f"seed {lrs[l]}")
                 axs[0, l].scatter(
                     bis,
                     allneurons[:, n],
@@ -533,14 +533,14 @@ def plot_measures(path):
             for i in range(len(datas[0]))
         ]
     )
-    mrc_separate_weight = mrc_separate_weight / mrc_separate_weight.max()
+    mrc_separate_weight = mrc_separate_weight / mrc_separate_weight.max()"""
     mrc_weighted = np.array(
         [
             np.mean([datas[a][i]["mrc_weighted"] for a in range(10)])
             for i in range(len(datas[0]))
         ]
     ) 
-    mrc_weighted = mrc_weighted / mrc_weighted.max()"""
+    mrc_weighted = mrc_weighted / mrc_weighted.max()
     mlc = np.array(
         [
             np.mean([datas[a][i]["pred_mlc"][0] for a in range(10)])
@@ -557,13 +557,14 @@ def plot_measures(path):
     plt.plot(bis, ols, color=colors[2], label="(m1?) ols coefficient of determination")
     plt.plot(bis, flip, color=colors[4], label="(m1?) prediction flip")
     plt.plot(bis, mlc, color=colors[6], label="m1 (true mlc)", linewidth=2)
-    """ plt.plot(
+    plt.plot(
         bis,
         mrc_weighted,
         color=colors[8],
-        label="m2 (mrc simple weighted)",
+        label="m2 (mrc weighted)",
         linewidth=2,
     )
+    """ 
     plt.plot(
         bis,
         mrc_separate_weight,
