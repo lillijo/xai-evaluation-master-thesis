@@ -19,7 +19,7 @@ class BiasedNoisyDataset(Dataset):
     def __init__(
         self,
         bias=0.0,
-        strength=0.0,
+        strength=0.5,
         verbose=False,
         length=None,
         img_path=IMG_PATH_DEFAULT,
@@ -68,11 +68,18 @@ class BiasedNoisyDataset(Dataset):
         TOTAL = len(self.labels)
         ITEM_L = len(self.labels) // 3
 
-        generator = self.rng.uniform(0, 1, TOTAL)
+        # original
+        """ generator = self.rng.uniform(0, 1, TOTAL)
         s = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL)
-        w = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL)
+        w = self.bias * generator + (1 - self.bias) * self.rng.uniform(0, 1, TOTAL) """
+        # normal noise
+        generator = self.rng.normal(0.5, 0.1, TOTAL)
+        s = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.1, TOTAL)
+        w = self.bias * generator + (1 - self.bias) * self.rng.normal(0.5, 0.1, TOTAL)
+
         shape = s <= self.cutoff
         watermark = w > self.strength
+
         shape_r = np.asarray(shape == True).nonzero()
         shape_e = np.asarray(shape == False).nonzero()
         wms_r = watermark[shape_r[0][:ITEM_L]]
@@ -92,8 +99,13 @@ class BiasedNoisyDataset(Dataset):
         self.seeds = self.rng.choice(TOTAL, TOTAL, replace=False)
 
         if self.verbose:
-            print("verbose")
-            # plot_fancy_distribution(self, s, w)
+            # print("verbose")
+            self.counts = {
+                0: Counter(self.watermarks[np.where(self.labels[:, 1] == 0)]),
+                1: Counter(self.watermarks[np.where(self.labels[:, 1] == 1)]),
+            }
+            print(self.counts)
+            #plot_fancy_distribution(self, s, w)
 
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
@@ -131,16 +143,26 @@ class BiasedNoisyDataset(Dataset):
             image[offset_water_image] = 1.0
         img_noiser = np.random.default_rng(seed=self.seeds[index])
         image = image + img_noiser.normal(0.0, 0.05, (64, 64))
-        """ min_val = image.min()
-        if min_val < 0:
-            image -= min_val
-        image = image / (torch.max(image) + 1e-10) """
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         if torch.cuda.is_available():
             image = image.cuda()
         image = image.view(1, 1, 64, 64)
         image.requires_grad = True
         return image
+    
+    def load_image_empty(self, index):
+        img_path = os.path.join(self.img_dir, "empty.npy")
+        image = np.load(img_path, mmap_mode="r")
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
+        offset_water_image = self.water_image + np.array(
+            [[0], [self.offset_y[index]], [self.offset_x[index]]]
+        )
+        image[offset_water_image] = 1.0
+        img_noiser = np.random.default_rng(seed=self.seeds[index])
+        image = image + img_noiser.normal(0.0, 0.05, (64, 64))
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32))
+        target = self.labels[index][1]
+        return (image, target)
 
     def get_item_info(self, index):
         has_watermark = self.watermarks[index]

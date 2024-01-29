@@ -98,7 +98,7 @@ def load_model(name, bias, num_it=0):
         model.load_state_dict(torch.load(path, map_location=torch.device(device)))
         return model
     warnings.warn(
-        "[model not found] model path not found, returning random initialized model"
+        f"[model not found] model path '{path}' not found, returning random initialized model"
     )
     model.eval()
     return model
@@ -121,9 +121,8 @@ def train_network(
     seeded=False
 ):
     if seeded:
-        seed = num_it if num_it != 9 else 11
-        torch.manual_seed(seed)
-        np.random.seed(seed)
+        torch.manual_seed(num_it)
+        np.random.seed(num_it)
     model = ShapeConvolutionalNeuralNetwork()
     device = f"cuda:{cuda_num}" if torch.cuda.is_available() else "cpu"
 
@@ -168,6 +167,8 @@ def train_network(
                     if hasattr(layer, "reset_parameters"):
                         layer.reset_parameters()  # type: ignore
         torch.save(model.state_dict(), model_path)
+        if avg_loss <= 0.035:
+            break
 
     print(
         "best loss: ", best_loss, " last loss: ", avg_loss, " best epoch: ", best_epoch

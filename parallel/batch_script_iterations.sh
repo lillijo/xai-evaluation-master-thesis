@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --output=convmeas.o%j           # File name for standard output
+#SBATCH --output=final.o%j              # File name for standard output
 #SBATCH --partition=gpu                 # Specify partition name
 #SBATCH --gpus=1                        # Specify number of GPUs needed for the job
 #SBATCH --exclusive                     # https://slurm.schedmd.com/sbatch.html#OPT_exclusive
@@ -17,4 +17,5 @@ ulimit -s 204800
 
 # Execute serial programs, e.g.
 # run_one_experiment run_test
-python3 -u measures.py $1 $2 $3
+python3 -u run_iterations.py $1 $2 $3
+#measures.py $1 $2 $3
