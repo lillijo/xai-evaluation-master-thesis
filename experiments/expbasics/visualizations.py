@@ -678,7 +678,7 @@ def plot_corr_factors(path, m_type="flip", bcut=0.5, num_it=6):
 
 def plot_fancy_distribution(dataset=None, s=[], w=[]):
     from collections import Counter
-    from expbasics.biased_noisy_dataset import BiasedNoisyDataset
+    from biased_noisy_dataset import BiasedNoisyDataset
 
     lim_x = [0,1]# [np.min(s), np.max(s)]
     lim_y = [0,1]# [np.min(w), np.max(w)]

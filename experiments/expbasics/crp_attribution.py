@@ -80,9 +80,9 @@ class CRPAttribution:
         path = f"crp-data/{name}_{model_name}_fv"
         self.fv_path = path
         self.cache = ImageCache(path=path + "-cache")
-        ds = TestDataset(length=1000, im_dir="testdata")
+        #ds = TestDataset(length=1000, im_dir="testdata")
         self.fv = FeatureVisualization(
-            self.attribution, ds, self.layer_map, path=self.fv_path, cache=self.cache  # type: ignore
+            self.attribution, self.dataset, self.layer_map, path=self.fv_path, cache=self.cache  # type: ignore
         )
 
         self.output_shape = get_output_shapes(
