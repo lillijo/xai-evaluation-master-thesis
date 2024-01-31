@@ -191,12 +191,14 @@ To account for the unknown effects of the random initialization of model weights
 \subsection{Mean Logit Change}
 For the W-dSprites binary classification task, the output vector consists of 2 values $y_0$ and $y_1$. The model predicts \textit{rectangle} when $y_0 > y_1$ and \textit{ellipse} otherwise. To compute the mean logit change when intervening on our watermark spurious feature $x$, we take a sufficient amount of samples $\mathcal{X}$ from our dataset and feed them through the model. When $W=1$ the images additionally contain a watermark, when $W=0$ not. 
 
+In \cite{Sixt2022a} paper: "median of the absolute change in logit values"
+
 The Mean Logit Change is computed like this:
 
 % euclidean distance (=earth mover distance), absolute difference, should it be averaged over logits, kernel (like Karimi)
 \begin{equation}
 \displaystyle 
-MLC =\frac{1}{|\mathcal{X}|} \sum_{c \in \mathcal{X}} \frac{|\vec{y}_{\mathrm{x}, W=1}- \vec{y}_{\mathrm{x}, W=0} |}{|\vec{y}|}
+MLC =\frac{1}{|\mathcal{X}|} \sum_{c \in \mathcal{X}} \frac{|\vec{y}_{\mathrm{x}, W=1}- \vec{y}_{\mathrm{x}, W=0} |}{||\vec{y}||}
 \end{equation}
 
 \subsection{Prediction Flip}
@@ -239,7 +241,37 @@ The causal effect of intervening on the spurious watermark feature on one neuron
 Many related works remove negative relevances in attribution maps to enable comparison with purely positive methods and avoid cancelling-out effects. We believe however, that a spurious feature can be equally negatively as positively attributed, for a model to be biased. Therefore we the measure we introduce incorporate both the magnitude of the positive and negative relevance. 
 Other potential ways to aggregate over differences is to apply the method of \cite{Karimi2023} using kernels or cosine similarity as in \cite{Dreyer2023a}. The latter however disregards potential sign-flip of a pixel as significant. 
 
-Extend on why using 10 models with different seeds and K different images (that are well distributed?) is enough to compute measure? 
+Extend on why using 20 models with different seeds and K (100?) different images (that are well distributed?) is enough to compute measure? 
+
+I am testing multiple different similarity measures now:
+cosine similarity seems to not be such a good idea because opposite heatmaps will not have a big angle from each other.
+check this again \url{https://datascience.stackexchange.com/questions/6544/normalized-euclidean-distance-versus-cross-correlation}
+probably the better measure is euclidean distance which is normed for better comparison:
+$\sqrt{\sum_{p \in P_x}(\frac{R_{i,p}(x_{(W=1)})}{|R_{i}(x_{(W=1)})|} - \frac{R_{i,p}(x_{(W=0)})}{|R_{i}(x_{(W=0)})|})^2}$ \\
+
+Which measures did I actually compute now?:
+\begin{itemize}
+    \item m1, mean logit change with normed absolute distances
+    \item m1, mean logit change with euclidean distance
+    \item m1, prediction flip
+    \item m2, mean attribution change, absolute distance per pixel, each heatmap weighted by absolute(!) relevance
+    \item m2, mean attribution change, normalized euclidean distance
+    \item m2, mean attribution change, cosine distance total
+    \item m2, mean attribution change, cosine distance weighted
+    \item m2, rma, mean absolute difference per neuron
+    \item m2, rma, pure rma value with watermark
+    \item m2, rma, euclidean distance
+    \item m2, rra, mean absolute distance per neuron
+    \item m2, rra, euclidean distance
+    \item m2, pg, mean absolute distance only including neurons where heatmap was not completely empty
+\end{itemize}
+
+
+also tried out hamming distance and some other measure which is kind of like normed hamming distance. 
+for some measures also without the difference, using the measure purely. 
+still: question remains, how to normalize the measures appropriately? Is it fine to just normalize them all to 1??? it would probably change how they react to rho. if the curve goes less high, normalizing to one would make it look like it is higher than mlc in the beginning.
+
+
 \begin{align*}
 & R_i^{\ell}(\mathrm{x}) = R(\mathrm{x} | \theta=\{i, y\}) \\
 & r_i(\mathrm{x}) = R(i | \theta=\{y\}) \\

@@ -25,7 +25,7 @@ for f in onlyfiles:
             rname = name.group(2)
             rest = a.replace(name.group(), "").replace("))))", "").replace("'", "\"")
             accuracies[rname] = json.loads(rest)
-            accuracies[rname]["num_it"] = int(rname[-1])
+            #accuracies[rname]["num_it"] = int(rname[-1])
 
 with open("../outputs/final_models.json", "w") as fd:
     json.dump(accuracies, fd, indent=2)

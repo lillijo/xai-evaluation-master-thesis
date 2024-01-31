@@ -23,19 +23,20 @@ from .network import ShapeConvolutionalNeuralNetwork
 from .cmiknnmixed import CMIknnMixed
 
 
-def remove_empty(data, all_var_names, types, with_type=True):
+def remove_empty(data, all_var_names, types, with_type=True, delete_constant=True):
     empty_vars = []
     var_names = all_var_names
-    for var in range(len(all_var_names)):
-        not_constant = np.where(data[:, var] != data[0, var])[0].shape[0]
-        if not_constant < 5:
-            empty_vars.append(var)
-        elif all_var_names[var][0:4] != "fact":
-            X = data[:, var]
-            data[:, var] = (X - X.mean()) / (X.std())
-    var_names = np.delete(all_var_names, empty_vars)
-    data = np.delete(data, empty_vars, axis=1)
-    types = np.delete(types, empty_vars)
+    if delete_constant:
+        for var in range(len(all_var_names)):
+            not_constant = np.where(data[:, var] != data[0, var])[0].shape[0]
+            if not_constant < 5:
+                empty_vars.append(var)
+            elif all_var_names[var][0:4] != "fact":
+                X = data[:, var]
+                data[:, var] = (X - X.mean()) / (X.std())
+        var_names = np.delete(all_var_names, empty_vars)
+        data = np.delete(data, empty_vars, axis=1)
+        types = np.delete(types, empty_vars)
     # sanity test that variable names are correct
     print(
         f"all variables: {all_var_names.shape},\n non-constant variables: {var_names.shape},\

@@ -79,21 +79,20 @@ def data_iterations(path, biascut=-1.0, num_it=4):
 
         # to make visualizations more comparable, sort out the bias steps not
         # present in some of them
-        less_items = list(np.round(np.linspace(0, 1, 21), 3))
+        less_items = list(np.round(np.linspace(0, 1, 51), 3))
         biases = [a["bias"] for a in alldata]
         datas = [
             list(
                 filter(
                     lambda x: x["num_it"] == n
-                    and x["bias"] >= biascut
-                    and x["bias"] in less_items,  # comment out
+                    and x["bias"] >= biascut,
+                    #and x["bias"] in less_items,  # comment out
                     alldata,
                 )
             )
             for n in range(num_it)
         ]
         bis = [a["bias"] for a in datas[0]]
-
     return datas, bis, biases, alldata
 
 
@@ -352,52 +351,37 @@ def plot_accuracies(path, treshold=90, num_it=6):
     fig = plt.figure(figsize=(8, 5))
     fig.set_facecolor(FACECOL)
     plt.ylim([0, 100])
-    print(sum_it(datas, lambda x: x["test_accuracy"][0] / 10))
     plt.plot(
         bis,
-        sum_it(datas, lambda x: x["test_accuracy"][0] / 10),
-        c=rcol[0],
-        label="unbiased rectangles",
-        linestyle=(0, (4, 3)),
-    )
-    plt.plot(
-        bis,
-        sum_it(datas, lambda x: x["all_wm_accuracy"][0] / 10),
+        sum_it(datas, lambda x: x["all_wm_accuracy"][0] / num_it),
         c=rcol[2],
         label="only rectangles with watermark",
         linestyle="dashed",
     )
     plt.plot(
         bis,
-        sum_it(datas, lambda x: x["no_wm_accuracy"][0] / 10),
+        sum_it(datas, lambda x: x["no_wm_accuracy"][0] / num_it),
         c=rcol[3],
         label="only rectangles without watermark",
         linestyle="dotted",
     )
     plt.plot(
         bis,
-        sum_it(datas, lambda x: x["test_accuracy"][1] / 10),
-        c=ecol[0],
-        label="unbiased ellipses",
-        linestyle=(0, (5, 3)),
-    )
-    plt.plot(
-        bis,
-        sum_it(datas, lambda x: x["all_wm_accuracy"][1] / 10),
+        sum_it(datas, lambda x: x["all_wm_accuracy"][1] / num_it),
         c=ecol[2],
         label="only ellipses with watermark",
         linestyle="dashed",
     )
     plt.plot(
         bis,
-        sum_it(datas, lambda x: x["no_wm_accuracy"][1] / 10),
+        sum_it(datas, lambda x: x["no_wm_accuracy"][1] / num_it),
         c=ecol[3],
         label="only ellipses without watermark",
         linestyle=(0, (1, 1)),
     )
     plt.plot(
         bis,
-        sum_it(datas, lambda x: x["train_accuracy"][2] / 10),
+        sum_it(datas, lambda x: x["train_accuracy"][2] / num_it),
         c="#000",
         label="training accuracy all",
         linestyle=(0, (1, 1)),
@@ -413,6 +397,7 @@ def plot_accuracies(path, treshold=90, num_it=6):
     plt.legend(loc="lower left")
     plt.ylabel("Accuracy")
     plt.xlabel("Bias")
+    return bads
 
 
 def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
@@ -678,7 +663,7 @@ def plot_corr_factors(path, m_type="flip", bcut=0.5, num_it=6):
 
 def plot_fancy_distribution(dataset=None, s=[], w=[]):
     from collections import Counter
-    from biased_noisy_dataset import BiasedNoisyDataset
+    from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 
     lim_x = [0,1]# [np.min(s), np.max(s)]
     lim_y = [0,1]# [np.min(w), np.max(w)]

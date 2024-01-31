@@ -13,6 +13,7 @@ LEARNING_RATE = 0.0003
 MOMENTUM = 0.45
 OPTIMIZER = "Adam"
 IMG_PATH_DEFAULT = "../dsprites-dataset/images/"
+bad_seeds = {9: 379, 5: 967, 15: 29, 14: 719}
 
 
 class ShapeConvolutionalNeuralNetwork(nn.Module):
@@ -118,11 +119,15 @@ def train_network(
     cuda_num=0,
     disable=True,
     num_it=0,
-    seeded=False
+    seeded=False,
 ):
     if seeded:
-        torch.manual_seed(num_it)
-        np.random.seed(num_it)
+        if num_it in bad_seeds:
+            torch.manual_seed(bad_seeds[num_it])
+            np.random.seed(bad_seeds[num_it])
+        else:
+            torch.manual_seed(num_it)
+            np.random.seed(num_it)
     model = ShapeConvolutionalNeuralNetwork()
     device = f"cuda:{cuda_num}" if torch.cuda.is_available() else "cpu"
 
