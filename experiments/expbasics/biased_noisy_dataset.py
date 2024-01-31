@@ -149,7 +149,7 @@ class BiasedNoisyDataset(Dataset):
         image = image.view(1, 1, 64, 64)
         image.requires_grad = True
         return image
-    
+
     def load_image_empty(self, index):
         img_path = os.path.join(self.img_dir, "empty.npy")
         image = np.load(img_path, mmap_mode="r")
@@ -163,6 +163,27 @@ class BiasedNoisyDataset(Dataset):
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         target = self.labels[index][1]
         return (image, target)
+
+    def load_shape_mask(self, index):
+        img_path = os.path.join(self.img_dir, f"{index}.npy")
+        image = np.load(img_path, mmap_mode="r")
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 1, 64, 64)
+        if torch.cuda.is_available():
+            image = image.cuda()
+        image.requires_grad = True
+        return image
+
+    def load_watermark_mask(self, index):
+        image = torch.zeros(1,64,64)
+        offset_water_image = self.water_image + np.array(
+            [[0], [self.offset_y[index]], [self.offset_x[index]]]
+        )
+        image[offset_water_image] = 1.0
+        if torch.cuda.is_available():
+            image = image.cuda()
+        image = image.view(1, 1, 64, 64)
+        image.requires_grad = True
+        return image
 
     def get_item_info(self, index):
         has_watermark = self.watermarks[index]
