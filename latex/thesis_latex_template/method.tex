@@ -194,11 +194,9 @@ For the W-dSprites binary classification task, the output vector consists of 2 v
 In \cite{Sixt2022a} paper: "median of the absolute change in logit values"
 
 The Mean Logit Change is computed like this:
-
-% euclidean distance (=earth mover distance), absolute difference, should it be averaged over logits, kernel (like Karimi)
 \begin{equation}
 \displaystyle 
-MLC =\frac{1}{|\mathcal{X}|} \sum_{c \in \mathcal{X}} \frac{|\vec{y}_{\mathrm{x}, W=1}- \vec{y}_{\mathrm{x}, W=0} |}{||\vec{y}||}
+MLC = \sqrt{(\vec{y}_{\mathrm{x}, W=1}- \vec{y}_{\mathrm{x}, W=0})^2}
 \end{equation}
 
 \subsection{Prediction Flip}
@@ -219,7 +217,7 @@ Our goal is to compare the causal effect of an upstream intervention on the true
 
 Each candidate should be a variation of measuring the effect of intervening on $W$ on an explanation:
 \begin{center}
-Average Causal Effect of latent factor $W$ on explanation $E$: \\
+Average Causal Effect of latent factor $W$ on explanation $e$: \\
 \begin{equation}
 \displaystyle ACE = \mathbb{E} [e \ | \ do(W=1) ] - \mathbb{E} [ e \ | \ do(W=0) ]
 \end{equation}
@@ -228,60 +226,57 @@ The core question is, how much of the influence on the explanation of changing $
 
 The measures introduced in the following are roughly ordered from measures being most true to the numerical effect of intervention to measures reducing the complexity of an explanation. Although human perception is not part of our evaluation, aiming for less complex explanations seems to be more in line with a \textit{good} explanation. While the first measure would require the user to compare multiple heatmaps pixel-wise to understand the effect, later metrics use only one pixel or a reduced (hopefully more human-understandable) concept. 
 
-{\color{gray}
-What about causal effect of changing the class, while keeping the watermark on? (should diminish when bias stronger)
-\begin{equation}\displaystyle
-    \mathbb{E} [RMA \ | \ do(S=1), W = 1  ] - \mathbb{E} [ \mathfrak{e} \ | \ do(S=0), W = 1 ]
-\end{equation}
-}
+Many related works remove negative relevances in attribution maps to enable comparison with purely positive methods and avoid cancelling-out effects. We believe, however, that a spurious feature can be negatively as well as positively attributed for a model to be biased. Therefore the measures we introduce mostly equally incorporate both the magnitude of the positive and negative relevance. 
 
-\subsection{Relevant Attribution Change}
+\subsection{Mean Attribution Change}
 The likely most straight-forward way to calculate explanation importance for neurons in a layer using CRP is to measure the average causal effect of an intervention on the attributions directly. This approach tries to emulate the \textit{mean logit change} of the prediction for the concept-based explanation. In a given layer $\ell \in L$, computing conditional attributions for each of the $|\ell|$ neurons results in $|\ell|$ concept-conditional heatmaps. Also, the total relevance of each those neurons for the overall prediction can be computed using CRP.
-The causal effect of intervening on the spurious watermark feature on one neuron is then the (absolute?) difference between its attribution map of one image with a watermark and the same image without a watermark. For an approximation of the total difference for a model, we weigh each neurons attribution map difference with the neurons relevance for the prediction. 
-Many related works remove negative relevances in attribution maps to enable comparison with purely positive methods and avoid cancelling-out effects. We believe however, that a spurious feature can be equally negatively as positively attributed, for a model to be biased. Therefore we the measure we introduce incorporate both the magnitude of the positive and negative relevance. 
-Other potential ways to aggregate over differences is to apply the method of \cite{Karimi2023} using kernels or cosine similarity as in \cite{Dreyer2023a}. The latter however disregards potential sign-flip of a pixel as significant. 
 
-Extend on why using 20 models with different seeds and K (100?) different images (that are well distributed?) is enough to compute measure? 
-
-I am testing multiple different similarity measures now:
-cosine similarity seems to not be such a good idea because opposite heatmaps will not have a big angle from each other.
-check this again \url{https://datascience.stackexchange.com/questions/6544/normalized-euclidean-distance-versus-cross-correlation}
-probably the better measure is euclidean distance which is normed for better comparison:
-$\sqrt{\sum_{p \in P_x}(\frac{R_{i,p}(x_{(W=1)})}{|R_{i}(x_{(W=1)})|} - \frac{R_{i,p}(x_{(W=0)})}{|R_{i}(x_{(W=0)})|})^2}$ \\
-
-Which measures did I actually compute now?:
-\begin{itemize}
-    \item m1, mean logit change with normed absolute distances
-    \item m1, mean logit change with euclidean distance
-    \item m1, prediction flip
-    \item m2, mean attribution change, absolute distance per pixel, each heatmap weighted by absolute(!) relevance
-    \item m2, mean attribution change, normalized euclidean distance
-    \item m2, mean attribution change, cosine distance total
-    \item m2, mean attribution change, cosine distance weighted
-    \item m2, rma, mean absolute difference per neuron
-    \item m2, rma, pure rma value with watermark
-    \item m2, rma, euclidean distance
-    \item m2, rra, mean absolute distance per neuron
-    \item m2, rra, euclidean distance
-    \item m2, pg, mean absolute distance only including neurons where heatmap was not completely empty
-\end{itemize}
-
-
-also tried out hamming distance and some other measure which is kind of like normed hamming distance. 
-for some measures also without the difference, using the measure purely. 
-still: question remains, how to normalize the measures appropriately? Is it fine to just normalize them all to 1??? it would probably change how they react to rho. if the curve goes less high, normalizing to one would make it look like it is higher than mlc in the beginning.
-
-
+We compute the attribution map and its total relevance with the CRP method the following way:
 \begin{align*}
 & R_i^{\ell}(\mathrm{x}) = R(\mathrm{x} | \theta=\{i, y\}) \\
 & r_i(\mathrm{x}) = R(i | \theta=\{y\}) \\
-& RAC = \frac{1}{|\mathcal{X}| }\sum_{\mathrm{x} \in \mathcal{X}} \sum_{i \in \ell} || r_i(\mathrm{x}_{(W=1)}) * R_i(\mathrm{x}_{(W=1)}) -  r_i(\mathrm{x}_{(W=0)}) * R_i(\mathrm{x}_{(W=0)})  || \\
-& RAC_{\rho} = \frac{1}{|M_\rho|}\sum_{m}^{M_{\rho}} RAC(m)
 \end{align*}
 
-Alternative Measure of Karimi!!!
+The causal effect of intervening on the spurious watermark feature on one neuron is then the difference between its attribution map of one image with a watermark and the same image without a watermark. For an approximation of the total difference for a model, one can also weigh each neurons attribution map difference with the neurons relevance for the prediction. If a model has learned the watermark as a distinct concept, but is not using it, the relevance of this concept should be low. \\
 
-While this weighted difference is constructed to measure the causal effect of intervention on the explanation as closely as possible, it ignores the core idea of CRP's potential usefulness. If adding or removing a watermark has a significant effect on some background pixels far away from it, this is not in line with desirable properties of a good explanation such as interpretability or even fidelity to the ground truth importance. It is likely that through the coupling of watermark and shape in our experiment, the changes of relevance do not only affect the watermark region itself but at least the shapes importance too. 
+To look at the difference in attribution multiple distance metrics could be applied. We compare three types of dissimilarity between two heatmaps (i.e. 2-dimensional pixel maps). Firstly, we look at the mean absolute pixel-wise difference. The Euclidean distance for two images seems the second natural approach. To make the results comparable we normalize each attribution map, which makes the ordering of this metric equal to the ordering if one where to take the \textit{cosine distance}.
+Lastly, we compare these to the kernelized treatment effect which Karimi et al. also use for their experiment \cite{Karimi2023}. \\ 
+
+
+
+\begin{align}
+& ||R(x) - R(x')|| \notag \\
+& \sim \sum_{p \in P_x} |R(x)_p - R(x')_p| \\
+& \sim \sqrt{\sum_{p \in P_x}\left( \frac{R(x)_p}{|R(x)|} - \frac{R(x')_p}{|R(x')|} \right) ^2} \\
+& \sim k(R(x) ,R(x) ) + 2 k(R(x) ,R(x') ) + k(R(x') ,R(x') )  
+\end{align}
+
+Once a distance metric is chosen, we need to aggregate results over the neurons in a layer.
+
+\begin{align}
+& \frac{1}{|M_\rho|\cdot |\mathcal{X}| \cdot |\ell| }\sum_{m}^{M_{\rho}} \sum_{\mathrm{x,x'}}^{\mathcal{X}} \sum_{i}^{\ell} || R_{m,i}(x) - R_{m,i}(x') || \cdot |r_{m,i}(x) |
+\end{align}
+
+While the absolute difference and kernel metrics keep the overall relevance intact, normalizing the euclidean distances means that we are losing this information. Therefore the neuron-wise results of the latter need to be weighted by their original relevance $r$ for the prediction to have a meaningful result. 
+We create a (weighted) sum over the neurons $i$ for each sample image $x$ ($x'$ with watermark). 
+We again average this over all images $\mathcal{X}$ for the differently initialized models $M_\rho$ for each value of $\rho$.
+
+Which measures did I actually compute now?:
+\begin{itemize}
+    \item m1, mean logit change with euclidean distances, normed after computing all
+    \item m1, mean logit change, normed by max absolute per vector
+    \item m1, prediction flip
+    \item m2, mean attribution change, absolute distance per pixel
+    \item m2, mean attribution change, normalized euclidean distance
+    \item m2, rma, mean absolute difference per neuron
+    \item m2, rra, mean absolute difference per neuron
+    \item m2, rra, mean absolute difference per neuron, weighted by relevance
+    \item m2, rra, euclidean distance
+    \item m2, pg, mean absolute difference weighted by relevance
+    \item m2, kernel (linear) like Karimi
+\end{itemize}
+
+Although this weighted difference is constructed to measure the causal effect of intervention on the explanation as closely as possible, it ignores the core idea of CRP's potential usefulness. If adding or removing a watermark has a significant effect on some background pixels far away from it, this is not in line with desirable properties of a good explanation such as interpretability or even fidelity to the ground truth importance. It is likely that through the coupling of watermark and shape in our experiment, the changes of relevance do not only affect the watermark region itself but at least the shapes importance too. 
 Another potential downfall for human intuition is the way more localized concepts are attributed in comparison to more global or wide-spread concepts. Achtibat et al. \cite{Achtibat2022} show an example where the eye of a dog wrongly seems to be more important than its fur in a general attribution map, because it is concentrated on a smaller region. A similar thing can potentially happen with our experiments watermark, as it fills a small region in comparison to the larger shape feature. 
 
 For completeness of comparison we compute the same measure for the LRP importance. In this case we just take the average difference when the watermark feature $W$ is intervened on for the heatmap computed for a general class-conditional attribution. 
@@ -292,7 +287,7 @@ Here should be a good lead over from this causal effect style measure to the oth
 In \cite{Arras2022} two metrics for the analysis of importance in pixel maps are introduced. Relevance Mass Accuracy (RMA) measures the ratio of relevance within a bounding box around a feature to the total relevance. Relevance Rank Accuracy (RRA) rates the percentage of pixels in such a bounding box that fall within the $k$ most important pixels in the heatmap.
 
 \subsubsection{Relevance Mass Accuracy (RMA)}
-When trying to establish whether a feature is important, one would intuitively look at that feature first. Therefore approaches like Relevance Mass Accuracy take into account the known boundary of a feature for benchmarks with ground-truth importance. Luckily, in our benchmark dataset the shape and watermark feature are spatially separated so this strategy is not per-se wrong.
+When trying to establish whether a feature is important, one would intuitively look at that feature first. Therefore approaches like Relevance Mass Accuracy take into account the known boundary of a feature for benchmarks with ground-truth importance. Luckily, in our benchmark dataset the shape and watermark feature are spatially separated so this strategy is applicable.
 Bau et al. \cite{Bau2017, Bau2020} have defined a similar measure to compare an explanation importance to a ground truth, which they term IoU (from \textit{Intersection over Union}). Both these works assume the perfect attribution of importance to one feature to be a binary mask, which is 1 inside and 0 outside the features region. \\
 
 For our localized metric we apply a strategy resembling these evaluation scores. 

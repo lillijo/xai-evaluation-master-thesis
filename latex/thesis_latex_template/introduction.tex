@@ -11,62 +11,59 @@
     \item Repeating the abstract in the introduction is a waste of space.
 \end{itemize}
 
-% what else to put in, reacting to Oana as well
+AGAIN: structure what i need to say:
 \begin{itemize}
-    \item start with general aim and state of XAI: Field is exploding, recently more work on evaluating XAI methods both on theoretical and practical level
-    \item more evaluation also led to more negative results, focus on BP methods (shortly embed into XAI taxonomy)
-    \item local (or 'glocal'), attribution methods have been criticized: general lack of difference to simple filters like 'Sobel', do not work in \textit{limit of simplicity}, are sensitive and lack faithfulness to model in case of constant vector shifts in data (not accurate in out-of-distribution cases), for BP methods heatmaps are class-insensitive due to negative relevance not being dealt with appropriately and matrix having rank 1
+    \item XAI is becoming bigger, so is its evaluation
+    \item therefore recently more criticisms, especially about local attribution methods
+    \item lack of proper evaluation, "circular criteria (such as fidelity and faithfulness Gevaert et al. (2022))", \cite{Adebayo2018, Sixt2020, Wilming2023} etc.
+    \item crp attempts to alleviate some of that, going away from "where" question, which does not seem to hold much information in some cases, to "what" question (is this actually related to recent evaluation stuff???)
+    \item therefore we want to evaluate whether crp actually manages to better identify biases using numerical measure
+    \item for that we use a new approach with a causally generated ground truth of a simple dataset, otherwise numerical measure of "biasedness" would not be possible
+    \item try to make this scm and images as close to a realistic image dataset as possible
+    \item we don't attempt to measure importance of feature which is supposed to be important (core feature) but of clever-hans feature
+    \item instead of having an either biased or unbiased dataset, we use coupling ratio
+    \item it makes it theoretically possible to establish a sort of threshold for feature importance? e.g. if feature more important than core feature, or a third or something?
+    \item REFER MORE TO \textit{Are We Explaining The Data Or The Model?}
+    \item most other work either has known bias or not. but it is not necessarily quantified how much of that bias was learned by model. 
 \end{itemize}
 
-
-\todo{REFER MORE TO \textit{Are We Explaining The Data Or The Model?}}
 \section{Motivation and Context}
-% comment Oana: the start is too abrupt, start with the XAI setting and problems in XAI, then introduce CRP
+With the explosion in popularity of deep neural networks the need to explain those opaque, black-box models has risen too. Recently, explainable AI (XAI) methods have been scrutinized more closely. Although there is still no consensus on what exactly makes a \textit{good explanation}, numerous potential metrics for the faithfulness, robustness and interpretability of explanations have been made \cite{?}. A promising branch of research seems to be the evaluation of explainable AI methods with causal methods. After all, explanations are, or at least should be, intrinsically causal constructs \cite{Woodward2004, Halpern2005, Schoelkopf2019}.\\
 
-The recent method of Concept-Relevance-Propagation (CRP) introduced in \cite{Achtibat2022} has been developed for a more fine-grained explanation of a neural networks decisions. Instead of producing one saliency map explaining the overall prediction output such as LRP \cite{Bach2015} does, each \textit{concept} in some hidden layer of the network gets assigned a conditional relevance and its own saliency map. In addition to the saliency maps, the relevance scores also act as a metric to maximize when searching representative samples for each of the concepts. According to the authors, through this more detailed explanation one can not only understand \textit{where} a model sees the most relevant features, but also \textit{what} features are relevant in this area. Their claim is, that the deeper layers of models represent concepts which are human-understandable and therefore aid in the explanation of what the model predicts. 
+Due to the stronger focus on evaluation of XAI, amongst other methods also local attribution methods have come under criticism for their general lack of faithfulness to the model they are trying to explain \cite{Adebayo2018, Karimi2023}. Also, some methods class-insensitivity \cite{Sixt2020} and their failure in presence of suppressor variables \cite{Wilming2023} and in the \textit{limit of simplicity} \cite{Kindermans2017} have been examined.  Other authors have criticized the lack of comparative user-guided evaluation of explanation methods \cite{Rong2023}. \\
 
-Some works have criticized local attribution methods, to which LRP counts, for their class-insensitivity due to the lack of negative explanations as well as overall subpar performance in the \textit{limit of simplicity} i.e. for very small linear datasets. 
-In the following we will investigate whether the extension through the concept conditional saliency maps and relevance scores can alleviate some of the criticisms.
+As local attribution methods, especially back-propagation methods, create visually compelling results through attribution maps, they have still become a staple for many AI practitioners, especially for computer vision tasks. 
 
-Others call for more user-guided evaluation of explanation methods as the ultimate goal is to help humans understand and evaluate machine learning models. One example of a user study and accompanying benchmark dataset is \cite{Sixt2022}. Similar to our work they investigate how well users can quantify biases of a model, one of the most important applications of XAI methods. 
+The recent \textit{glocal} attribution method \textit{Concept-Relevance-Propagation (CRP)} introduced in \cite{Achtibat2022} has been developed for a more fine-grained explanation of a neural networks decisions. Instead of producing one attribution map explaining the overall prediction output such as LRP \cite{Bach2015}, each \textit{concept} in some hidden layer of the network gets assigned a conditional relevance and its own saliency map. In addition to the saliency maps, the relevance scores also act as a metric to maximize when searching representative samples for each of the concepts. According to the authors, through this more detailed explanation one can not only understand \textit{where} a model sees the most relevant features, but also \textit{what} features are relevant in this area. Their pre-assumption is, that the deeper layers of models represent concepts which are human-understandable and therefore aid in the explanation of what the model predicts. In qualitative examinations, as well as a human evaluation study \cite{Achtibat2023}, they find that \textit{Clever-Hans} (i.e. spuriously correlated) features are easier to identify with the concept-based approach and their relevance better determined in comparison to other local attribution methods. Finding whether a background or spuriously correlated feature is biasing a model is in our opinion one of the most important applications of XAI.
+\\
 
-There is still no consensus on the appropriate evaluation of back-propagation methods specifically and saliency methods in general. Most authors introducing new methods show explanations on examples from typical benchmark datasets and models. Usually ablation tests, in which singular neurons/channels are deactivated in descending order of attributed relevance, give some confidence that the features identified as important indeed have some relationship with the prediction. However it is unclear whether the explanation methods sensitivity to e.g. biases in the dataset is in accordance with the actual models sensitivity. 
+Here, we therefore make the attempt to evaluate yet another desirable characteristic of XAI: that its sensitivity to spurious feature importance closely follows that of the network it is trying to explain. The general sensitivity or faithfulness to a model has been studied with varying methods, most often creating perturbations in the input or model at the \textit{important} feature and testing the decline in accuracy. Some recent works have also evaluated an explanations feature importance when spuriously correlated features are present \cite{Yang2019,Kim2018,Parafita2019,Reimers2020,Singla2022}. Arguably, explanations having high fidelity is especially crucial when identifying and quantifying spurious correlations a model has learned. Confirming that the true feature has some importance is not as convincing of an explanation if the importance of other features is not compared to it.
+We believe that to establish the true effect of a spuriously correlated feature on a models prediction, it is interesting to also look at it in a continuous and relative fashion. 
+In a realistic setting it is hard for a model to not have learned at least some bias. This is especially true because it seems impossible even for humans to know the \textit{true causal model} of how e.g. images are created. So in accordance with ideas of \textit{fairness} it seems impossible to aim for completely unbiased models, as they would need to have all knowable and unknowable knowledge of the universe to not predict 'out-of-distribution'. Instead, one needs to define a measurable threshold of biasedness, which is acceptable for a specific task.  
 
-\todo{Motivation Example of why finding biases is one of the most important tasks for XAI}
-\begin{itemize}
-    \item it is super important the explanation method has high fidelity when identifying and quantifying biases a model has learned
-    \item data is always biased, we want to find the bias
-    \item but often the model can learn the \textit{true} features of a distribution although it has strong \textit{spurious} features 
-    \item \cite{Achtibat2022} has shown this with watermark example and also somewhat with dog snout example
-    \item need a good example though
-    \item thesis: data is always biased, it is basically impossible to get completely unbiased data in such quantities. especially because sometimes we are not even able to identify the biases as we humans are prone to them too
-    \item so in accoradance to \textit{fair AI} it seems impossible to aim for \textit{completely unbiased} models, as they would need to have all knowable and unknowable knowledge of the universe to not predict 'out-of-distribution' 
-    \item instead we should identify a measure of biasedness which tells us how strongly a spurious feature is used and then depending on the use case a threshold for this can be defined.
-\end{itemize}
+Therefore we will extend previous work on evaluating the explanation methods fidelity in the presence of Clever-Hans features, by using a known causal model. We extend a simple benchmark dataset with known ground truth to have a structural causal model which generates the data.
+While the \textit{core} feature actually determines the class other, \textit{spurious} features are still present and correlate with the core feature in aknown way \cite{Singla2022}.
+Knowing the generating factors helps to quantify the ground-truth feature importance of not only the core and the spurious feature but also irrelevant features as a baseline.
 
-Therefore we will extend previous work on evaluating the explanation methods fidelity in the presence of data biases and Clever-Hans features. Due to limited resources a user study like \cite{Sixt2022} is not possible in our case. Instead we intend to develop a metric to quantify the coupling between the models prediction performance to the concept relevances as an artificially introduced bias gets stronger. To test this metric we propose a simple artificial benchmarking dataset based on the existing disentangling dataset \textit{dsprites} \cite{dsprites17}. To some of the images we add a watermark based on a structural causal model (SCM) similar to how we expect the causal relationships in real-world watermark examples to be. Neither does the watermark itself cause the label, nor the label the watermark. Instead, a third, unknown confounder has an effect on both the presence of the watermark and the shape shown in the image. The confounding variable termed the \textit{generator} is mixed with other random variables as described in \cite{Clark2023}. Here, the generator is the signal and the other \textit{causal factors} of the two variables the noise, so a better term than 'signal-to-noise' ratio might be 'spurious-to-core' ratio.
-(The terms 'spurious' and 'core' features are taken from \cite{Singla2022}.) 
 
-Knowing the generating factors of these benchmark images, showing either rectangles or ellipses in different sizes, rotations and positions helps to quantify the ground-truth feature importance of not only the feature to be predicted but expectedly irrelevant features (as a baseline) as well as the Clever-Hans feature. 
+With the aim of evaluating fidelity in the presence of a spuriously correlated feature, a zoo of models is trained with varying coupling ratios. Ground-truth biasedness is calculated for each model and each feature. In expectation, the models importance for the core feature declines and for the spurious feature increases as the coupling ratio rises. 
 
-With the aim of evaluating fidelity in the presence of a spuriously correlated feature, a zoo of models is trained with varying signal-to-noise ratios of the watermark feature. Ground-truth biasedness is calculated for each model and each feature as shown in \cref{fig:tesfigure}. The models coupling with the core feature shape suffers and with the watermark feature increases as the spurious-to-core ratio rises. 
-For a preliminary test the total relevance of the pixels within a small bounding box around the watermark are compared to the total relevance of the rest of the image, using the saliency map produced as a global summary and equivalent to what LRP would produce. 
 
-If CRP indeed produces an accurate explanation, more concepts should assign higher relevance to the bias feature the stronger the bias impacts the prediction of the model. It is important to note, that the model might accurately predict based on the real feature even though the bias is strong, when there are enough counterexamples. \Cref{fig:tesfigure} shows the non-linear interaction between prediction accuracy and spurious-to-core ratio.
+If CRP indeed produces an accurate explanation, more concepts should assign higher relevance to the bias feature the stronger the bias impacts the prediction of the model. It is important to note, that the model might accurately predict based on the real feature even though the bias is strong, when there are enough counterexamples. \Cref{fig:tesfigure} shows the non-linear interaction between prediction accuracy and coupling ratio.
 Now the question is, whether CRP can correctly identify this non-linear relationship or whether CRPs attribution to the spurious feature will more closely follow its actual presence in the data. 
 In other words: Does CRP learn the causal effect of the spurious feature on the model or just the causal effect within the data? Our goal is to quantify the effect that CRP actually has on human understanding. So even if the overall importance of the watermark can be either denied or affirmed, the numeric importance might not be the same as what a user can see and find through heatmaps, relevance hierarchies and relevance maximization image sets. Therefore it is necessary to develop methods which quantify human understanding of biasedness?  
 
-\section{Strategy}
+\section{Contributions}
 \todo{refine strategy based on what i actually did}
 \begin{itemize}
-    \item Construct a causal generating model on top of the existing artificial disentangling benchmarking dataset DSPRITES
-    \item Intervene on a latent factor in this causal model to generate a succession of training datasets
-    \item Train small convolutional neural networks with 10 different random initializations on the intervened-on datasets
-    \item Establish a ground-truth of model accuracy and importance in relationship to the intervened factor
-    \item Evaluate feature importance in a concept-based approach using concept relevance propagation (CRP)
-    \item Construct a metric that accurately describes the effect of the intervention on perceivable explanation importance 
+    \item Construct a causal data generating model
+    \item Embed data generating model into explanation generation process
+    \item Train a succession of models by intervening on coupling ratio
+    \item Establish a ground-truth of model accuracy and feature importance in relationship to the intervened factor
+    \item Evaluate explanations in a concept-based approach using concept relevance propagation (CRP)
+    \item Construct  metrics describing the effect of the intervention on the explanations feature importance 
     \item Evaluate the fidelity of this measure for CRP to the trained models feature importance
-    \item Examine the approach using different generating structural causal models and interventions
+    \item Further test the approach using different generating structural causal models and interventions
 \end{itemize}
 
 \section{Outline}
