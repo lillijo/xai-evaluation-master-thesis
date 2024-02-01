@@ -24,8 +24,12 @@ for f in onlyfiles:
         if name is not None:
             rname = name.group(2)
             rest = a.replace(name.group(), "").replace("))))", "").replace("'", "\"")
-            accuracies[rname] = json.loads(rest)
-            #accuracies[rname]["num_it"] = int(rname[-1])
+            new_value = json.loads(rest)
+            if  rname not in accuracies or accuracies[rname]["file"] < f:
+                if rname in accuracies:
+                    print(rname,accuracies[rname]["file"], f)
+                accuracies[rname] = new_value
+                accuracies[rname]["file"] = f
 
 with open("../outputs/final_models.json", "w") as fd:
     json.dump(accuracies, fd, indent=2)

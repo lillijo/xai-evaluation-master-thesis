@@ -4,7 +4,7 @@ import torch
 from tqdm import tqdm
 import json
 import copy
-from sklearn.metrics import normalized_mutual_info_score
+from sklearn.metrics import matthews_corrcoef, normalized_mutual_info_score
 
 from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 from expbasics.crp_attribution import CRPAttribution
@@ -30,25 +30,28 @@ LAYER_ID_MAP = {
     "linear_layers.2": 2,
 }
 NAME = "../clustermodels/final"  # "../clustermodels/model_seeded"  #
-BIASES = list(
-    np.round(np.linspace(0, 1, 51), 3)
-)  # list(np.round(np.linspace(0, 1, 21), 3))  #
+BIASES = list(np.round(np.linspace(0, 1, 51), 3))
+# list(np.round(np.linspace(0, 1, 11), 3))
+# list(np.round(np.linspace(0, 1, 51), 3))
+# list(np.round(np.linspace(0, 1, 21), 3))  #
 ITERATIONS = list(range(16))  # list(range(10))  #
 
 ALL_MEASURES = [
     "m0_rho",
     "m0_mi",
-    "m1_mlc",
+    "m1_mlc_euclid_norm",
+    "m1_mlc_euclid_abs_norm",
     "m1_mlc_euclid",
     "m1_pf",
-    "m2_mac1",
     "m2_crv",
     "m2_mac_euclid",
+    "m2_mac_euclid_u",
     "m2_mac_euclid_weigh",
-    "m2_rma",
     "m2_rra",
-    "m2_pg",
+    "m2_rra_weigh" "m2_pg",
     "m2_relative_mask",
+    "m2_relative_mask_weigh" "m2_rma",
+    "m0_phi",
 ]
 
 
@@ -90,28 +93,22 @@ class AllMeasures:
             dist = float(torch.sum(torch.abs((h1 - h0)))) / h1.shape[0]
         return dist
 
-    def euclidean_distance(self, h0, h1, w0=None, w1=None):
-        dist = 0.0
-        if w1 is not None and w0 is not None:
-            h0 = h0 * torch.abs(w0[:, None, None])
-            h1 = h1 * torch.abs(w1[:, None, None])
-        if h0.dim() > 1:
-            h0 = h0 / (torch.norm(torch.flatten(h0)) + 1e-10)
-            h1 = h1 / (torch.norm(torch.flatten(h1)) + 1e-10)
-        elif h0.shape[0] == 2:
-            h0 = h0 / h0.abs().max()
-            h1 = h1 / h1.abs().max()
+    def euclidean_distance(self, h0, h1, normed="norm"):
+        h0 = torch.flatten(h0)
+        h1 = torch.flatten(h1)
+        if normed == "norm":
+            if torch.any(h0 != 0):
+                h0 = h0 / (torch.norm(h0))
+            if torch.any(h1 != 0):
+                h1 = h1 / (torch.norm(h1))
+        elif normed == "abs_norm":
+            if torch.any(h0 != 0):
+                h0 = h0 / h0.abs().max()
+            if torch.any(h1 != 0):
+                h1 = h1 / h1.abs().max()
+        return float(torch.sqrt(torch.sum(torch.square(h1 - h0))))
 
-        dist = float(
-            torch.sqrt(torch.sum(torch.square(torch.flatten(h1) - torch.flatten(h0))))
-            / 2
-        )
-        return dist
-
-    def cosine_similarity(self, h0, h1, w0=None, w1=None):
-        if w0 is not None and w1 is not None:
-            h0 = h0 * torch.abs(w0[:, None, None])
-            h1 = h1 * torch.abs(w1[:, None, None])
+    def cosine_similarity(self, h0, h1):
         return float(
             1
             - torch.abs(
@@ -126,15 +123,12 @@ class AllMeasures:
     def earth_mover_distance(self, h0, h1, w=None):
         pass
 
-    def heatmaps(self, image, layer_name, crpa: CRPAttribution, offset):
+    def heatmaps(self, image, wm_mask, layer_name, crpa: CRPAttribution):
         nlen = LAYER_ID_MAP[layer_name]
-        conditions = [{layer_name: [i]} for i in range(LAYER_ID_MAP[layer_name])]
-        mask = torch.zeros(64, 64).to(self.tdev)
-        mask[
-            max(0, 57 + offset[0]) : max(0, 58 + offset[0]) + 5,
-            max(offset[1] + 3, 0) : max(offset[1] + 4, 0) + 10,
-        ] = 1
-        mask_size = int(mask.sum())
+        conditions = [
+            {layer_name: [i], "y": [1]} for i in range(LAYER_ID_MAP[layer_name])
+        ]
+        mask_size = int(wm_mask.sum())
         heatmaps = torch.zeros((nlen, 64, 64))
         rel_within = []
         rra = []
@@ -145,14 +139,14 @@ class AllMeasures:
             image,
             conditions,
             crpa.composite,
-            start_layer="linear_layers.2",
+            # start_layer="linear_layers.2",
             record_layer=crpa.layer_names,
             verbose=False,
             batch_size=nlen,
         ):
             heatmaps = attr.heatmap
             heatmaps_abs = attr.heatmap.abs()
-            masked = heatmaps_abs * mask
+            masked = heatmaps_abs * wm_mask
             sorted_values = torch.sort(
                 heatmaps_abs.view(nlen, -1), dim=1, descending=True
             ).values
@@ -187,13 +181,12 @@ class AllMeasures:
         )
 
     def relative_masked_relevance(
-        self, index, image, relevances, layer_name, crpa: CRPAttribution
+        self, index, image, wm_mask, layer_name, crpa: CRPAttribution
     ):
-        wm_mask = self.ds.load_watermark_mask(index)
         shape_mask = self.ds.load_shape_mask(index)
         nlen = LAYER_ID_MAP[layer_name]
         conditions = [{layer_name: [i]} for i in range(LAYER_ID_MAP[layer_name])]
-        res = 0.0
+        vals = torch.zeros(nlen)
         for attr in crpa.attribution.generate(
             image,
             conditions,
@@ -204,15 +197,14 @@ class AllMeasures:
             batch_size=nlen,
         ):
             heatmaps_abs = attr.heatmap.abs()
-            total_relevance = heatmaps_abs.sum()
-            wm_rel = torch.sum(heatmaps_abs * wm_mask[0], dim=(1, 2)) / wm_mask.sum()
-            shape_rel = (
-                torch.sum(heatmaps_abs * shape_mask[0], dim=(1, 2)) / shape_mask.sum()
-            )
-            ratios = (wm_rel - shape_rel) / (total_relevance + 1e-10)
-            res = float(torch.sum(ratios * torch.abs(relevances[:, None, None])))
-            res = min(res, 1)
-        return res
+            wm_rel = torch.sum(heatmaps_abs * wm_mask[0], dim=(1, 2))
+            shape_rel = torch.sum(heatmaps_abs * shape_mask[0], dim=(1, 2))
+            for i in range(nlen):
+                if wm_rel[i] > (shape_rel[i] * (wm_mask.sum() / (shape_mask.sum()))):
+                    vals[i] = wm_rel[i]
+                else:
+                    vals[i] = 0
+        return vals
 
     def relevances(self, image, label, layer_name, crpa: CRPAttribution):
         attr = crpa.attribution(
@@ -232,12 +224,13 @@ class AllMeasures:
             predi_1,
             rel_0,
             rel_1,
-            rel_0_all,
-            rel_1_all,
-            hm_1,
             hm_0,
+            hm_1,
             x,
+            label,
+            image_0,
             image_1,
+            mask,
             layer_name,
             crpa,
         ] = args
@@ -245,8 +238,12 @@ class AllMeasures:
         if "m1_mlc" == measure:
             return self.mean_absolute_change(predv_1[0], predv_0[0])
         # mean logit change using euclidean distance
+        if "m1_mlc_euclid_norm" == measure:
+            return self.euclidean_distance(predv_1, predv_0, normed="norm")
+        if "m1_mlc_euclid_abs_norm" == measure:
+            return self.euclidean_distance(predv_1, predv_0, normed="abs_norm")
         if "m1_mlc_euclid" == measure:
-            return self.euclidean_distance(predv_1[0], predv_0[0])
+            return self.euclidean_distance(predv_1, predv_0, normed="none")
         # mean logit change using cosine distance
         if "m1_mlc_cosine" == measure:
             return self.cosine_similarity(predv_1[0], predv_0[0])
@@ -258,48 +255,140 @@ class AllMeasures:
             return self.hm_diff1(hm_1["heatmaps"], hm_0["heatmaps"], rel_1, rel_0)
         # distance between vectors of all relevances
         if "m2_crv" == measure:
-            return float(torch.sum(torch.abs(rel_1_all - rel_0_all))) / 3
+            # relevance vector for multiple layers
+            rel_0_all = torch.cat(
+                [
+                    self.relevances(image_0, label, l, crpa)
+                    for l in list(LAYER_ID_MAP.keys())[1:4]
+                ]
+            )
+            rel_1_all = torch.cat(
+                [
+                    self.relevances(image_1, label, l, crpa)
+                    for l in list(LAYER_ID_MAP.keys())[1:4]
+                ]
+            )
+            # relevances over 3 layers, excluding first and last
+            # each layers absolute values sum up to 1
+            # having 3 layers, we have to divide by 6
+            # because maximal difference is 2
+            return float(torch.sum(torch.abs(rel_0_all - rel_1_all)) / 6)
         # hamming distance heatmaps, with/without weights
         if "m2_mac_hamming" == measure:
             return self.hamming_distance(hm_1["heatmaps"], hm_0["heatmaps"])
         if "m2_mac_hamming_weigh" == measure:
             return self.hamming_distance(hm_1["heatmaps"], hm_0["heatmaps"], rel_1)
+
+        if "m2_mac_absolute" == measure:
+            diff = 0
+            for i in range(LAYER_ID_MAP[layer_name]):
+                diff += torch.sum(torch.abs(hm_1["heatmaps"][i] - hm_0["heatmaps"][i]))
+            return float(diff / LAYER_ID_MAP[layer_name])
+        if "m2_mac_absolute_weigh" == measure:
+            diff = 0
+            for i in range(LAYER_ID_MAP[layer_name]):
+                diff += torch.sum(
+                    torch.abs(hm_1["heatmaps"][i] - hm_0["heatmaps"][i])
+                ) * torch.abs(rel_1[i])
+            return float(diff)
         # euclidean distance heatmaps, with/without weights
         if "m2_mac_euclid" == measure:
-            return self.euclidean_distance(hm_0["heatmaps"], hm_1["heatmaps"])
+            diff = 0
+            for i in range(LAYER_ID_MAP[layer_name]):
+                diff += self.euclidean_distance(
+                    hm_0["heatmaps"][i], hm_1["heatmaps"][i], normed="none"
+                )
+            return float(diff / LAYER_ID_MAP[layer_name])
+        if "m2_mac_euclid_abs_norm" == measure:
+            diff = 0
+            for i in range(LAYER_ID_MAP[layer_name]):
+                diff += self.euclidean_distance(
+                    hm_0["heatmaps"][i], hm_1["heatmaps"][i], normed="abs_norm"
+                )
+            return float(diff / LAYER_ID_MAP[layer_name])
+        if "m2_mac_euclid_norm" == measure:
+            diff = 0
+            for i in range(LAYER_ID_MAP[layer_name]):
+                diff += self.euclidean_distance(
+                    hm_0["heatmaps"][i], hm_1["heatmaps"][i], normed="norm"
+                )
+            return float(diff / LAYER_ID_MAP[layer_name])
+        if "m2_mac_euclid_weigh_abs_norm" == measure:
+            diff = 0
+            for i in range(LAYER_ID_MAP[layer_name]):
+                diff += self.euclidean_distance(
+                    hm_0["heatmaps"][i], hm_1["heatmaps"][i], normed="abs_norm"
+                ) * torch.abs(rel_1[i])
+            return float(diff)
+        if "m2_mac_euclid_weigh_norm" == measure:
+            diff = 0
+            for i in range(LAYER_ID_MAP[layer_name]):
+                diff += self.euclidean_distance(
+                    hm_0["heatmaps"][i], hm_1["heatmaps"][i], normed="norm"
+                ) * torch.abs(rel_1[i])
+            return float(diff)
         if "m2_mac_euclid_weigh" == measure:
             return self.euclidean_distance(
-                hm_0["heatmaps"], hm_1["heatmaps"], rel_0, rel_1
+                hm_0["heatmaps"], hm_1["heatmaps"], normed="none"
             )
         # cosine similarity heatmaps, with/without weights
         if "m2_mac_cosine" == measure:
             return self.cosine_similarity(hm_0["heatmaps"], hm_1["heatmaps"])
         if "m2_mac_cosine_weigh" == measure:
-            return self.cosine_similarity(
-                hm_0["heatmaps"], hm_1["heatmaps"], rel_0, rel_1
-            )
+            # not valid anymore
+            return self.cosine_similarity(hm_0["heatmaps"], hm_1["heatmaps"])
         if "m2_relative_mask" == measure:
-            return self.relative_masked_relevance(x, image_1, rel_1, layer_name, crpa)
+            vals = self.relative_masked_relevance(x, image_1, mask, layer_name, crpa)
+            return float(vals.sum())
+        if "m2_relative_mask_weigh" == measure:
+            vals = self.relative_masked_relevance(x, image_1, mask, layer_name, crpa)
+            diff = 0
+            for i in range(LAYER_ID_MAP[layer_name]):
+                diff += vals[i] * torch.abs(rel_1[i])
+            return float(diff)
         if "m2_rma" == measure:
             return self.mean_absolute_change(hm_1["rma"], hm_0["rma"])
         if "m2_rma_val" == measure:
             return hm_1["rma"]
         if "m2_rma_euclid" == measure:
-            return self.euclidean_distance(hm_1["rma"], hm_0["rma"])
+            return self.euclidean_distance(hm_1["rma"], hm_0["rma"], normed="none")
         if "m2_rra" == measure:
             return self.mean_absolute_change(hm_1["rra"], hm_0["rra"])
+        if "m2_rra_weigh" == measure:
+            diff = 0
+            for i in range(LAYER_ID_MAP[layer_name]):
+                diff += torch.abs(hm_1["rra"][i] - hm_0["rra"][i]) * torch.abs(rel_1[i])
+            return float(diff)
         if "m2_rra_euclid" == measure:
-            return self.euclidean_distance(hm_1["rra"], hm_0["rra"])
+            return self.euclidean_distance(hm_1["rra"], hm_0["rra"], normed="none")
         if "m2_pg_non_empty" == measure:
             return float(
                 torch.sum(torch.abs(hm_1["pg"] - hm_0["pg"])) / hm_1["non_empty"]
             )
         if "m2_pg" == measure:
             return self.mean_absolute_change(hm_1["pg"], hm_0["pg"])
+        if "m2_pg_weigh" == measure:
+            diff = 0
+            for i in range(LAYER_ID_MAP[layer_name]):
+                diff += torch.abs(hm_1["pg"][i] - hm_0["pg"][i]) * torch.abs(rel_1[i])
+            return float(diff)
         if "m2_pg_euclid" == measure:
             return self.euclidean_distance(hm_1["pg"], hm_0["pg"])
         if "m2_pg_val" == measure:
             return float(torch.sum(hm_1["pg"]) / hm_1["pg"].shape[0])
+        if "m2_kernel" == measure:
+            def kernel(a, b):
+                return (
+                    torch.nn.functional.conv2d(a, a)
+                    - 2 * torch.nn.functional.conv2d(a, b)
+                    + torch.nn.functional.conv2d(b, b)
+                )
+
+            batched = kernel(
+                hm_1["heatmaps"].view(LAYER_ID_MAP[layer_name], 1, 64, 64),
+                hm_0["heatmaps"].view(LAYER_ID_MAP[layer_name], 1, 64, 64),
+            )
+            return sum([float(batched[i, i].flatten()) for i in range(8)])
 
         return 0.0
 
@@ -311,15 +400,15 @@ class AllMeasures:
         indices = np.round(np.linspace(0, MAX_INDEX, self.len_x)).astype(int)
 
         # if they are not needed, initialize empty
-        image_0 = torch.zeros(1,64,64)
-        predv_0 = torch.zeros(1,2)
-        predv_1 = torch.zeros(1,2)
+        image_0 = torch.zeros(1, 64, 64)
+        predv_0 = torch.zeros(1, 2)
+        predv_1 = torch.zeros(1, 2)
         predi_0 = 0
         predi_1 = 1
-        rel_0_all = torch.zeros(22)
-        rel_1_all = torch.zeros(22)
         hm_0 = torch.zeros(8, 1, 64, 64)
         hm_1 = torch.zeros(8, 1, 64, 64)
+        rel_0 = torch.zeros(8)
+        rel_1 = torch.zeros(8)
         for rho in (pbar := tqdm(BIASES)):
             if str(rho) not in over_rho:
                 over_rho[str(rho)] = {meas: 0.0 for meas in measures}
@@ -342,34 +431,22 @@ class AllMeasures:
                     # image W=0, W=1
                     image_1 = self.ds.load_image_wm(x, True)
                     image_0 = self.ds.load_image_wm(x, False)
-                    if "m2_relative_mask" not in measures and len(measures) > 1:
-                        # prediction output W=0, W=1
-                        predv_0 = model(image_0)
-                        predv_1 = model(image_1)
-                        # classification W=0, W=1
-                        predi_0 = int(predv_0.data.max(1)[1][0])
-                        predi_1 = int(predv_1.data.max(1)[1][0])
-                        # relevance vector for multiple layers
-                        rel_0_all = torch.cat(
-                            [
-                                self.relevances(image_0, label, l, crpa)
-                                for l in list(LAYER_ID_MAP.keys())[1:4]
-                            ]
-                        )
-                        rel_1_all = torch.cat(
-                            [
-                                self.relevances(image_1, label, l, crpa)
-                                for l in list(LAYER_ID_MAP.keys())[1:4]
-                            ]
-                        )
-                        # heatmaps W=0, W=1
-                        # torch.zeros(8,1, 64, 64)  #
-                        hm_0 = self.heatmaps(image_0, layer_name, crpa, offset)
-                        hm_1 = self.heatmaps(image_1, layer_name, crpa, offset)
-                    
-                    # relevances W=0, W=1
-                    rel_0 = self.relevances(image_0, label, layer_name, crpa)
-                    rel_1 = self.relevances(image_1, label, layer_name, crpa)
+                    # if "m2_relative_mask" not in measures and len(measures) > 1:
+                    # prediction output W=0, W=1
+                    predv_0 = model(image_0)
+                    predv_1 = model(image_1)
+                    # classification W=0, W=1
+                    predi_0 = int(predv_0.data.max(1)[1][0])
+                    predi_1 = int(predv_1.data.max(1)[1][0])
+                    # heatmaps W=0, W=1
+                    # torch.zeros(8,1, 64, 64)  #
+                    if np.any(np.array([bool("m2" in meas) for meas in measures])):
+                        hm_0 = self.heatmaps(image_0, mask, layer_name, crpa)
+                        hm_1 = self.heatmaps(image_1, mask, layer_name, crpa)
+
+                        # relevances W=0, W=1
+                        rel_0 = self.relevances(image_0, label, layer_name, crpa)
+                        rel_1 = self.relevances(image_1, label, layer_name, crpa)
 
                     inputvals = [
                         predv_0,
@@ -378,17 +455,18 @@ class AllMeasures:
                         predi_1,
                         rel_0,
                         rel_1,
-                        rel_0_all,
-                        rel_1_all,
-                        hm_1,
                         hm_0,
+                        hm_1,
                         x,
+                        label,
+                        image_0,
                         image_1,
+                        mask,
                         layer_name,
                         crpa,
                     ]
                     for meas in measures:
-                        if meas not in ["m0_mi", "m0_rho"]:
+                        if meas not in ["m0_mi", "m0_rho", "m0_phi"]:
                             if meas not in models_values[str(rho)][str(m)] or isnan(
                                 models_values[str(rho)][str(m)][meas]
                             ):
@@ -402,9 +480,9 @@ class AllMeasures:
                             )
             for m in ITERATIONS:
                 for k, v in models_values[str(rho)][str(m)].items():
-                    if k in measures:
-                        over_rho[str(rho)][k] += v / len(ITERATIONS)
-            if "m0_mi" in measures:
+                    if k in measures and k not in ["m0_mi", "m0_rho", "m0_phi"]:
+                        over_rho[str(rho)][k] += float(v / len(ITERATIONS))
+            if "m0_phi" in measures:
                 indices_long = np.round(np.linspace(0, MAX_INDEX, 40000)).astype(int)
                 ds = BiasedNoisyDataset(rho)
                 labels_true, labels_pred = [], []
@@ -415,25 +493,38 @@ class AllMeasures:
                 over_rho[str(rho)]["m0_mi"] = normalized_mutual_info_score(
                     labels_true, labels_pred
                 )
+                over_rho[str(rho)]["m0_phi"] = matthews_corrcoef(
+                    labels_true, labels_pred
+                )
                 over_rho[str(rho)]["m0_rho"] = rho
                 for m in ITERATIONS:
                     models_values[str(rho)][str(m)]["m0_mi"] = over_rho[str(rho)][
                         "m0_mi"
                     ]
+                    models_values[str(rho)][str(m)]["m0_mi"] = over_rho[str(rho)][
+                        "m0_phi"
+                    ]
                     models_values[str(rho)][str(m)]["m0_rho"] = rho
 
-        with open("over_rho.json", "w") as f:
-            json.dump(over_rho, f)
-        with open("models_values.json", "w") as f:
-            json.dump(models_values, f)
+            with open("over_rho.json", "w") as f:
+                json.dump(over_rho, f)
+            with open("models_values.json", "w") as f:
+                json.dump(models_values, f)
 
 
 if __name__ == "__main__":
     # parser = argparse.ArgumentParser("script_parallel")
     # parser.add_argument("layername", help="layer float", type=str)
-    allm = AllMeasures("../dsprites-dataset/images/", 10)
+    allm = AllMeasures("../dsprites-dataset/images/", 8)
     # allm.loop_rho_and_m("convolutional_layers.6")  #  #"linear_layers.0"
     allm.recompute_measures(
         "convolutional_layers.6",
-        ["m2_relative_mask"],  # ["m2_relative_mask"]  #  ALL_MEASURES
+        ["m2_mac_euclid_weigh"],  # ["measure"]  #  ALL_MEASURES
     )  #  #"linear_layers.0"
+
+
+""" "m1_mlc_euclid_norm",
+"m1_mlc_euclid_abs_norm",
+"m1_mlc_euclid",
+"m2_rma",
+"m0_phi" """

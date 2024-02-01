@@ -808,7 +808,7 @@ def fancy_attributions(unbiased_ds, crp_attribution):
         c += 1
 
 
-def my_plot_grid(images, rows, cols, resize=1):
+def my_plot_grid(images, rows, cols, resize=1, norm=False):
     fig, axs = plt.subplots(
         rows,
         cols,
@@ -820,17 +820,23 @@ def my_plot_grid(images, rows, cols, resize=1):
     )
     fig.set_facecolor(FACECOL)
     fig.set_alpha(0.0)
+    maxv = max(float(images.abs().max()), 0.001)
+    center = 0.0
+    divnorm = matplotlib.colors.TwoSlopeNorm(
+        vmin=-maxv, vcenter=center, vmax=maxv
+    )
     for il in range(rows):
         for n in range(cols):
             axs[il, n].xaxis.set_visible(False)
             axs[il, n].yaxis.set_visible(False)
             if torch.any(images[il, n] != 0):
-                maxv = max(float(images[il, n].abs().max()), 0.001)
-                # minv = min(float(images[il, n].min()), -0.001)
-                center = 0.0
-                divnorm = matplotlib.colors.TwoSlopeNorm(
-                    vmin=-maxv, vcenter=center, vmax=maxv
-                )
+                if not norm:
+                    maxv = max(float(images[il, n].abs().max()), 0.001)
+                    # minv = min(float(images[il, n].min()), -0.001)
+                    center = 0.0
+                    divnorm = matplotlib.colors.TwoSlopeNorm(
+                        vmin=-maxv, vcenter=center, vmax=maxv
+                    )
                 axs[il, n].imshow(images[il, n], cmap="bwr", norm=divnorm)
             else:
                 axs[il, n].axis("off")
