@@ -80,7 +80,7 @@ class CRPAttribution:
         path = f"crp-data/{name}_{model_name}_fv"
         self.fv_path = path
         self.cache = ImageCache(path=path + "-cache")
-        #ds = TestDataset(length=1000, im_dir="testdata")
+        # ds = TestDataset(length=1000, im_dir="testdata")
         self.fv = FeatureVisualization(
             self.attribution, self.dataset, self.layer_map, path=self.fv_path, cache=self.cache  # type: ignore
         )
@@ -103,8 +103,8 @@ class CRPAttribution:
 
     def compute_feature_vis(self):
         print("computing feature vis")
-        saved_files = self.fv.run(self.composite, 0, 3000, 128, 500)
-        self.fv.precompute_ref(
+        saved_files = self.fv.run(self.composite, 0, 1000, 128, 500)
+        """ self.fv.precompute_ref(
             self.layer_id_map,
             plot_list=[vis_simple],
             mode="relevance",
@@ -112,7 +112,7 @@ class CRPAttribution:
             composite=self.composite,
             batch_size=128,
             stats=True,
-        )
+        ) """
         return saved_files
 
     def make_stats_references(self, cond_layer, neurons):
@@ -140,12 +140,12 @@ class CRPAttribution:
             symmetric=True,
         )
 
-    def make_all_references(self, cond_layer, neurons):
+    def make_all_references(self, cond_layer, neurons, relact="relevance"):
         no_ref_samples = 8
         ref_c = self.fv.get_max_reference(
             neurons,
             cond_layer,
-            "relevance",
+            relact,
             (0, no_ref_samples),
             composite=self.composite,
             rf=True,
@@ -153,7 +153,7 @@ class CRPAttribution:
         )
         plot_grid(
             ref_c,
-            figsize=(no_ref_samples, len(neurons)),
+            figsize=(no_ref_samples, 2 * len(neurons)),
             padding=True,
             symmetric=True,
         )
@@ -455,7 +455,7 @@ class CRPAttribution:
             composite=self.composite,
             concept_id=pred,
             layer_name="linear_layers.2",
-            width=[6, 2, 2, 2],
+            width=[8, 6],  # [6,2,2,2]
             abs_norm=True,
             verbose=False,
             batch_size=1,

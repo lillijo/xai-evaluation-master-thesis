@@ -239,7 +239,7 @@ def draw_graph_with_images(nodes, connections, images, ax=None):
             G.nodes[n]["subset"] = subsets[n]
     pos = nx.multipartite_layout(G, subset_key="subset")
     # if ax is None:
-    fig = plt.figure(figsize=(16, 11))
+    fig = plt.figure(figsize=(16, 16))
     ax = fig.add_subplot(111, frame_on=False)
     # ax.set_aspect('equal')
     nx.draw_networkx(
