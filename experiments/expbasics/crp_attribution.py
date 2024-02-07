@@ -1,7 +1,7 @@
 from re import S
 import numpy as np
 import torch
-import os
+from os.path import isfile, join
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 
@@ -79,11 +79,7 @@ class CRPAttribution:
         self.attribution = CondAttribution(model, no_param_grad=True, device=self.tdev)
         path = f"crp-data/{name}_{model_name}_fv"
         self.fv_path = path
-        self.cache = ImageCache(path=path + "-cache")
-        # ds = TestDataset(length=1000, im_dir="testdata")
-        self.fv = FeatureVisualization(
-            self.attribution, self.dataset, self.layer_map, path=self.fv_path, cache=self.cache  # type: ignore
-        )
+        self.fv = FeatureVisualization(self.attribution, self.dataset, self.layer_map)  # type: ignore
 
         self.output_shape = get_output_shapes(
             model, self.fv.get_data_sample(0)[0], self.layer_names
@@ -103,6 +99,11 @@ class CRPAttribution:
 
     def compute_feature_vis(self):
         print("computing feature vis")
+        if not isfile(self.fv_path):
+            self.cache = ImageCache(path=self.fv_path + "-cache")
+            self.fv = FeatureVisualization(
+                self.attribution, self.dataset, self.layer_map, path=self.fv_path, cache=self.cache  # type: ignore
+            )
         saved_files = self.fv.run(self.composite, 0, 1000, 128, 500)
         """ self.fv.precompute_ref(
             self.layer_id_map,

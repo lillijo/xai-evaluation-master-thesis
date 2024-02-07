@@ -84,9 +84,8 @@ def data_iterations(path, biascut=-1.0, num_it=4):
         datas = [
             list(
                 filter(
-                    lambda x: x["num_it"] == n
-                    and x["bias"] >= biascut,
-                    #and x["bias"] in less_items,  # comment out
+                    lambda x: x["num_it"] == n and x["bias"] >= biascut,
+                    # and x["bias"] in less_items,  # comment out
                     alldata,
                 )
             )
@@ -350,53 +349,114 @@ def plot_accuracies(path, treshold=90, num_it=6):
     ecol = matplotlib.cm.cool(np.linspace(0, 1, 4))  # type: ignore
     fig = plt.figure(figsize=(8, 5))
     fig.set_facecolor(FACECOL)
-    plt.ylim([0, 100])
+    plt.ylim([30, 100])
+
+    def to_arr(key, item):
+        return np.array(
+            [
+                [datas[i][x][key][item] for i in range(num_it)]
+                for x in range(len(datas[0]))
+            ]
+        )
+
+    all_wm_r = to_arr("all_wm_accuracy", 0)
+    all_wm_r_sigma = all_wm_r.std(axis=1)
+    all_wm_r = all_wm_r.mean(axis=1)
     plt.plot(
         bis,
-        sum_it(datas, lambda x: x["all_wm_accuracy"][0] / num_it),
+        all_wm_r,
         c=rcol[2],
         label="only rectangles with watermark",
         linestyle="dashed",
     )
-    plt.plot(
+    plt.fill_between(
+        bis,
+        all_wm_r + all_wm_r_sigma,
+        all_wm_r - all_wm_r_sigma,
+        facecolor=rcol[2],
+        alpha=0.3,
+    )
+    """ plt.plot(
         bis,
         sum_it(datas, lambda x: x["no_wm_accuracy"][0] / num_it),
         c=rcol[3],
         label="only rectangles without watermark",
         linestyle="dotted",
-    )
-    plt.plot(
+    ) """
+    """ plt.plot(
         bis,
         sum_it(datas, lambda x: x["all_wm_accuracy"][1] / num_it),
         c=ecol[2],
         label="only ellipses with watermark",
         linestyle="dashed",
-    )
+    ) """
+    no_wm_e = to_arr("no_wm_accuracy", 1)
+    no_wm_e_sigma = no_wm_e.std(axis=1)
+    no_wm_e = no_wm_e.mean(axis=1)
     plt.plot(
         bis,
-        sum_it(datas, lambda x: x["no_wm_accuracy"][1] / num_it),
+        no_wm_e,
         c=ecol[3],
         label="only ellipses without watermark",
         linestyle=(0, (1, 1)),
+    )
+    plt.fill_between(
+        bis,
+        no_wm_e + no_wm_e_sigma,
+        no_wm_e - no_wm_e_sigma,
+        facecolor=ecol[3],
+        alpha=0.3,
+    )
+    X1 = np.array(
+        [
+            [datas[i][x]["train_accuracy"][2] for i in range(num_it)]
+            for x in range(len(datas[0]))
+        ]
+    )
+    mu1 = X1.mean(axis=1)
+    sigma1 = X1.std(axis=1)
+    mins = X1.min(axis=1)
+    maxs = X1.max(axis=1)
+    plt.fill_between(bis, maxs, mins, facecolor="#222", alpha=0.1, label="maximum and minimum")
+    plt.fill_between(bis, mu1 + sigma1, mu1 - sigma1, facecolor="#000", alpha=0.3, label="standard deviation")
+    plt.plot(
+        bis,
+        sum_it(datas, lambda x: x["train_accuracy"][0] / num_it),
+        c=rcol[0],
+        label="training accuracy rectangles (class 0)",
+        linestyle=(0, (1, 1)),
+    )
+    plt.plot(
+        bis,
+        sum_it(datas, lambda x: x["train_accuracy"][1] / num_it),
+        c=ecol[0],
+        label="training accuracy ellipses (class 1)",
+        linestyle=(0, (3, 1)),
     )
     plt.plot(
         bis,
         sum_it(datas, lambda x: x["train_accuracy"][2] / num_it),
         c="#000",
         label="training accuracy all",
-        linestyle=(0, (1, 1)),
     )
     bads = [
         [a["num_it"], a["bias"], a["train_accuracy"][2]]
         for a in list(filter(lambda x: x["train_accuracy"][2] < treshold, alldata))
     ]
-    plt.title("Accuracy of models when intervening on watermark")
+    # plt.title("Accuracy of models when intervening on watermark")
     print(f"accuracy below {treshold}%: {len(bads)}")
     if len(bads) > 0:
         print("bad biases: ", bads)
-    plt.legend(loc="lower left")
-    plt.ylabel("Accuracy")
-    plt.xlabel("Bias")
+    plt.legend(
+        bbox_to_anchor=(0.0, 0.01, 1.0, 0.102),
+        loc="lower left",
+        #ncols=2,
+        #mode="expand",
+        #borderaxespad=0.0,
+        reverse=True,
+    )
+    plt.ylabel("Accuracy in %")
+    plt.xlabel("Coupling Ratio Rho")
     return bads
 
 
@@ -440,7 +500,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
         if f == 2:
             diff_lat = lat_data
         elif f == 0:
-            diff_lat = [(1 - lat_data[i] ) for i in range(len(lat_data))] #diff_lat[i]
+            diff_lat = [(1 - lat_data[i]) for i in range(len(lat_data))]  # diff_lat[i]
         for l in range(num_it):
             lat_data = [a[f"pred_{m_type}"][f] for a in datas[l]]
             plt.scatter(
@@ -524,7 +584,7 @@ def plot_measures(path):
             np.mean([datas[a][i]["mrc_weighted"] for a in range(10)])
             for i in range(len(datas[0]))
         ]
-    ) 
+    )
     mrc_weighted = mrc_weighted / mrc_weighted.max()
     mlc = np.array(
         [
@@ -537,7 +597,7 @@ def plot_measures(path):
     with open("gt_mlc.npy", "wb") as f:
         np.save(f, mlc)
     coeff = np.load("phi_coefficients.npy")
-    #cmi = np.load("")
+    # cmi = np.load("")
     plt.plot(bis, coeff, color=colors[0], label="m0 (phi-coefficient wm/shape)")
     plt.plot(bis, ols, color=colors[2], label="(m1?) ols coefficient of determination")
     plt.plot(bis, flip, color=colors[4], label="(m1?) prediction flip")
@@ -665,8 +725,8 @@ def plot_fancy_distribution(dataset=None, s=[], w=[]):
     from collections import Counter
     from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 
-    lim_x = [0,1]# [np.min(s), np.max(s)]
-    lim_y = [0,1]# [np.min(w), np.max(w)]
+    lim_x = [0, 1]  # [np.min(s), np.max(s)]
+    lim_y = [0, 1]  # [np.min(w), np.max(w)]
 
     fig = plt.figure(figsize=(7, 5))
     fig.set_facecolor(FACECOL)
@@ -822,9 +882,7 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False):
     fig.set_alpha(0.0)
     maxv = max(float(images.abs().max()), 0.001)
     center = 0.0
-    divnorm = matplotlib.colors.TwoSlopeNorm(
-        vmin=-maxv, vcenter=center, vmax=maxv
-    )
+    divnorm = matplotlib.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
     for il in range(rows):
         for n in range(cols):
             axs[il, n].xaxis.set_visible(False)
