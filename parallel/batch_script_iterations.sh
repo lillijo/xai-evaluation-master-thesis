@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --output=final.o%j              # File name for standard output
+#SBATCH --output=retrain.o%j              # File name for standard output
 #SBATCH --partition=gpu                 # Specify partition name
 #SBATCH --gpus=1                        # Specify number of GPUs needed for the job
 #SBATCH --exclusive                     # https://slurm.schedmd.com/sbatch.html#OPT_exclusive

@@ -172,7 +172,7 @@ def train_network(
                     if hasattr(layer, "reset_parameters"):
                         layer.reset_parameters()  # type: ignore
         torch.save(model.state_dict(), model_path)
-        if avg_loss <= 0.035:
+        if avg_loss <= 0.15:
             break
 
     print(

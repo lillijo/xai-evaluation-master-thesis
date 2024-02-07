@@ -23,13 +23,13 @@ for f in onlyfiles:
         name = namereg.search(a)
         if name is not None:
             rname = name.group(2)
-            rest = a.replace(name.group(), "").replace("))))", "").replace("'", "\"")
+            rest = a.replace(name.group(), "").replace("))))", "").replace("'", '"')
             new_value = json.loads(rest)
-            if  rname not in accuracies or accuracies[rname]["file"] < f:
+            if rname not in accuracies or accuracies[rname]["file"] < f:
                 if rname in accuracies:
-                    print(rname,accuracies[rname]["file"], f)
+                    print(rname, accuracies[rname]["file"], f)
                 accuracies[rname] = new_value
                 accuracies[rname]["file"] = f
 
-with open("../outputs/final_models.json", "w") as fd:
+with open("../outputs/retrain.json", "w") as fd:
     json.dump(accuracies, fd, indent=2)

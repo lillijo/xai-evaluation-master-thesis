@@ -9,7 +9,7 @@ import argparse
 
 LEARNING_RATE = 0.001
 STRENGTH = 0.5
-EPOCHS = 5
+EPOCHS = 3
 BATCH_SIZE = 128
 NAME = "models/final"
 FV_NAME = "fv_model"
@@ -42,7 +42,7 @@ def train_model_evaluate(
         NAME,
         BATCH_SIZE,
         load=load_model,
-        retrain=False,
+        retrain=True,
         learning_rate=LEARNING_RATE,
         epochs=EPOCHS,
         num_it=num_it,
@@ -90,7 +90,7 @@ def compute_with_param(bias, start_it, end_it):
     for num_it in range(start_it, end_it):
         name = to_name(bias, num_it)
         if not (name in accuracies and accuracies[name]["train_accuracy"][2] > 80):
-            load_model = False if (name in accuracies) else True
+            load_model = True #False if (name in accuracies) else
             (name, result) = train_model_evaluate(
                 bias,
                 allwm,
@@ -106,7 +106,7 @@ def compute_with_param(bias, start_it, end_it):
             print("model exists:")
             print(f"(((({name}:{accuracies[name]}))))")
 
-
+""" 
 def compute_retrain_seeds(bias):
     with open("parallel_accuracies.json", "r") as f:
         accuracies = json.load(f)
@@ -150,15 +150,15 @@ def compute_retrain_seeds(bias):
             accuracies[name] = result
         else:
             print("model exists:")
-            print(f"(((({name}:{accuracies[name]}))))")
+            print(f"(((({name}:{accuracies[name]}))))") """
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("script_parallel")
     parser.add_argument("bias", help="bias float", type=float)
-    """ parser.add_argument("start_it", help=" float", type=int)
+    parser.add_argument("start_it", help=" float", type=int)
     parser.add_argument("end_it", help=" float", type=int)
-    
-    compute_with_param(args.bias, args.start_it, args.end_it) """
     args = parser.parse_args()
-    compute_retrain_seeds(args.bias)
+    
+    compute_with_param(args.bias, args.start_it, args.end_it)
+    #compute_retrain_seeds(args.bias)
