@@ -11,12 +11,47 @@
     \end{itemize}
 }
 
+\begin{figure}
+    \centering
+    \includegraphics{thesis_latex_template/pics/basic_accuracy.png}
+    \caption{Mean accuracy for models with the same coupling ratio $\rho$ (16 per bucket)}
+    \label{fig:basic_accuracy}
+\end{figure}
+
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/unnormalized_some_measures.png}
+    \caption{Comparison of Measures Unnormalized}
+    \label{fig:unnormalized}
+\end{figure}
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/normalized_some_measures.png}
+    \caption{Comparison of Measures Normalized to [0,1]}
+    \label{fig:normalized}
+\end{figure}
+
+
+Interesting things i wanna say
+\begin{itemize}
+    \item Firstly: The reaction to the "bias" is way less strong than one might expect. Only at super high rates it actually becomes worth it to learn the spurious feature.
+    \item However, that might be expected as that is what deep neural networks are specifically designed for
+    \item in general, it is relieving to see that the importance of the biased feature for the model and the explanation is not completely departing from each other
+    \item as the models feature importance rises with $\rho$, so does the explanation importance
+    \item but it becomes clear that depending on the way the explanation is read / measured it can over- or under-emphasize the wm effect. 
+    \item the seed makes a huge difference (maybe this is just because my model is not stable and it has to be recomputed???) 
+    \item 
+\end{itemize}
 
 \section{Experiments}
 \begin{itemize}
     \item what have I tried out with the different methods?
     \item list in concise order the possible measures
-    \item ground-truth feature importance: mean logit change for output, R2-score,  prediction flip
+    \item ground-truth feature importance: mean logit change for output, phi correlation (= prediction flip)
     \item baseline explanation feature importance - thats what we compare to e.g. watermark bounding-box importance for summary heatmap
     \item special concept explanations feature importance
     \item how are the experiments set up, how do i make sure they are all well comparable
@@ -43,10 +78,6 @@ lots of plots!
 
 
 
-\section{Evaluating Method on Other Problems}\label{section:further_problems}
-
-
-
 \section{Evaluation}
 \begin{itemize}
     \item evaluation of evaluation criteria:
@@ -63,6 +94,8 @@ lots of plots!
     \item 
 \end{itemize}
 
+
+\section{Evaluating Method on Other Problems}\label{section:further_problems}
 
 \section{Discussion}
 \begin{itemize}
