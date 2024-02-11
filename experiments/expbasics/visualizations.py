@@ -346,7 +346,7 @@ def avg_max_neuron_ground_truth_plot(
 def plot_accuracies(path, treshold=90, num_it=6):
     datas, bis, biases, alldata = data_iterations(path, num_it=num_it)
     rcol = matplotlib.cm.winter(np.linspace(0, 1, 4))  # type: ignore
-    ecol = matplotlib.cm.cool(np.linspace(0, 1, 4))  # type: ignore
+    ecol = matplotlib.cm.spring(np.linspace(0, 1, 4))  # type: ignore
     fig = plt.figure(figsize=(8, 5))
     fig.set_facecolor(FACECOL)
     plt.ylim([30, 100])
@@ -354,7 +354,7 @@ def plot_accuracies(path, treshold=90, num_it=6):
     def to_arr(key, item):
         return np.array(
             [
-                [datas[i][x][key][item] for i in range(num_it)]
+                [datas[i][x][key][item] for i in [0,2,4,5,7,8,9,10,11,12,13,15]]
                 for x in range(len(datas[0]))
             ]
         )
@@ -376,27 +376,13 @@ def plot_accuracies(path, treshold=90, num_it=6):
         facecolor=rcol[2],
         alpha=0.3,
     )
-    """ plt.plot(
-        bis,
-        sum_it(datas, lambda x: x["no_wm_accuracy"][0] / num_it),
-        c=rcol[3],
-        label="only rectangles without watermark",
-        linestyle="dotted",
-    ) """
-    """ plt.plot(
-        bis,
-        sum_it(datas, lambda x: x["all_wm_accuracy"][1] / num_it),
-        c=ecol[2],
-        label="only ellipses with watermark",
-        linestyle="dashed",
-    ) """
     no_wm_e = to_arr("no_wm_accuracy", 1)
     no_wm_e_sigma = no_wm_e.std(axis=1)
     no_wm_e = no_wm_e.mean(axis=1)
     plt.plot(
         bis,
         no_wm_e,
-        c=ecol[3],
+        c=ecol[1],
         label="only ellipses without watermark",
         linestyle=(0, (1, 1)),
     )
@@ -404,43 +390,39 @@ def plot_accuracies(path, treshold=90, num_it=6):
         bis,
         no_wm_e + no_wm_e_sigma,
         no_wm_e - no_wm_e_sigma,
-        facecolor=ecol[3],
+        facecolor=ecol[1],
         alpha=0.3,
     )
-    X1 = np.array(
-        [
-            [datas[i][x]["train_accuracy"][2] for i in range(num_it)]
-            for x in range(len(datas[0]))
-        ]
-    )
+    X1 = to_arr("train_accuracy",2)
     mu1 = X1.mean(axis=1)
-    sigma1 = X1.std(axis=1)
+    """ sigma1 = X1.std(axis=1)
     mins = X1.min(axis=1)
     maxs = X1.max(axis=1)
     plt.fill_between(bis, maxs, mins, facecolor="#222", alpha=0.1, label="maximum and minimum")
     plt.fill_between(bis, mu1 + sigma1, mu1 - sigma1, facecolor="#000", alpha=0.3, label="standard deviation")
+     
     plt.plot(
         bis,
-        sum_it(datas, lambda x: x["train_accuracy"][0] / num_it),
+        to_arr("train_accuracy",0).mean(axis=1),
         c=rcol[0],
         label="training accuracy rectangles (class 0)",
         linestyle=(0, (1, 1)),
     )
     plt.plot(
         bis,
-        sum_it(datas, lambda x: x["train_accuracy"][1] / num_it),
+        to_arr("train_accuracy",1).mean(axis=1),
         c=ecol[0],
         label="training accuracy ellipses (class 1)",
         linestyle=(0, (3, 1)),
-    )
+    ) """
     plt.plot(
         bis,
-        sum_it(datas, lambda x: x["train_accuracy"][2] / num_it),
+        mu1,
         c="#000",
         label="training accuracy all",
     )
     bads = [
-        [a["num_it"], a["bias"], a["train_accuracy"][2]]
+        [a["num_it"], a["bias"],a["train_accuracy"][2]]
         for a in list(filter(lambda x: x["train_accuracy"][2] < treshold, alldata))
     ]
     # plt.title("Accuracy of models when intervening on watermark")
