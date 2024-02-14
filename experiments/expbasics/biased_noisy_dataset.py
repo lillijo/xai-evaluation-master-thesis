@@ -124,7 +124,7 @@ class BiasedNoisyDataset(Dataset):
         image = image / (torch.max(image) + 1e-10) """
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         target = self.labels[index][1]
-        return (image, target, self.watermarks[index]) # , self.watermarks[index]
+        return (image, target,) # , self.watermarks[index]
 
     def latent_to_index(self, latents):
         return np.dot(latents, self.latents_bases).astype(int)
@@ -181,8 +181,8 @@ class BiasedNoisyDataset(Dataset):
         image[offset_water_image] = 1.0
         if torch.cuda.is_available():
             image = image.cuda()
-        image = image.view(1, 1, 64, 64)
-        image.requires_grad = True
+        #image = image.view(1, 1, 64, 64)
+        #image.requires_grad = True
         return image
 
     def get_item_info(self, index):
