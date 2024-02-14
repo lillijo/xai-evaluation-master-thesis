@@ -852,8 +852,8 @@ def fancy_attributions(unbiased_ds, crp_attribution):
 
 def my_plot_grid(images, rows, cols, resize=1, norm=False):
     fig, axs = plt.subplots(
-        rows,
-        cols,
+        max(rows,2),
+        max(cols,2),
         figsize=(
             cols * resize,
             rows * resize,
@@ -865,11 +865,11 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False):
     maxv = max(float(images.abs().max()), 0.001)
     center = 0.0
     divnorm = matplotlib.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
-    for il in range(rows):
-        for n in range(cols):
+    for il in range(max(rows,2)):
+        for n in range(max(cols,2)):
             axs[il, n].xaxis.set_visible(False)
             axs[il, n].yaxis.set_visible(False)
-            if torch.any(images[il, n] != 0):
+            if il < rows and n < cols and torch.any(images[il, n] != 0):
                 if not norm:
                     maxv = max(float(images[il, n].abs().max()), 0.001)
                     # minv = min(float(images[il, n].min()), -0.001)
@@ -879,7 +879,8 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False):
                     )
                 axs[il, n].imshow(images[il, n], cmap="bwr", norm=divnorm)
             else:
-                axs[il, n].axis("off")
+                axs[il, n].imshow(torch.zeros(64,64), cmap="bwr", norm=divnorm)
+                #axs[il, n].axis("off")
     # return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     # Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
 
