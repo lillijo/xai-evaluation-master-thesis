@@ -56,15 +56,14 @@ In other words: Does CRP learn the causal effect of the spurious feature on the 
 \section{Contributions}
 \todo{refine strategy based on what i actually did}
 \begin{itemize}
-    \item Construct a causal data generating model
-    \item Embed data generating model into explanation generation process
-    \item Train a succession of models by intervening on coupling ratio
+    \item Construct a causal model of the explanation generation process
+    \item Construct a causal data generating model embedded into the larger model
+    \item Train a succession of neural network instances by intervening on a meta variable that determines the correlations in the data distribution
     \item Establish a ground-truth of model accuracy and feature importance in relationship to the intervened factor
     \item Evaluate explanations in a concept-based approach using concept relevance propagation (CRP)
-    \item Construct  metrics describing the effect of the intervention on the explanations feature importance 
-    \item Evaluate the fidelity of this measure for CRP to the trained models feature importance
-    \item Further test the approach using different generating structural causal models and interventions
+    \item Construct X metrics describing the effect of the intervention on the explanations feature importance 
+    \item Compare the effect of the intervention on model importance and explanation importance
 \end{itemize}
 
 \section{Outline}
-To further motivate this approach we will in the following summarize previous work on causal XAI, evaluation of XAI and local attribution methods in \cref{chapter:related_work}. Then we will lay down the theoretical framework of the studied XAI method, on structural causal models and on evaluation measures in \cref{chapter:background}. \Cref{chapter:method} introduces the benchmark dataset and its causal generation process and the architecture and trianing of the tested convolutional neural network model. It also describes the methods used to establish a ground-truth \textit{feature importance} as well as metrics for measuring feature importance in our explanation. Finally their performances are compared and visualized in \cref{chapter:results} and discussed in \cref{chapter:conclusion}.
+To further motivate this approach we will in the following summarize previous work on XAI, evaluation of XAI, causality and their combination \cref{chapter:background}. We will also lay down the theoretical framework of the XAI method and the causal concepts studied here. \Cref{chapter:method} introduces the causal explanation generation process, and how the benchmark dataset embeds into it. It also describes the methods used to establish a ground-truth \textit{feature importance} as well as metrics for measuring feature importance in our explanation. The architecture and training of the DNN model and other details of the conducted experiment are detailed here too. Finally the different measures are compared and visualized in \cref{chapter:results} and discussed in \cref{chapter:conclusion}.

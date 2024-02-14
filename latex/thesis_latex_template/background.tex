@@ -361,11 +361,6 @@ evaluation studies, old notes:
             \\ task: quantify treatment effect when changing hyperparameters in comparison to changing model weights
       \item \cite{Adebayo2018}: some saliency methods are independent to both the model and the data generating factors (not testing LRP)
             \\ task: compare explanation trained on true model with explanation trained with random labels, also compare to simple edge detector which is very similar often
-      \item \cite{Parafita2019}: use generative model to identify (causal) latent factors and estimate effect they have on prediction outcome
-            \\ task: use data with known latent generating factors to test effect estimation on a constructed causal graph
-      \item \cite{Narendra2018}: build SCM over input-model-output -> has potential to be more accurate than saliency purely observational
-      \item \cite{Chattopadhyay2019}: build SCM over last linear layer before output and attribute because of sensitivity to constant shifts as shown by Kindermans
-            \\ task: treat Model as SCM and calculate interventional expectations and average causal effect
       \item \cite{Sixt2022}: deep taylor decomposition fails, when only positive relevance taken into account, matrix falls to rank 1 \\ task: theoretical analysis
 \end{enumerate}
 }
@@ -449,188 +444,49 @@ They introduce a generation process for mixing the suppressor and real features 
 
 \section{Causal Inference}
 In the following we summarize the causal inference and estimation framework used for our analysis. 
+Although the principles of causality seem to be innate in human rational thinking, they have been formalized not so long ago \cite{Spirtes1993, Halpern2005, Pearl2000} and efforts to include causal notions into fields like AI have also been met with doubts and caution. 
+
 \subsection{Ladder of Causation}
-As mentioned earlier, most machine learning methods including deep neural networks do not attempt to learn causal relationships but merely \textit{associations}. These are on the first ladder of causation as described by Pearl \cite{Pearl2009}. Many explanation methods do not go beyond the statistical associations as found in the models output and ask questions like \textit{How does seeing prediction Y change my believe that X is important}. However in recent years there has been an effort to climb the ladder of causation and answer \textit{what if} questions like \textit{how does the model output Y change if I change X} by creating \textit{interventions} on the input or the model parameters. The highest rank of causation, counterfactuals, answers \textit{why} questions. One concrete example would be: \textit{How would the output Y have changed, if X had been different}. 
+As mentioned before, most machine learning methods including deep neural networks do not attempt to learn causal relationships but merely \textit{associations}. These are on the first ladder of causation as described by Pearl \cite{Pearl2000}. Many explanation methods do not go beyond the statistical associations as found in the models output either and ask questions like \textit{How does seeing prediction Y change my believe that X is important}. However in recent years there has been an effort to climb the ladder of causation and answer \textit{what if} questions like \textit{how does the model output Y change if I change X} by creating \textit{interventions} on the input or the model parameters. The highest rank of causation, \textit{counterfactuals}, answers \textit{why} questions. One concrete example would be: \textit{How would the output Y have changed, if X had been different}. 
 
 \subsection{Structural Causal Models}
-To analyse and quantify causal relationships, \textit{structural causal models} are defined, based on the observable variables \textbf{X}, the unobserved or noise variables \textit{U} and their probability distribution $P_u$, and structural assignments \textit{f}. The structural assignments represent causal mechanisms between a variable $x_i$ and its parents $Pa(x_i) \in (X \setminus \{x_i\}) \cup U$  such that $\forall x_i \in X, x_i = f_i(Pa(x_i),u_i)$. 
-Structural causal models, or short SCMs can be represented by a directed acyclic graph (DAG) $G(V,E)$ known as a causal Bayesian network. The nodes $V$ are the endogenous (or known) variables and the directed edges represent the causal mechanisms $f$ from each parent variable in $PA^i$ to its child $x_i$.  
+To analyze and quantify causal relationships, \textit{structural causal models} are defined, based on the observable variables \textbf{X}, the unobserved or noise variables \textit{U} and their probability distribution $P_u$, and structural assignments \textit{f}. The structural assignments represent causal mechanisms between a variable $x_i$ and its parents $Pa(x_i) \in (X \setminus \{x_i\}) \cup U$  such that $\forall x_i \in X, x_i = f_i(Pa(x_i),u_i)$. 
+Structural causal models, or short SCMs, can be represented by a directed acyclic graph (DAG) $G(V,E)$ known as a causal Bayesian network. The nodes $V$ are the endogenous (or observable) variables and the directed edges represent the causal mechanisms $f$ from each parent variable in $PA^i$ to its child $x_i$. We assume that \textit{structural minimality} holds for the SCM and its graph, which means that if a directed edge between two variables X and Y exists, there is a non-zero causal effect from X to Y. 
+In general the structural assignments $f$ can take any shape, though restricted SCMs pose assumptions on the type of functions possible. Importantly, if no assumptions are made, the direction of causal links is not always identifiable \cite{Peters2017}. Even though in practice one can for example often assume that the noise is not exactly Gaussian, which makes identification possible, this is not necessarily the case for complex image data. As we will see later, the directions of causal links cannot be easily identified for typical image classification tasks and this shall not be the goal of this work. By generating a toy dataset with a predefined SCM we can estimate causal effects because the causal directions are known.
 
-\begin{itemize}
-    \item Probability Distributions
-    \item Bayesian Networks and Statistical Models
-    \item Causal Models: structural assignments/entailed distributions, parent variables are direct causes of variable 
-    \item causal graph: DAG with causal variables as vertex set and structural assignments as edges
-    \item Markov Equivalence, Identifiability, Restricted SCMs vs Linear Additive-Gaussian-Noise models
-    \item effect of hard/soft intervention on graph and entailed distribution
-    \item total causal effect of x on y: p(do(X=x)) != p(do(X=x'))
-    \item Assumptions that need to hold: structural minimality, acyclicity
-    \item causal graph and entailed distribution are markov relative
-\end{itemize}
+Something about \textit{independent mechanisms}
 
 \subsection{Causal Effect Estimation}
+A hard intervention on a variable $X$, denoted as $do(X := x_0)$ is replacing the previous structural assignment of that variable ($X = f(PA_x, \eta_x)$) with a fixed value $x_0$.  
+In the associated causal graph this is equivalent to removing all in-going edges of $X$.
+When the causal model is at least partly known, causal effects can be estimated by intervention. The average causal effect of a binary variable $X$ on another variable $Y$ is defined as follows:
 
-\begin{itemize}
-    
-    \item neural networks could be seen as SCMs \cite{Chattopadhyay2019}
-    \item but AI / neural networks in general do not care about causation and work through finding useful correlations
-    \item and that is good this way, otherwise they would never find anything useful, statistics and correlations are great
-    \item none-the-less the better we get at identifying spurious features the more causal methods might apply?
-    \item it doesn't matter whether the network has found the actual causal reasons for its prediction, but explanations are a distinctively causal concept.
-    \item and explanation asks how and why, so we want to know the cause of model predicting Y from X
-    \item causal methods have started to be used for evaluation of xai
-\end{itemize}
-
+\begin{equation}
+\displaystyle ACE = \mathbb{E} [ y \ | \ do(x=1) ] - \mathbb{E} [ y \ | \ do(x=0) ] 
+\end{equation}
+In recent years a multitude of work has taken variants of this average causal effect and of SCMs to either explain AI models directly or to evaluate explanations. 
 
 \section{Towards More Causal Evaluation of XAI}\label{section:causal_xai}
-early and long-standing relationship between causality and AI research
 
-Explaining a models decision is an intrinsically causal task. Naturally, a few overview papers have structured and incorporated this task with language from the field of causality. Motivated by a philosophical and theoretical foundation \cite{Woodward2004, Halpern2005, Schoelkopf2019} many authors have already set to using more causal language when describing the goals of explanation methods. Moraffah et al. \cite{Moraffah2020a} survey current causal XAI methods as well as their (potentially causal) evaluation. Beckers \cite{Beckers2022} formally defines \textit{sufficient} and \textit{counterfactual explanations} as well as \textit{actual causation} in the 'action-guiding' setting that is XAI. He argues that a good explanation not only shows which things ought to be changed for a different outcome (\textit{counterfactuals}) but also which ''\textit{may not be manipulated}'' (page 5). 
+There is a long-standing relationship between causality and AI research and explaining a models decision is in itself a causal task.
+As Schölkopf argues, ''the hard open problems of machine learning and AI are intrinsically related to causality'' \cite{Schoelkopf2019}.
+Built on a philosophical and theoretical foundation \cite{Woodward2004, Halpern2005, Schoelkopf2019} many authors have already started using more causal language when describing the goals of explanation methods. Moraffah et al. \cite{Moraffah2020a} survey current causal XAI methods as well as causal evaluation of XAI methods. Beckers \cite{Beckers2022} formally defines \textit{sufficient} and \textit{counterfactual explanations} as well as \textit{actual causation} in the 'action-guiding' setting that is XAI. He argues that a good explanation not only shows which things ought to be changed for a different outcome but also makes clear which ''\textit{may not be manipulated}''. In computer vision tasks there is no standard way of explaining the contextual data distribution that ought to stay fixed. 
 
+There is therefore a growing variance of generating counterfactual explanations \cite{Moraffah2020a}. Similarly, feature attribution needs to make decisions on how to explain in the context of the training distribution. 
+Some authors \cite{Kindermans2017,Wilming2023, Wilming2022} argue, that explanation methods should learn to ignore the underlying data distribution with potential spurious correlations by incorporating it into the explanation process. Others believe that one of the core use-cases of explanation methods is to uncover these \textit{Clever-Hans} artifacts, stemming from skewed training distributions. It seems not advisable to apply a biased model to an out-of-distribution scenario, even though the learned spurious features (or suppressor variables) might not have an effect on the outcome (yet).\\
 
-      {
-            \color{gray}
-            Goyal:
-            \begin{quote}
-                  We note that this problem does not exist as such for most
-                  local interpretation methods: because for a given image,
-                  the pixels deterministically cause the output of a model,
-                  there is no notion of probability or confounding. However,
-                  confounding might affect local models where pixels are perturbed based on data-dependent models....
+Causal methods can be applied in multiple ways in a prediction/explanation setting.
+Some authors use more fine-grained features like single pixels as implicit causal variables, especially for scenarios without a known ground truth importance \cite{Zeiler2013,Fong2017,Samek2017a}. Others use known ground truth factors or learn abstract concepts as causal variables in an unsupervised manner \cite{Goyal2019, Tran2022, Reimers2019, Reimers2020, Harradon2018}. The third approach is to interpret the neural network itself as a causal graph and hidden neurons as causal variables that can be intervened on \cite{Narendra2018, Chattopadhyay2019}. Karimi et al. \cite{Karimi2023} on the other hand, interpret the whole process from hyperparameters to the explanation as one causal model and intervene on model hyperparameters. 
+In all cases, the goal is to estimate the effect of interventions on the model prediction and explanation, either to construct a new (counterfactual) explanation method or to evaluate existing methods.
+Our work in principle also intervenes on a variable in order to measure causal effects. Similar to Karimi et al. \cite{Karimi2023} our variable can be seen as a hyperparameter to the whole model training and explanation generation process and we do not aim to generate explanations but study their relationship with the prediction. In their work, they intervene on many training hyperparameters in order to compare the influence on the prediction to the influence on the explanation. Their hypothesis is that a good explanation should be determined only by the prediction and therefore the effects of the hyperparameters on the explanation should be completely mediated by the prediction. By carefully constructing a process where only one variable in a data distribution changes, we conduct a similar experiment. 
 
-                  Many interpretability methods developed to have causal-
-                  flavor are for local explanations, such as removing and
-                  adding pixels to generate counterfactual explanations for
-                  images
-            \end{quote}
-            \begin{quote}
-                Prediction in its most natural application is a forward-looking notion, meaning one predicts an event before it takes place. Explanation on the other hand is a backward-looking notion, meaning that one explains an event after it has happened. Yet as many papers on XAI clearly illustrate, explanations about past events are often required precisely to inform predictions about future events
-            \end{quote}
-
-            \begin{quote}
-
-                  \begin{itemize}
-                        \item statistical: how would seeing x change my belief in y?
-                        \item interventional: what if?
-                        \item counterfactual: why?
-                  \end{itemize}
-            \end{quote}
-
-            In this paper and year (2020) there were no specific datasets designed for the purpose of causal interpretability (performance evaluation)
-
-            Evaluation:
-
-            \begin{itemize}
-                  \item human subject: [89], [17], [91], [66]
-                  \item how close model is to actual causal features
-                  \item how locally faithful is proposed method (i.e. with masking, perturbation)
-                  \item how consistent are explanation?
-                  \item metrics for evaluating counterfactual explanations: sparsity/size, interpretability, proximity, speed, diversity, visual-linguistic counterfactuals
-            \end{itemize}
-      }
-      
-      {\color{red} which other methods/approaches/papers are there that broadly connect explainable AI and causality }
-      
-\begin{itemize}
-      \item general map of causality and XAI mixups
-      \item counterfactual stuff
-      \item seeing model as scm stuff \cite{Chattopadhyay2019}
-      \item seeing whole process as SCM \cite{Karimi2023} - very important for my work, as i do basically the same thing just not for hyperparameters but biasedness!
-      \item representation learning??? \todo{mabye ask simon, what is a good overview paper? Schoelkopf2019? }
-      \item overview of \cite{Schoelkopf2019}
-      \item Oanas thesis / work??
-\end{itemize}
-
-\begin{itemize}
-      \item generally, mostly about counterfactuals: \cite{Moraffah2020a}
-      \item causal attribution, similar to LRP but more "causally" neural networks as SCMs \cite{Chattopadhyay2019}
-      \item causal concept effects (edges in mnist) \cite{Goyal2019}
-      \item causal in most general sense:independent/disjoint mechanism analysis \cite{Leemann2023} \cite{Leemann2022}
-      \item causal binary concepts \cite{Tran2022}
-      \item basic framework/idea of interpreting NN as skeleton of SCM and using some transformation to quantify effect:\cite{Narendra2018}
-\end{itemize}
-
-
-\paragraph*{KARIMI:}
-\cite{Karimi2023}
-Gleich:
-
-\begin{itemize}
-      \item systematisch kausalen effekt von "upstream" auf Explanation/Output messen
-      \item kausales Modell relativ gleich H -> model/X -> Y -> E
-      \item treatment effect (= average causal effect?) $ITE_y(x) = Y*_h(x) - Y*_h'(x)$
-      \item similar: measure "Identity" is just Y to measure goodness of explanation
-\end{itemize}
-
-Anders
-\begin{itemize}
-      \item Bei uns werden andere "upstream" variablen genutzt: Hyperparameter sind fixed (also dürfen keinen Effekt haben theoretisch), stattdessen werden rho im data generating process und der seed intervened (bei ihnen bleibt der seed gleich) (und natürlich das sample)
-      \item figure 1 links "mechanical system/ generating process" rechts "causal model"
-      \item nutzen existierenden model zoo, sagen "fundamental problem of causal inference" können nicht alle verschiedenen kombinationen evaluieren
-      \item use model zoo to perform observational study (is however quite similar to our experimental study)
-      \item have too many variables they wanna test, therefore too computationally expensive, we can do it because problem/ model is small and only have 2 variables to test
-      \item they use complete treatment effect (i.e. as far as i understand: absolute change in all pixel values?) -> this is not a smart choice for our problem, we want to look
-      \item Problem bei Karimi möglicherweise: teilweise "deterministische" verbindung zwischen model/output/explanation und hyperparametern macht explanation von model möglicherweise conditionally independent to output/model given hyperparameters
-\end{itemize}
-
-\paragraph{Reread Karimi:}
-\begin{itemize}
-    \item for high performing models, direct effect of hyperparameters stronger than effect of Y on E
-    \item influence of Y on E decreases for higher performing models
-    \item others argue that E should not just strongly correlate with Y but also reflect other features like data distribution
-    \item important also for my thesis: \textit{'Despite some methodological similarities, our work is fundamentally different from using causal inference to generate counterfactual explanations'}
-    \item while we do not keep the dataset constant, by keeping all other parameters in dataset constant (any hyperparameters) we create a similar experiment
-    \item $Y_h^*(x)$ and $E_h^*(x)$ are outcomes generated when hyperparameters set to $H= h$ on data point $X=x$
-    \item training procedure: $T: \mathcal{H} \times \mathcal{D} \rightarrow \mathcal{F}$ (training hyperparameters and dataset $\mathcal{D}:= (\mathcal{X,Y})$
-    \item prediction procedure: $P: \mathcal{F} \times \mathcal{X} \rightarrow \mathcal{Y}$
-    \item explanation procedure: $E: \mathcal{F} \times \mathcal{X} \times \mathcal{Y} \rightarrow \mathcal{E}$ 
-    \item potential outcomes framework Rubin 2005 \cite{Rubin2005}
-    \item they perform "observational study", we are able to measure everything
-    \item we have two "effects" we want to measure: locally: effect of having/removing watermark, globally effect of coupling ratio on this effect or something
-    \item reiterate over causal assumptions: \textit{exchangeability}
-    \item \textbf{Kernelized Treatment Effect (KTE)}: replace 'subtracting' with different dissimilarity measure: $
-    ||\psi(Y_h^*(x)) - \psi(Y_{h'}^*(x))||_{\mathcal{G}}^2 =   k(Y_h^*(x), Y_h^*(x)) - 2k(Y_h^*(x),Y_{h'}^*(x)) + k(Y_{h'}^*(x),Y_{h'}^*(x))  
-    $
-    \item \begin{quote}Applying kernel is especially important when we compare Eh (x), as comparing each spatially-related pixel value across different images is likely to not lead to a meaningful result
-    \end{quote}
-    \item They compare the explanations (/predictions) of two different models directly with each other by using this kernelized method. I think this is not a good idea. The cost function is likely quite highly non-linear and has many local minima. Therefore it is very bold to assume that "similar" models must fall in similar local minima. We know that cost functions can be in a sense "chaotic" meaning that close starting points don't necessarily end up in similar end points. (do we?)
-    \item taking averages therefore seems to be the better option? If we can find good measure of importance
-    \item do I need to rethink my whole idea? But I cannot compare explanations of models with different bias or? 
-    \item only use some samples, therefore just \textit{observed} = empirical estimates (does not work if exchangeability does not hold)
-    \item direct vs. indirect influence: correlation on prediction and explanation, vs. when predictions are randomized, but just approximation because relationship can be non-linear.
-    \item hyper-parameter values are drawn independently at random from pre-specified ranges
-    \item random seed and base model architecture fixed
-    \item negative attribution is zeroed out
-    \item they need \textit{identity} (E = Y) to measure \textit{goodness}, we can use the \textit{ground truth importance}, or?
-    \item kernel choice seems to have no effect on distributions of ITEs (individual treatment effect)
-    \item they look at performance buckets, we look at $\rho$  buckets ? \textit{How does the relationship between E and Y change as a function of the performance of the model}
-    \item justify why I only use "high-performing" models? Although they show that there is unfavorable relationship between model performance and explanation \textit{goodness}, we believe that the selection bias for the highest performing models is inevitable for AI research practice. Therefore we implicitly select for performance by using well-performing hyper-parameters and by sorting out one seed that seemed to not converge (meaning our model is not stable?)
-    \item only compare to within-accuracy-bucket control group
-    \item use \textit{Spearman Rank Correlation} or \textit{Pearson Correlation} to compare effect on Y and E
-    \item $corr(ITE_Y, ITE_E)$ increases as performance increases
-    \item when randomizing Y, direct effect of H on E seems to increase when model performance does: I have good explanation: looking only at Y (binary) does not convey whole prediction, i.e. the more sophisticated the model, the more it reacts slightly to slight changes in image, without necessarily affecting overall decision.
-    \item criticism: only use pretty low performing models (57\% seems to be highest?)
-    \item mention in own limitations: their metric does not touch with other metrics for XAI: \textit{intelligibility, transparency, complexity, user-friendliness}
-    
-    
-\end{itemize}
-
-nice formulation: \textit{elicited criticisms} and look at the cited work
-
-do what they do, replace hyperparameters with latent factors in data, test specifically for concept based methods. 
-
-\paragraph*{Reimers2020}
-\cite{Reimers2020}
-\begin{itemize}
-      \item intervention on image parts or other "known features"
-      \item kind of motivating work to this thesis and other causal work: do independence test given ground truth 
-      \item cites Kindermans, Adebayo constant vector shift and untrained models produce similar heatmaps to trained ones
-\end{itemize}
-
-\subsection{Importance Evaluation With Known Ground Truth}
 
 \subsection{Interpreting The Explanation Process as a Causal Model}
 
- 
+\begin{itemize}
+    \item observational study looking at real world correlated datasets disentanglement, correlated things are not properly disentangled \cite{Traeuble2021} 
+\end{itemize}
+
+ \cite{Yang2019} Benchmarking attribution methods with relative feature importance
 
 

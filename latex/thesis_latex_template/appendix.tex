@@ -30,6 +30,34 @@ To adapt the benchmark for our purpose, only the first two shape classes (rectan
 To make the spurious feature, which is the watermark \textit{w} more difficult to learn, its position is therefore varied across the edges of the image. Further a small uniform noise term is added to make the problem more realistic and the saliency maps more convincing and informative.
 The aim of this new dataset is, to create the simplest possible scenario with known generating factors, while keeping it as realistic or close to real world application cases of attribution methods as possible. In \autoref{fig:dsprites_examples} the resulting images are visualized.
 
+
+\section{Proof $\phi$-Coefficient is equal to Prediction Flip}
+\label{appendix:phi_equals_pf}
+\begin{table}[t]
+    \centering
+\newlength{\width}
+\width15mm
+\begin{tabular}{|c|c|c|c|c|c|}
+    \hline
+     \multirow{2}{\width}{}& \multicolumn{2}{|c|}{w=1} &\multicolumn{2}{|c|}{w=0} & \multirow{2}{\width}{total}  \\  \cline{2-5}
+     & x=1 & x= 0 & x= 1& x= 0 &\\ \hline
+    \multirow{2}{\width}{y= 1} & A $n_{111}$ & B $n_{110}$& C $n_{101}$& D $n_{100}$&\multirow{2}{\width}{$n_{1**}$}    \\ \cline{2-5}
+    & \multicolumn{2}{|c|}{$n_{11*}$ }& \multicolumn{2}{|c|}{$n_{10*}$} &  \\ \hline 
+    \multirow{2}{\width}{y= 0} & E $n_{011}$& F $n_{010}$& G $n_{001}$& H $n_{000}$& \multirow{2}{\width}{ $n_{0**}$} \\ \cline{2-5}
+    & \multicolumn{2}{|c|}{$n_{01*}$} & \multicolumn{2}{|c|}{$n_{00*}$} & \\ \hline 
+    \multirow{2}{\width}{total} & $n_{*11}$&  $n_{*10}$&  $n_{*01}$&$n_{*00}$& \multirow{2}{\width}{ $n$ } \\ \cline{2-5}
+    & \multicolumn{2}{|c|}{$n_{*1*}$} & \multicolumn{2}{|c|}{$n_{*0*}$} & \\ \hline
+\end{tabular}
+    \caption{Caption}
+    \label{tab:tBLE}
+\end{table}
+
+\begin{align*}
+\phi = \frac{n_{11*} * n_{00*} - n_{10*}*n_{01*}}{\sqrt{n_{1**}*n_{0**}*n_{*0*}*n_{*1*}}} 
+& PF = \frac{X}{n_{*0*}+n_{*1*}}
+\end{align*}
+
+
 \section{Model, Hyperparameters and Training}\label{appendix:model}
 
 \subsection{Model Architecture}
@@ -89,4 +117,87 @@ As this experiment is not concerned with the models accuracy, in principle the w
     \item why am i not just using 3d shapes dataset? \url{https://github.com/deepmind/3dshapes-dataset/} (C. Burgess and H. Kim)
 \end{itemize}
 
-\section{Further Plots Groud Truth}
+\section{Further Plots Ground Truth}
+
+
+\section{Similarities with Karimi???}
+\begin{itemize}
+    \item for high performing models, direct effect of hyperparameters stronger than effect of Y on E
+    \item influence of Y on E decreases for higher performing models
+    \item others argue that E should not just strongly correlate with Y but also reflect other features like data distribution
+    \item important also for my thesis: \textit{'Despite some methodological similarities, our work is fundamentally different from using causal inference to generate counterfactual explanations'}
+    \item while we do not keep the dataset constant, by keeping all other parameters in dataset constant (any hyperparameters) we create a similar experiment
+    \item $Y_h^*(x)$ and $E_h^*(x)$ are outcomes generated when hyperparameters set to $H= h$ on data point $X=x$
+    \item training procedure: $T: \mathcal{H} \times \mathcal{D} \rightarrow \mathcal{F}$ (training hyperparameters and dataset $\mathcal{D}:= (\mathcal{X,Y})$
+    \item prediction procedure: $P: \mathcal{F} \times \mathcal{X} \rightarrow \mathcal{Y}$
+    \item explanation procedure: $E: \mathcal{F} \times \mathcal{X} \times \mathcal{Y} \rightarrow \mathcal{E}$ 
+    \item potential outcomes framework Rubin 2005 \cite{Rubin2005}
+    \item they perform "observational study", we are able to measure everything
+    \item we have two "effects" we want to measure: locally: effect of having/removing watermark, globally effect of coupling ratio on this effect or something
+    \item reiterate over causal assumptions: \textit{exchangeability}
+    \item \textbf{Kernelized Treatment Effect (KTE)}: replace 'subtracting' with different dissimilarity measure: $
+    ||\psi(Y_h^*(x)) - \psi(Y_{h'}^*(x))||_{\mathcal{G}}^2 =   k(Y_h^*(x), Y_h^*(x)) - 2k(Y_h^*(x),Y_{h'}^*(x)) + k(Y_{h'}^*(x),Y_{h'}^*(x))  
+    $
+    \item \begin{quote}Applying kernel is especially important when we compare Eh (x), as comparing each spatially-related pixel value across different images is likely to not lead to a meaningful result
+    \end{quote}
+    \item They compare the explanations (/predictions) of two different models directly with each other by using this kernelized method. I think this is not a good idea. The cost function is likely quite highly non-linear and has many local minima. Therefore it is very bold to assume that "similar" models must fall in similar local minima. We know that cost functions can be in a sense "chaotic" meaning that close starting points don't necessarily end up in similar end points. (do we?)
+    \item taking averages therefore seems to be the better option? If we can find good measure of importance
+    \item do I need to rethink my whole idea? But I cannot compare explanations of models with different bias or? 
+    \item only use some samples, therefore just \textit{observed} = empirical estimates (does not work if exchangeability does not hold)
+    \item direct vs. indirect influence: correlation on prediction and explanation, vs. when predictions are randomized, but just approximation because relationship can be non-linear.
+    \item hyper-parameter values are drawn independently at random from pre-specified ranges
+    \item random seed and base model architecture fixed
+    \item negative attribution is zeroed out
+    \item they need \textit{identity} (E = Y) to measure \textit{goodness}, we can use the \textit{ground truth importance}, or?
+    \item kernel choice seems to have no effect on distributions of ITEs (individual treatment effect)
+    \item they look at performance buckets, we look at $\rho$  buckets ? \textit{How does the relationship between E and Y change as a function of the performance of the model}
+    \item justify why I only use "high-performing" models? Although they show that there is unfavorable relationship between model performance and explanation \textit{goodness}, we believe that the selection bias for the highest performing models is inevitable for AI research practice. Therefore we implicitly select for performance by using well-performing hyper-parameters and by sorting out one seed that seemed to not converge (meaning our model is not stable?)
+    \item only compare to within-accuracy-bucket control group
+    \item use \textit{Spearman Rank Correlation} or \textit{Pearson Correlation} to compare effect on Y and E
+    \item $corr(ITE_Y, ITE_E)$ increases as performance increases
+    \item when randomizing Y, direct effect of H on E seems to increase when model performance does: I have good explanation: looking only at Y (binary) does not convey whole prediction, i.e. the more sophisticated the model, the more it reacts slightly to slight changes in image, without necessarily affecting overall decision.
+    \item criticism: only use pretty low performing models (57\% seems to be highest?)
+    \item mention in own limitations: their metric does not touch with other metrics for XAI: \textit{intelligibility, transparency, complexity, user-friendliness}
+\end{itemize}
+
+
+\section{Human Interpretable Importance}
+\subsection{Interpretation Techniques from CRP Work}
+The authors of CRP embed the approach into a handful of concept-based interpretation techniques. Their motivation is to gain more abstract, reduced explanations, while still potentially using multiple concepts. The underlying assumption is that the neurons in layers of deep neural networks encode human-understandable concepts hierarchically from low-level to abstract \cite{Zeiler2013,Bau2017,Olah2017}. Although this assumption seems to be made mostly for large and deep CNN and complex image datasets, the general idea can be applied in our experiment too. 
+
+\subsubsection{Relevance Maximization}
+Prominently, they introduce \textit{Relevance Maximization}, creating reference sets of images for all neurons encoding potentially human-understandable concepts. It is the \textit{relevance} analogue to \textit{activation maximization} \cite{Nguyen2016}. This technique arguably reduces the complexity of the explanation as \textit{learning-by-example} is proven to be a prevailing human strategy.
+Therefore it seems fair to evaluate feature importance based on those reference sets. If a set overlaps strongly with regard to the spurious feature's value, one can assume this feature to be the concept encoded by that concept/neuron. 
+Unfortunately the overlap of our feature of interest might be disguised by other features. As an example: while each image in a set might have the watermark, they might all show the same shape in a similar rotation too. This indeed happens with our benchmark dataset (see \cref{fig:suppressor_ref}), probably also because of its generally low complexity. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.3\textwidth]{thesis_latex_template/pics/suppressed_reference_set.png}
+    \caption[Reference Set Interpretation]{Example of a reference set, with unclear interpretation}
+    \label{fig:suppressor_ref}
+\end{figure}
+
+The information content about one features importance is therefore offset by the other features overlaps. This problem is in line with recent work finding that many explanation methods overstate the importance of so-called \textit{suppressor variables} \cite{Wilming2023,Clark2023}. In our W-dSprites dataset the other generating factors like rotation, scale, x-, and y-position are independent of the shape. However, it can be expected that learning them helps the model in its prediction, because the generated image is a collider of shape and the other factors. Since CRP and LRP do not inherently use the underlying data distribution for their explanation like \textit{PatternAttribution} and \textit{PatternNet} do, they are expected to attribute some importance to suppressor variables. \\
+
+The \textit{receptive field} information might act against this problem because it restricts attention to the encoded concept. It's overlap with the feature in question can be evaluated through approaches similar to the mentioned RMA. 
+In comparison to the previous methods, finding one value that measures the feature importance in this kind of explanation is more elaborate. In the steps below we seek to capture as much feature importance as possible while only using the human-interpretable essence of the technique:
+
+\paragraph{Steps:}
+\begin{enumerate}
+    \item For a coupling ratio $\rho$ and a random initialization $m$, take model $\mathcal{M}_{\rho, m}$
+    \item for each neuron $i$ in layer $\ell$ compute a set of $k$ image instances that maximizes the relevance of this neuron: $\mathcal{T}_{max_i}^rel = max_i R_i(\mathrm{x} | \theta)$ 
+    \item count the images containing the watermark $\mathcal{T}_{W=1}$
+    \item for each image in $\mathcal{T}_{W=1}$ compute the intersection between the bounding box of the watermark and the thresholded receptive field of the neuron in that image
+    \item create a weighted sum of the images with the receptive field information
+    \item weigh each neuron by its average importance for images with watermark
+    \item average the resulting measure over all models with the same $\rho$ value 
+\end{enumerate}
+
+
+
+{ \color{gray}
+% causal graph stuff that didn't work because of to high linear correlation of neurons
+% could serve as a motivation for my actual experiment? also shows where others like Chattopadhyay and Narendra might be misguided
+\section{Preliminary (Causal) Experiments}
+The initial idea for this master thesis was, to interpret the conditional relevances of all neurons as causal variables and the neural network itself as a structural causal model. Together with the variables of the generating model this would have been a complete detail causal process of explanation with ground truth. Then the goal was to use causal discovery algorithms to establish human-interpretable concepts and their importances. While the \textit{NN-model-as-SCM} view has been applied by some \cite{Narendra2018,Chattopadhyay2019}, it seems to not be functional for naive causal discovery at least for CRP relevances. The main reason for this is, that the relevances of neurons have deterministic relationships with each other. 
+} 

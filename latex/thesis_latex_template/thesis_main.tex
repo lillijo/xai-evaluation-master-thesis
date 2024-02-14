@@ -103,8 +103,21 @@
 \renewcommand{\headrulewidth}{0pt} % remove lines from header
 \renewcommand{\footrulewidth}{0pt} % remove lines from header
 
+% independence sign _||_
 \newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
 \def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+
+% have text above and below variable
+\newcommand\stackequal[2]{%
+  \mathrel{\stackunder[2pt]{\stackon[4pt]{=}{$\scriptscriptstyle#1$}}{%
+  $\scriptscriptstyle#2$}}}
+
+
+\DeclareMathOperator*{\MLC}{MLC}
+\DeclareMathOperator*{\MAC}{MAC}
+\DeclareMathOperator*{\RMA}{RMA}
+\DeclareMathOperator*{\RRA}{RRA}
+\DeclareMathOperator*{\PG}{PG}
 
 \fancyfoot{} % delete all existing footer formating
 \fancyfoot[LE,RO]{\thepage} % put page number on the left on even page and right on odd page
