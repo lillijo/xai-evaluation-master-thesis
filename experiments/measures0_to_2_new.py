@@ -38,38 +38,6 @@ BIASES = list(np.round(np.linspace(0, 1, 51), 3))
 # list(np.round(np.linspace(0, 1, 21), 3))  #
 ITERATIONS = list(range(16))
 
-ALL_MEASURES = [
-    "m1_pf",
-    "m1_mlc_euclid_norm",
-    "m1_mlc_euclid_abs_norm",
-    "m1_mlc_euclid",
-    "m2_crv",
-    "m2_mac_absolute",
-    "m2_mac_absolute_weigh",
-    "m2_mac_euclid",
-    "m2_mac_euclid_abs_norm",
-    "m2_mac_euclid_norm",
-    "m2_mac_euclid_weigh_abs_norm",
-    "m2_mac_euclid_weigh_norm",
-    "m2_mac_euclid_weigh",
-    "m2_relative_mask",
-    "m2_relative_mask_weigh",
-    "m2_rma",
-    "m2_rma_val",
-    "m2_rma_euclid",
-    "m2_rra",
-    "m2_rra_weigh",
-    "m2_rra_euclid",
-    "m2_pg",
-    "m2_pg_non_empty",
-    "m2_pg_weigh",
-    "m2_pg_val",
-    "m2_kernel",
-    "m0_rho",
-    "m0_mi",
-    "m0_phi",
-]
-
 
 def find_else(element, list_element):
     try:
@@ -118,6 +86,34 @@ class AllMeasures:
         self.rng = np.random.default_rng()  # seed=SEED
         self.layer_name = layer_name
         self.len_neurons = LAYER_ID_MAP[self.layer_name]
+
+    def heatmaps(
+        self,
+        image: torch.Tensor,
+        crpa: CRPAttribution,
+    ):
+        conditions = [{self.layer_name: [i], "y": [1]} for i in range(self.len_neurons)]
+        heatmaps = torch.zeros((self.len_neurons, 64, 64))
+        for attr in crpa.attribution.generate(
+            image,
+            conditions,
+            crpa.composite,
+            record_layer=crpa.layer_names,
+            verbose=False,
+            batch_size=self.len_neurons,
+        ):
+            heatmaps = attr.heatmap
+        return heatmaps
+
+    def relevances(self, image, crpa: CRPAttribution):
+        attr = crpa.attribution(
+            image,
+            [{"y": [1]}],
+            crpa.composite,
+            record_layer=crpa.layer_names,
+        )
+        rel_c = crpa.cc.attribute(attr.relevances[self.layer_name], abs_norm=True)
+        return rel_c[0]
 
     def compute_per_sample(self):
         indices = np.round(np.linspace(0, MAX_INDEX, self.len_x)).astype(int)
@@ -170,74 +166,6 @@ class AllMeasures:
                     )
                 results_m_r.save()
 
-    def mean_absolute_change(self, v1, v2, divide=True):
-
-        if isinstance(v1, int):
-            return abs(v1 - v2)
-        absolute_sum = float(torch.sum(torch.abs(v1 - v2)))
-        if divide:
-            return float(absolute_sum / v1.shape[0])
-        return absolute_sum
-
-    def diff_normed(self, v1, v2):
-        return float(
-            torch.sum(
-                torch.abs(
-                    (v1 / (torch.norm(v1) + 1e-10)) - (v2 / (torch.norm(v2) + 1e-10))
-                )
-            )
-        )
-
-    def hm_diff1(self, h0, h1, r0, r1):
-        return float(
-            torch.sum(torch.abs((h1 * r1[:, None, None] - h0 * r0[:, None, None])))
-        )
-
-    def euclidean_distance(self, h0, h1, normed="none"):
-        h0 = torch.flatten(h0)
-        h1 = torch.flatten(h1)
-        if normed == "norm":
-            if torch.any(h0 != 0):
-                h0 = h0 / (torch.norm(h0))
-            if torch.any(h1 != 0):
-                h1 = h1 / (torch.norm(h1))
-        elif normed == "abs_norm":
-            maxi = torch.max(h0.abs().max(), h1.abs().max())
-            if torch.any(h0 != 0):
-                h0 = h0 / maxi
-            if torch.any(h1 != 0):
-                h1 = h1 / maxi
-        return float(torch.sqrt(torch.sum(torch.square(h1 - h0))))
-
-    def cosine_distance(self, h0, h1):
-        return float(
-            1
-            - torch.nn.functional.cosine_similarity(
-                torch.flatten(h1),
-                torch.flatten(h0),
-                dim=0,
-                eps=1e-10
-            )
-        )
-
-    def heatmaps(
-        self,
-        image: torch.Tensor,
-        crpa: CRPAttribution,
-    ):
-        conditions = [{self.layer_name: [i], "y": [1]} for i in range(self.len_neurons)]
-        heatmaps = torch.zeros((self.len_neurons, 64, 64))
-        for attr in crpa.attribution.generate(
-            image,
-            conditions,
-            crpa.composite,
-            record_layer=crpa.layer_names,
-            verbose=False,
-            batch_size=self.len_neurons,
-        ):
-            heatmaps = attr.heatmap
-        return heatmaps
-
     def heatmap_values(
         self,
         heatmaps: torch.Tensor,
@@ -278,71 +206,51 @@ class AllMeasures:
             non_empty=non_empty,
         )
 
-    def relative_masked_relevance(self, index, heatmap, wm_mask):
-        shape_mask = self.ds.load_shape_mask(index)
-        vals = torch.zeros(self.len_neurons)
-        heatmaps_abs = heatmap.abs()
-        wm_rel = torch.sum(heatmaps_abs * wm_mask[0], dim=(1, 2))
-        shape_rel = torch.sum(heatmaps_abs * shape_mask[0], dim=(1, 2))
-        for i in range(self.len_neurons):
-            if wm_rel[i] > (shape_rel[i] * (wm_mask.sum() / (shape_mask.sum()))):
-                vals[i] = wm_rel[i]
-            else:
-                vals[i] = 0
-        return vals
-
-    def kernel_distance(self, v0, v1):
-        def kernel(a, b):
-            return (
-                torch.nn.functional.conv2d(a, a)
-                - 2 * torch.nn.functional.conv2d(a, b)
-                + torch.nn.functional.conv2d(b, b)
+    def cosine_distance(self, h0, h1):
+        return float(
+            1
+            - torch.nn.functional.cosine_similarity(
+                torch.flatten(h1), torch.flatten(h0), dim=0, eps=1e-10
             )
+        )
 
-        batched = kernel(
+    def kernel2d(self, a, b):
+        return (
+            torch.nn.functional.conv2d(a, a)
+            - 2 * torch.nn.functional.conv2d(a, b)
+            + torch.nn.functional.conv2d(b, b)
+        )
+
+    def kernel1d(self, a, b, dim):
+        return torch.sum(
+            torch.square(a) - 2 * (a * b) + torch.square(b),
+            dim=dim,
+        )
+
+    def kernel_distance(self, v0, v1, weight=1):
+        batched = self.kernel2d(
             v1.view(self.len_neurons, 1, 64, 64),
             v0.view(self.len_neurons, 1, 64, 64),
         )
-        return sum([float(batched[i, i].flatten()) for i in range(self.len_neurons)])
-
-    def relevances(self, image, crpa: CRPAttribution):
-        attr = crpa.attribution(
-            image,
-            [{"y": [1]}],
-            crpa.composite,
-            record_layer=crpa.layer_names,
-        )
-        rel_c = crpa.cc.attribute(attr.relevances[self.layer_name], abs_norm=True)
-        return rel_c[0]
+        return torch.sum(torch.diagonal(batched, 0) * weight)
 
     def easy_compute_measures(self):
         measures = [
-            "m0_rho",
-            "m0_mi",
-            "m0_phi",
-            "m1_mi",
             "m1_phi",
             "m1_mlc_abs",
             "m1_mlc_cosine",
+            "m1_mlc_kernel",
             "m2_rel_abs",
-            "m2_rel_euclid",
             "m2_rel_cosine",
+            "m2_rel_kernel",
             "m2_mac_abs",
             "m2_mac_euclid",
-            "m2_mac_euclid_weighted",
             "m2_mac_cosine",
-            "m2_mac_angular",
-            "m2_mac_euclid_per_image",
             "m2_mac_kernel",
-            "m2_rma_sum",
             "m2_rma_weighted",
-            "m2_pg_sum",
             "m2_pg_weighted",
-            "m2_rra_sum",
             "m2_rra_weighted",
             "m2_bbox_rel",
-            "m2_rel_kernel",
-            "m1_mlc_kernel",
         ]
 
         def m_i(name):
@@ -357,19 +265,6 @@ class AllMeasures:
         per_sample_values = old_values
         softmax = torch.nn.Softmax(dim=1)
         for rho_ind, rho in enumerate((pbar := tqdm(BIASES))):
-            """# PURE RHO VALUE
-            per_sample_values[rho_ind, :, :, m_i("m0_rho")] = rho
-            ds = BiasedNoisyDataset(rho)
-            labels_pred = ds.watermarks[indices].astype(int)
-            labels_true = ds.labels[indices, 1]
-            # mutual information true labels
-            per_sample_values[rho_ind, :, :, m_i("m0_mi")] = (  # type: ignore
-                normalized_mutual_info_score(labels_true, labels_pred)
-            )
-            # phi correlation true labels
-            per_sample_values[rho_ind, :, :, m_i("m0_phi")] = matthews_corrcoef(
-                labels_true, labels_pred
-            )"""
             for m in ITERATIONS:
                 pbar.set_postfix(m=m)
                 filename = f"outputs/measures/{rho_ind}_{m}.gz"
@@ -381,42 +276,24 @@ class AllMeasures:
                 pred1s = r_m_info[1][:, 1].to(dtype=torch.float)
                 rels0 = r_m_info[2][:, 0].to(dtype=torch.float)
                 rels1 = r_m_info[2][:, 1].to(dtype=torch.float)
-                # kernel distance relevances
-                per_sample_values[rho_ind, m, :, m_i("m2_rel_kernel")] = torch.sum(
-                    torch.square(rels1) - 2 * (rels1 * rels0) + torch.square(rels0),
-                    dim=(1),
-                )
-                # kernel distance prediction logits
-                pred0sabs = softmax(pred0s)
-                pred1sabs = softmax(pred1s)
-                per_sample_values[rho_ind, m, :, m_i("m1_mlc_kernel")] = (
-                    torch.sum(
-                        torch.square(pred1sabs)
-                        - 2 * (pred1sabs * pred0sabs)
-                        + torch.square(pred0sabs),
-                        dim=(1),
-                    )
-                    / 2
-                )
 
-                """ labels_true = torch.cat((r_m_info[3][:, 0], r_m_info[3][:, 1]))
+                # phi correlation (=prediction flip) prediction
+                labels_true = torch.cat((r_m_info[3][:, 0], r_m_info[3][:, 1]))
                 labels_pred = torch.cat(
                     [torch.zeros(self.len_x), torch.ones(self.len_x)]
                 )
-                # mutual information prediction
-                per_sample_values[rho_ind, m, :, m_i("m1_mi")] = (  # type: ignore
-                    normalized_mutual_info_score(labels_true, labels_pred)
-                )
-                # phi correlation (=prediction flip) prediction
                 per_sample_values[rho_ind, m, :, m_i("m1_phi")] = matthews_corrcoef(
                     labels_true, labels_pred
                 )
-                # absolute difference predictions
+
+                # PREDICTION
                 pred0sabs = softmax(pred0s)
                 pred1sabs = softmax(pred1s)
+                # absolute difference predictions
                 per_sample_values[rho_ind, m, :, m_i("m1_mlc_abs")] = (
                     torch.sum(torch.abs(pred1sabs - pred0sabs), dim=1) / 2
                 )
+                # cosine distance predictions
                 per_sample_values[rho_ind, m, :, m_i("m1_mlc_cosine")] = (
                     1
                     - torch.nn.functional.cosine_similarity(
@@ -425,70 +302,52 @@ class AllMeasures:
                         dim=1,
                     )
                 )
+                # kernel distance prediction logits
+                per_sample_values[rho_ind, m, :, m_i("m1_mlc_kernel")] = (
+                    self.kernel1d(pred1sabs, pred0sabs, dim=1) / 2
+                )
 
+                # RELEVANCES
                 # absolute difference relevances (/len samples)
                 per_sample_values[rho_ind, m, :, m_i("m2_rel_abs")] = (
                     torch.sum(torch.abs(rels1 - rels0), dim=1) / 2
-                )
-                # euclidean distance relevances
-                per_sample_values[rho_ind, m, :, m_i("m2_rel_euclid")] = torch.sqrt(
-                    torch.sum(((rels1 - rels0) ** 2), dim=1)
                 )
                 # cosine distance relevances
                 per_sample_values[rho_ind, m, :, m_i("m2_rel_cosine")] = (
                     self.cosine_distance(rels1, rels0)
                 )
+                # kernel distance relevances
+                per_sample_values[rho_ind, m, :, m_i("m2_rel_kernel")] = self.kernel1d(
+                    rels1, rels0, dim=1
+                )
 
+                # HEATMAPS
                 maxval = max(
                     hm0s.abs().sum(dim=(1, 2, 3)).max(),
                     hm1s.abs().sum(dim=(1, 2, 3)).max(),
                 )
                 hm0sabs = hm0s / maxval
                 hm1sabs = hm1s / maxval
-
                 # absolute difference heatmaps
                 # normalized by max total absolute relevance
                 per_sample_values[rho_ind, m, :, m_i("m2_mac_abs")] = torch.sum(
                     torch.abs(hm1sabs - hm0sabs), dim=(1, 2, 3)
                 )
-
-                # euclidean distance heatmaps, normalized
-                per_sample_values[rho_ind, m, :, m_i("m2_mac_euclid")] = (
-                    self.euclidean_distance(hm0sabs, hm1sabs)
-                )
-                # euclidean distance heatmaps, weighted
-                per_sample_values[rho_ind, m, :, m_i("m2_mac_euclid_weighted")] = (
-                    torch.sum(
-                        rels1.abs()
-                        * torch.sqrt(torch.sum(torch.square(hm1s - hm0s), dim=(2, 3))),
-                        dim=1,
-                    )
+                # euclidean distance heatmaps
+                per_sample_values[rho_ind, m, :, m_i("m2_mac_euclid")] = torch.sum(
+                    torch.sqrt(torch.sum(torch.square((hm1s - hm0s)), dim=(2, 3))),
+                    dim=1,
                 )
                 # cosine distance
                 per_sample_values[rho_ind, m, :, m_i("m2_mac_cosine")] = (
                     self.cosine_distance(hm1s, hm0s)
                 )
-                # angular distance (from cosine)
-                per_sample_values[rho_ind, m, :, m_i("m2_mac_angular")] = (
-                    torch.arccos(
-                        torch.nn.functional.cosine_similarity(
-                            hm1s.flatten(),
-                            hm0s.flatten(),
-                            dim=0,
-                        )
-                    )
-                    / math.pi
-                ) """
 
                 for n, i in enumerate(indices):
-                    """# euclid per image
-                    per_sample_values[rho_ind, m, :, m_i("m2_mac_euclid_per_image")] = (
-                        self.euclidean_distance(hm1s[n], hm0s[n])
-                    )
                     # kernel distance
                     per_sample_values[rho_ind, m, n, m_i("m2_mac_kernel")] = (
                         self.kernel_distance(hm1s[n], hm0s[n])
-                    )"""
+                    )
 
                     _, _, offset = self.ds.get_item_info(i)
                     mask = torch.zeros(64, 64).to(self.tdev)
@@ -496,20 +355,9 @@ class AllMeasures:
                         max(0, 57 + offset[0]) : max(0, 58 + offset[0]) + 5,
                         max(offset[1] + 3, 0) : max(offset[1] + 4, 0) + 10,
                     ] = 1
-                    weight = torch.abs(rels1[n])
-                    weight = weight / max(1, float(weight.sum()))
+                    weight = rels1[n]
                     hms_values1 = self.heatmap_values(hm1s[n], mask)
                     hms_values0 = self.heatmap_values(hm0s[n], mask)
-                    divby = max(
-                        2,
-                        int(hms_values1["non_empty"]) * 2,
-                        int(hms_values0["non_empty"]) * 2,
-                    )
-                    # pure rma summed
-                    per_sample_values[rho_ind, m, n, m_i("m2_rma_sum")] = (
-                        torch.sum(torch.abs(hms_values1["rma"] - hms_values0["rma"]))
-                        / divby
-                    )
                     # rma weighted sum
                     per_sample_values[rho_ind, m, n, m_i("m2_rma_weighted")] = (
                         torch.sum(
@@ -518,19 +366,9 @@ class AllMeasures:
                             )
                         )
                     )
-                    # pg sum
-                    per_sample_values[rho_ind, m, n, m_i("m2_pg_sum")] = (
-                        torch.sum(torch.abs(hms_values1["pg"] - hms_values0["pg"]))
-                        / divby
-                    )
                     # pg weighted sum
                     per_sample_values[rho_ind, m, n, m_i("m2_pg_weighted")] = torch.sum(
                         torch.abs((hms_values1["pg"] - hms_values0["pg"]) * weight)
-                    )
-                    # rra sum
-                    per_sample_values[rho_ind, m, n, m_i("m2_rra_sum")] = (
-                        torch.sum(torch.abs(hms_values1["rra"] - hms_values0["rra"]))
-                        / divby
                     )
                     # rra weighted sum
                     per_sample_values[rho_ind, m, n, m_i("m2_rra_weighted")] = (
@@ -541,13 +379,10 @@ class AllMeasures:
                         )
                     )
                     # relevance within summed
-                    per_sample_values[rho_ind, m, n, m_i("m2_bbox_rel")] = (
-                        torch.sum(
-                            torch.abs(
-                                hms_values1["rel_within"] - hms_values0["rel_within"]
-                            )
-                        )
-                        / divby
+                    per_sample_values[rho_ind, m, n, m_i("m2_bbox_rel")] = torch.sum(
+                        torch.abs(hms_values1["rel_within"] - hms_values0["rel_within"])
+                    ) / max(
+                        1, int(hms_values1["non_empty"]), int(hms_values0["non_empty"])
                     )
 
         with gzip.open("all_measures_128_4.pickle", "wb") as f:

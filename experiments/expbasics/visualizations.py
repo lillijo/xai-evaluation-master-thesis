@@ -343,7 +343,7 @@ def avg_max_neuron_ground_truth_plot(
     fig.savefig(f"outputs/imgs/{file_name}.png")
 
 
-def plot_accuracies(path, treshold=90, num_it=6):
+def plot_accuracies(path, treshold=90, num_it=6, intervened=False):
     datas, bis, biases, alldata = data_iterations(path, num_it=num_it)
     rcol = matplotlib.cm.winter(np.linspace(0, 1, 4))  # type: ignore
     ecol = matplotlib.cm.spring(np.linspace(0, 1, 4))  # type: ignore
@@ -354,67 +354,81 @@ def plot_accuracies(path, treshold=90, num_it=6):
     def to_arr(key, item):
         return np.array(
             [
-                [datas[i][x][key][item] for i in [0,2,4,5,7,8,9,10,11,12,13,15]]
+                [
+                    datas[i][x][key][item] for i in range(16)
+                ]  # [0,2,4,5,7,8,9,10,11,12,13,15]
                 for x in range(len(datas[0]))
             ]
         )
 
-    all_wm_r = to_arr("all_wm_accuracy", 0)
-    all_wm_r_sigma = all_wm_r.std(axis=1)
-    all_wm_r = all_wm_r.mean(axis=1)
-    plt.plot(
-        bis,
-        all_wm_r,
-        c=rcol[2],
-        label="only rectangles with watermark",
-        linestyle="dashed",
-    )
-    plt.fill_between(
-        bis,
-        all_wm_r + all_wm_r_sigma,
-        all_wm_r - all_wm_r_sigma,
-        facecolor=rcol[2],
-        alpha=0.3,
-    )
-    no_wm_e = to_arr("no_wm_accuracy", 1)
-    no_wm_e_sigma = no_wm_e.std(axis=1)
-    no_wm_e = no_wm_e.mean(axis=1)
-    plt.plot(
-        bis,
-        no_wm_e,
-        c=ecol[1],
-        label="only ellipses without watermark",
-        linestyle=(0, (1, 1)),
-    )
-    plt.fill_between(
-        bis,
-        no_wm_e + no_wm_e_sigma,
-        no_wm_e - no_wm_e_sigma,
-        facecolor=ecol[1],
-        alpha=0.3,
-    )
-    X1 = to_arr("train_accuracy",2)
+    if intervened:
+        all_wm_r = to_arr("all_wm_accuracy", 0)
+        all_wm_r_sigma = all_wm_r.std(axis=1) / np.sqrt(16)
+        all_wm_r = all_wm_r.mean(axis=1)
+        plt.plot(
+            bis,
+            all_wm_r,
+            c=rcol[2],
+            label="only rectangles with watermark",
+            linestyle="dashed",
+        )
+        plt.fill_between(
+            bis,
+            all_wm_r + all_wm_r_sigma,
+            all_wm_r - all_wm_r_sigma,
+            facecolor=rcol[2],
+            alpha=0.3,
+        )
+        no_wm_e = to_arr("no_wm_accuracy", 1)
+        no_wm_e_sigma = no_wm_e.std(axis=1) / np.sqrt(16)
+        no_wm_e = no_wm_e.mean(axis=1)
+        plt.plot(
+            bis,
+            no_wm_e,
+            c=ecol[1],
+            label="only ellipses without watermark",
+            linestyle=(0, (1, 1)),
+        )
+        plt.fill_between(
+            bis,
+            no_wm_e + no_wm_e_sigma,
+            no_wm_e - no_wm_e_sigma,
+            facecolor=ecol[1],
+            alpha=0.3,
+        )
+    X1 = to_arr("train_accuracy", 2)
     mu1 = X1.mean(axis=1)
-    """ sigma1 = X1.std(axis=1)
-    mins = X1.min(axis=1)
-    maxs = X1.max(axis=1)
-    plt.fill_between(bis, maxs, mins, facecolor="#222", alpha=0.1, label="maximum and minimum")
-    plt.fill_between(bis, mu1 + sigma1, mu1 - sigma1, facecolor="#000", alpha=0.3, label="standard deviation")
-     
-    plt.plot(
-        bis,
-        to_arr("train_accuracy",0).mean(axis=1),
-        c=rcol[0],
-        label="training accuracy rectangles (class 0)",
-        linestyle=(0, (1, 1)),
-    )
-    plt.plot(
-        bis,
-        to_arr("train_accuracy",1).mean(axis=1),
-        c=ecol[0],
-        label="training accuracy ellipses (class 1)",
-        linestyle=(0, (3, 1)),
-    ) """
+    if not intervened:
+        sigma1 = X1.std(axis=1)
+        mins = X1.min(axis=1)
+        maxs = X1.max(axis=1)
+        plt.fill_between(
+            bis, maxs, mins, facecolor="#222", alpha=0.1, label="maximum and minimum"
+        )
+        plt.fill_between(
+            bis,
+            mu1 + sigma1,
+            mu1 - sigma1,
+            facecolor="#000",
+            alpha=0.3,
+            label="standard deviation",
+        )
+
+        plt.plot(
+            bis,
+            to_arr("train_accuracy", 0).mean(axis=1),
+            c=rcol[0],
+            label="training accuracy rectangles (class 0)",
+            linestyle=(0, (1, 1)),
+        )
+        plt.plot(
+            bis,
+            to_arr("train_accuracy", 1).mean(axis=1),
+            c=ecol[0],
+            label="training accuracy ellipses (class 1)",
+            linestyle=(0, (3, 1)),
+        )
+
     plt.plot(
         bis,
         mu1,
@@ -422,7 +436,7 @@ def plot_accuracies(path, treshold=90, num_it=6):
         label="training accuracy all",
     )
     bads = [
-        [a["num_it"], a["bias"],a["train_accuracy"][2]]
+        [a["num_it"], a["bias"], a["train_accuracy"][2]]
         for a in list(filter(lambda x: x["train_accuracy"][2] < treshold, alldata))
     ]
     # plt.title("Accuracy of models when intervening on watermark")
@@ -432,9 +446,9 @@ def plot_accuracies(path, treshold=90, num_it=6):
     plt.legend(
         bbox_to_anchor=(0.0, 0.01, 1.0, 0.102),
         loc="lower left",
-        #ncols=2,
-        #mode="expand",
-        #borderaxespad=0.0,
+        # ncols=2,
+        # mode="expand",
+        # borderaxespad=0.0,
         reverse=True,
     )
     plt.ylabel("Accuracy in %")
@@ -852,8 +866,8 @@ def fancy_attributions(unbiased_ds, crp_attribution):
 
 def my_plot_grid(images, rows, cols, resize=1, norm=False):
     fig, axs = plt.subplots(
-        max(rows,2),
-        max(cols,2),
+        max(rows, 2),
+        max(cols, 2),
         figsize=(
             cols * resize,
             rows * resize,
@@ -865,8 +879,8 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False):
     maxv = max(float(images.abs().max()), 0.001)
     center = 0.0
     divnorm = matplotlib.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
-    for il in range(max(rows,2)):
-        for n in range(max(cols,2)):
+    for il in range(max(rows, 2)):
+        for n in range(max(cols, 2)):
             axs[il, n].xaxis.set_visible(False)
             axs[il, n].yaxis.set_visible(False)
             if il < rows and n < cols and torch.any(images[il, n] != 0):
@@ -879,8 +893,8 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False):
                     )
                 axs[il, n].imshow(images[il, n], cmap="bwr", norm=divnorm)
             else:
-                axs[il, n].imshow(torch.zeros(64,64), cmap="bwr", norm=divnorm)
-                #axs[il, n].axis("off")
+                axs[il, n].imshow(torch.zeros(64, 64), cmap="bwr", norm=divnorm)
+                # axs[il, n].axis("off")
     # return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     # Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
 
