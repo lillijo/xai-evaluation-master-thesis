@@ -9,16 +9,10 @@
 	\includegraphics[width=\textwidth]{pics/test.png}
 	\caption[Test Figure]{This is a test figure}
 \end{figure}
-
-\section{Preliminary Experiments}
-\subsection{Plots}
-\begin{figure}[ht]
-	\centering
-	\label{fig:blafigure}
-	\includegraphics[width=\textwidth]{pics/test.png}
-	\caption[Test Figure 2]{This is a test figure}
-\end{figure}
-\subsection{Causal Discovery on Neural Network Models Idea and Implementation?}
+\begin{itemize}
+    \item explain used LRP rule \textit{epsilon plus flat} in sufficient detail
+    \item explain what canonizers are and why they are not necessary for my example (model is simple and does not have batch norm layers) 
+\end{itemize}
 
 
 \section{Details on Adapted dSprites Dataset}\label{appendix:dsprites}
@@ -29,6 +23,14 @@ The generating factors \verb|shape|, \verb|scale|, \verb|rotation|, \verb|x posi
 To adapt the benchmark for our purpose, only the first two shape classes (rectangle and ellipse) are used. A watermark in the form of a small \textit{w} was initially added to the lower-left corner of some images. During initial testing with only these adaptations it became clear that even the small convolutional neural network employed here is too powerful for this task as effectively dividing the image into two parts solves the problem and most neurons became irrelevant.
 To make the spurious feature, which is the watermark \textit{w} more difficult to learn, its position is therefore varied across the edges of the image. Further a small uniform noise term is added to make the problem more realistic and the saliency maps more convincing and informative.
 The aim of this new dataset is, to create the simplest possible scenario with known generating factors, while keeping it as realistic or close to real world application cases of attribution methods as possible. In \autoref{fig:dsprites_examples} the resulting images are visualized.
+
+
+\todo{why the heck new dataset???}
+\begin{itemize}
+    \item why do we need another dataset for benchmarking watermark bias??
+    \item some other benchmarks that deal with similar questions are...
+    \item why am i not just using 3d shapes dataset? \url{https://github.com/deepmind/3dshapes-dataset/} (C. Burgess and H. Kim)
+\end{itemize}
 
 
 \section{Proof $\phi$-Coefficient is equal to Prediction Flip}
@@ -59,9 +61,10 @@ The aim of this new dataset is, to create the simplest possible scenario with kn
 
 
 \section{Model, Hyperparameters and Training}\label{appendix:model}
-
 \subsection{Model Architecture}
-Say more about it? what I tried, choice of maxpool, etc.
+For our analysis we decided on a model architecture that is small enough to train a few hundred times but big enough to still have high performance and be comparable to the deep neural networks that local attribution methods are typically applied to.
+We deemed 3 convolutional layer and one fully connected layer before the final output layer enough for our task. Notably, the layers have comparably few channels (8 or 6). The objective of creating such a narrow network was to be able to visually compare \textit{all} filters within a layer in order to identify the human-understandable concepts they potentially learned. 
+
 \begin{lstlisting}[language=bash, label=lst:cnnmodel]
 
 convolutional_layers: 
@@ -81,44 +84,30 @@ linear_layers:
 
 \end{lstlisting}
 
-
-
 \subsection{Hyperparameter Choice}
-Similar to the size of the model, other hyperparameters are optimized for accuracy.
-Finally we train all models using the \verb|Adam| optimizer \todo{cite} with a learning rate of \verb|0.001| using \verb|cross-entropy| loss \todo{cite} as the objective to minimize.
-It is interesting to note that the learning rate has significantly different optimal values for highly biased models than unbiased ones and we therefore have to chose a compromise. We assume this to be due to the cost function becoming less complex as the trivial watermark feature gains importance.
-But importantly, those hyperparameters including the learning rate should not be changed over the course of training our set of models because it has been shown that explanation can causally depend on hyperparameters quite strongly \cite{Karimi2023}. In our experiment we want to keep hyperparameters fixed and only intervene on the spurious-to-core feature ratio $\rho$ or later on all generating factors for establishing ground-truth importance. Another note is that as we are not evaluating the learning process or the model itself but the explanation. The hyperparameters were therefore not in focus of this thesis and chosen rather quickly through some trial-and-error.
+The values for hyperparameters of the training process are optimized for accuracy with a rather short search. Finally, we train all models using the \verb|Adam| optimizer with a learning rate of \verb|0.001| using \verb|cross-entropy| loss as the objective to minimize. 
+It is interesting to note that the learning rate has significantly different optimal values for highly biased models than completely unbiased ones and we therefore chose a compromise. We assume this to be due to the cost function becoming less complex, the more (\textit{information-theoretically}) useful the trivial watermark feature becomes to learn.
+But importantly, those hyperparameters including the learning rate can not be changed over the course of training our set of models because it has been shown that explanation can causally depend on hyperparameters quite strongly \cite{Karimi2023}. The observation about the learning rate might stand in relation to the findings of Karimi et al., that the better a model performs, the more strongly the explanations seem to be affected by hyperparameters.
+In our experiment we keep hyperparameters fixed and only intervene on the spurious-to-core feature ratio $\rho$. The only hyperparameter we choose to control for, is the random initialization of weights and biases. Usually, this is not identified as a hyperparameter. However, when using a seed to ensure that multiple models are initialized identically, while receiving differently generated data, it becomes possible to control for its effect like a causal variable. It can then be interpreted as the $\mathcal{U}$, or noise term, of the model.
+As mentioned in the method section (\ref{section:training}), this seemed necessary because we observed the random initializations to have high variance in how they react to the spurious feature. 
 
 \subsection{Training and Accuracy}
 We generate datasets by sampling the spurious-to-core feature ratio $\rho$ in 0.05 steps and training on the same dataset while initializing the model with 10 different seeds.
 Previously, the experiment did not control the influence of the random seed, but after observing strong variations of importance depending on the seed, we decided to always use the same 10 seeds for every dataset. This way it is theoretically possible to marginalize out the effect of the seed on the importance of the spurious feature, however this was done only through averaging of the 10 models results.
 In total, 210 models are trained. The training dataset contains 30\% of all samples. Experimentally, much fewer samples seemed to be enough to achieve high accuracies, however there is no need to fear overfitting as it should if anything increase importance of the most important features even more.
 
-Due to the low complexity of this benchmark dataset, very high accuracies of over 99\% are to be expected and also occurred after short training for most models.
+Due to the low complexity of this benchmark dataset, very high accuracies of over 90\% are to be expected and also occurred after short training for most models.
 
-As this experiment is not concerned with the models accuracy, in principle the whole dataset could be used for training. We suppose that this would make the measured importance even more accurate and stable. Our assumption is that this would firstly be too computationally expensive and secondly harder to compare to real world problems where data is more limited. Therefore we take $30\%$ of the images for training.
+As this experiment is not concerned with the models accuracy, in principle the whole dataset (\~ 700'000 images) could be used for training. We suppose that this could make the measured importance even more accurate and stable, but believe that the general tendency should still be the same for a smaller subset. Therefore we take $30\%$ of the images for training and also because it woulf be too computationally expensive and harder to compare to real world problems where data is more limited. 
 
-\subsection{Computational Setup}
-\label{section:setup}
-\begin{itemize}
-    \item computed on personal dell xps 13 with cpu
-    \item and on cluster \todo{cluster specs}
-    \item how long did training all models take?
-    \item about 40 hours on cluster
-    \item + how long did computation of measures take:
-    \item about 1 minute for all measures per model so 3 and a half hours
-    \item measure time for final method more accurately for one model \todo{exact timing of final method}
-\end{itemize}
+\subsection{Computational Setup}\label{section:setup}
+The 816 models were trained on 4x NVIDIA A100 GPUs kindly provided by the Deutsches Klimarechenzentrum (DKRZ), which took about 40 hours in total, so on average 3 minutes per model. 
+For the generation of 128x2x816 explanations about 30 minutes on a personal Dell XPS 13 laptop without dedicated graphics card was sufficient. All metrics were subsequently computed within minutes too. 
 
-\todo{why the heck new dataset???}
-\begin{itemize}
-    \item why do we need another dataset for benchmarking watermark bias??
-    \item some other benchmarks that deal with similar questions are...
-    \item why am i not just using 3d shapes dataset? \url{https://github.com/deepmind/3dshapes-dataset/} (C. Burgess and H. Kim)
-\end{itemize}
+\textit{This work used resources of the Deutsches Klimarechenzentrum (DKRZ) granted by its Scientific Steering Committee (WLA) under project ID 1083}
+
 
 \section{Further Plots Ground Truth}
-
 
 \section{Similarities with Karimi???}
 \begin{itemize}
@@ -200,4 +189,15 @@ In comparison to the previous methods, finding one value that measures the featu
 % could serve as a motivation for my actual experiment? also shows where others like Chattopadhyay and Narendra might be misguided
 \section{Preliminary (Causal) Experiments}
 The initial idea for this master thesis was, to interpret the conditional relevances of all neurons as causal variables and the neural network itself as a structural causal model. Together with the variables of the generating model this would have been a complete detail causal process of explanation with ground truth. Then the goal was to use causal discovery algorithms to establish human-interpretable concepts and their importances. While the \textit{NN-model-as-SCM} view has been applied by some \cite{Narendra2018,Chattopadhyay2019}, it seems to not be functional for naive causal discovery at least for CRP relevances. The main reason for this is, that the relevances of neurons have deterministic relationships with each other. 
+
+
+\section{Preliminary Experiments}
+\subsection{Plots}
+\begin{figure}[ht]
+	\centering
+	\label{fig:blafigure}
+	\includegraphics[width=\textwidth]{pics/test.png}
+	\caption[Test Figure 2]{This is a test figure}
+\end{figure}
+\subsection{Causal Discovery on Neural Network Models Idea and Implementation?}
 } 

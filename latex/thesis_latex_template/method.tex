@@ -125,9 +125,9 @@ Although this thesis is not the first work to use a toy dataset with known gener
 \end{figure}
 
 \section{Generating Explanations with Concept Relevance Propagation}
-The previously described causal framework can be applied to a multitude of explanation methods as it is principally model- and method-agnostic. However we limit our analysis to CRP, its predecessor LRP and interpretation techniques constructed with CRP.
-Producing explanations using concept relevance propagation requires decisions on the backpropagation rule(s), on the conditioning sets and potentially further hyperparameters. 
-We follow the recommendations or default settings of CRP's authors \cite{Achtibat2022, Achtibat2023} and best practices \cite{Kohlbrenner2020} as closely as possible.
+The previously described causal framework can be applied to a multitude of explanation methods as it is principally model- and method-agnostic. However we limit our analysis to CRP and interpretation techniques constructed with CRP. This is mostly due to the time limitations of a master thesis, but also because they specifically claim in their paper to be able to identify relative importance using CRP. 
+Producing explanations using concept relevance propagation requires decisions on the backpropagation rule(s), on the conditioning sets and further hyperparameters. 
+We follow the recommendations and default settings of CRP's authors \cite{Achtibat2022, Achtibat2023} and best practices \cite{Kohlbrenner2020} as closely as possible.
 For the backpropagation we apply the $LRP_{\varepsilon -z^+- b^-}$ - rule as recommended by \cite{Kohlbrenner2020}. Due to the simplicity of our CNN model no more model canonization steps need to be applied. See \cref{appendix:lrprules} for further technical details. 
 
 \begin{figure}
@@ -137,13 +137,13 @@ For the backpropagation we apply the $LRP_{\varepsilon -z^+- b^-}$ - rule as rec
     \label{fig:cc_heatmaps}
 \end{figure}
 
-Principally, neurons in every layer of a model can be conditioned on using the CRP-approach. However, the resulting attribution maps are not necessarily depicting disentangled and abstract enough concepts. When looking at a \textit{concept-conditional} attribution maps from the earlier layers, one will likely see low-level features. In the later fully connected layers before the output the potentially disentangled concepts might get mixed together again for the final decision. In \cref{fig:cc_heatmaps} an example shows the tendency from trivial to abstract \textit{concepts}. 
-According to \cite{Dreyer2023a, Zeiler2013} the last convolutional layer is ``most likely representing disentangled representation''. For comparison we investigate both the last convolutional (layer 3) and the first fully connected layer (layer 4) of the 5 total layers. It is not entirely clear whether the extremely small size of our model hinders a transfer of the results to realistic scenarios. Yet training significantly larger models would have been too computationally expensive for this approach. \\
+Principally, neurons in every layer of a model can be conditioned on using the CRP-approach. However, the resulting attribution maps are not necessarily depicting disentangled \textit{and} abstract enough concepts. When looking at \textit{concept-conditional} attribution maps from the earlier layers, one will likely see low-level features akin to Sobel-filter. In the late, fully connected layers before the output the previously disentangled concepts might get mixed together again for the final decision. In \cref{fig:cc_heatmaps} an example shows the tendency from trivial to abstract \textit{concepts}. 
+According to \cite{Dreyer2023a} referring to \cite{Zeiler2013} the \textit{last convolutional layer} is ``most likely representing disentangled representation''. For comparison we investigate both the last convolutional and the first fully connected layer of the model. It is not entirely clear whether the extremely small size of our model hinders a transfer of the results to realistic scenarios. Yet, training significantly larger models would have been too computationally expensive for this principled approach, requiring many trained models.\\
 
-In the following we will reiterate the steps necessary to produce multiple types of explanations with CRP:
+In the following we will reiterate the steps necessary to produce the different components of CRP-explanations:
 
 \subsubsection{Concept-Conditional Attribution Maps and Relevance for Prediction}
-The concept-conditional backpropagation rule described in \cref{section:crp_background} can be applied to arbitrary sets of neurons $\theta$. In our scenario we create class-specific attribution maps conditioned on each neuron in the selected layer (3 or 4). For this we use the output for the predicted class as the initialization for relevance, keep all other layers untouched and then mask out the other neurons relevance in the layer $\ell$. 
+The concept-conditional backpropagation rule described in \cref{section:crp_background} can be applied to arbitrary sets of neurons (i.e. filters) $\theta$. In our scenario we create class-specific attribution maps conditioned on each neuron in the selected layer (last convolutional or first fully connected). For this we use the output for the ellipse class as the initialization for relevance, keep all other layers untouched and then itreatively mask out the other neurons relevance in the layer $\ell$. 
 \begin{equation}
     R_{i}^{\ell}(\mathrm{x} |\theta_{\ell}=\{i\}) 
 \end{equation}
@@ -214,17 +214,19 @@ To account for the effect of the initialization of model weights and biases on t
 Computing the Prediction Flip is straight forward in our example as we can control all variables. 
 This binary causal effect can be estimated as the percentage of images for which the prediction flips, when the factor is flipped, which in turn is equivalent to the $\phi$-coefficient between prediction $Y$ and watermark $W$ (see proof in \cref{appendix:phi_equals_pf}). Therefore this measure is apt for the comparison with the $W,S$ correlation in the training data distribution.
 
-We expect this variant of the model importance to be less sensitive to the spurious watermark feature $W$. The reason being, that while the continuous output vector (i.e. \textit{confidence}) might already be affected by the spurious feature for weaker biases, the prediction will only flip once the spurious feature becomes more important than the core feature. For example, an image without a watermark might be correctly classified as an ellipse, but the same image with the watermark might have a higher activation for that class.
+We expect this variant of the model importance to only become sensitive to the spurious watermark feature $W$ for higher values of $\rho$. The reason being, that while the continuous output vector (i.e.\textit{confidence}) might already be affected by the spurious feature for weaker biases, the prediction will only flip once the spurious feature becomes more important than the core feature. For example, an image without a watermark might be correctly classified as an ellipse, but the same image with the watermark might have a higher activation for that class.
 
-For better readability we will refer to an image with the watermark $\mathrm{x}_{do(W=1)}$ as $\mathrm{x}$ and the same image without the watermark $\mathrm{x}_{do(W=0)}$ as $\mathrm{x}'$ in the future.
-\begin{equation}
+For better readability we will refer to an image with the watermark $\mathrm{x}_{do(W=1)}$ as $\mathrm{x}$ and the same image without the watermark $\mathrm{x}_{do(W=0)}$ as $\mathrm{x}'$ in the rest of the thesis.
+\begin{align}
 \displaystyle 
-PF =\frac{1}{|\mathcal{X}|} \sum_{\mathrm{x} \in \mathcal{X}} |y(\mathrm{x}) - y(\mathrm{x}') |
-\end{equation}
+& PF =\frac{1}{|\mathcal{X}|} \sum_{\mathrm{x} \in \mathcal{X}} |y(\mathrm{x}) - y(\mathrm{x}') | \\
+&  \equiv \frac{|\mathrm{x}_{W=1,y=1}|*|\mathrm{x}_{W=0,y=0}| - |\mathrm{x}_{W=1,y=0}|*|\mathrm{x}_{W=0,y=1}| }
+{\sqrt{|\mathrm{x}_{y=1}|*|\mathrm{x}_{y=0}|*|\mathrm{x}_{W=1}|*|\mathrm{x}_{W=0}| }}
+\end{align}
 
 
 \subsection{Mean Logit Change}
-For the W-dSprites classification task, the output vector consists of 2 logits $y_0$ and $y_1$. The model predicts \textit{rectangle} when $y_0 > y_1$ and \textit{ellipse} otherwise. To compute the mean logit change when intervening on our watermark spurious feature $x$, we take a sufficient amount of samples $\mathcal{X}$ from our dataset and feed them through the model. First we predict images with $W=1$ (containing a watermark) then with $W=0$. It is important to choose a reasonable distance measure between the two output vectors. \cite{Sixt2022a} and \cite{Goyal2019} use the mean absolute difference. To enable better comparison we use the soft-max confidences as during the training process. This keeps the relative magnitudes within the sample set intact but brings it to the range $[0,1]$. All measures are scaled so that the distance for maximally different instances is 1, which in this case means dividing by 2. Although we compute the euclidean distance for the explanations later, this is not necessary here, as for 2D vectors $D_{euclid} = \sqrt{D_{abs}}$.\\
+For the W-dSprites classification task, the output vector consists of 2 logits $y_0$ and $y_1$. The model predicts \textit{rectangle} when $y_0 > y_1$ and \textit{ellipse} otherwise. To compute the mean logit change when intervening on our watermark spurious feature $x$, we take a sufficient amount of samples $\mathcal{X}$ from our dataset and feed them through the model. First we predict images with $W=1$ (containing a watermark) then with $W=0$. It is important to choose a reasonable distance measure between the two output vectors. \cite{Sixt2022a} and \cite{Goyal2019} use the mean absolute difference (or $L1$-norm). To enable better comparison we use the soft-max confidences as during the training process. This keeps the relative magnitudes within the sample set intact but brings it to the range $[0,1]$. All measures are scaled so that the distance for maximally different instances is 1, which in this case means dividing by 2. Although we compute the euclidean distance for the explanations later, this is not necessary here, as for 2D vectors $D_{euclid} = \sqrt{D_{abs}}$.\\
 
 Mean Absolute Difference:
 \begin{align}\displaystyle 
@@ -232,7 +234,9 @@ Mean Absolute Difference:
 |y_0(\mathrm{x}) -y_0(\mathrm{x}')| + |y_1(\mathrm{x}) -y_1(\mathrm{x}')| 
 \end{align}
 
-Recently, assessing the similarity of per-concept relevances has also been done using the cosine similarity \cite{Sixt2020, Achtibat2022}. Therefore we also include the cosine distance as a potential metric for the model importance $m_1$. We are not convinced that this metric has properties we seek for evaluating logits of a network as it does not exhibit triangle inequality cite?.  
+Recently, assessing the similarity of activation and relevance vectors has been done using the cosine similarity \cite{Sixt2020, Dreyer2023a, Achtibat2022}. Therefore we also include the cosine distance as a potential distance metric for the model output (as well as the explanation later). We are not convinced that this measure has properties we seek for evaluating logits of a network as it does not exhibit triangle inequality. However it seems useful to incorporate metrics used by other authors to enable comparison. Through the soft-max scaling of the output confidences we can nevertheless ensure the magnitude to not be ignored by this measure, which can be interpreted as angular dissimilarity. Without that the cosine distance of e.g. $[-0.5,0.5]$ and $[-10,10]$ would be 0, but for their soft-maxed counterparts the resulting distance is $0.06$. \\
+
+Cosine Distance:
 \begin{align}\displaystyle 
 & \MLC_{\rho, m}^{cosine} = \frac{1}{|\mathcal{X}|}\sum_{\mathrm{x} \in \mathcal{X}}  
 1 - \frac{\vec{y}(\mathrm{x}) \cdot \vec{y}(\mathrm{x}')}
@@ -241,7 +245,8 @@ Recently, assessing the similarity of per-concept relevances has also been done 
 
 
 \section{CRP Explanation Importance $m_2$}\label{section:measure}
-Our goal is to compare the causal effect of an upstream intervention on the true feature importance and then the explained feature importance. After having defined multiple ways to measure the models true feature importance, we need to repeat the process for the explanation produced by CRP. It is not well known how humans perceive changes in an explanation and there is no agreed upon scale of importance, so we believe it is best to construct multiple measures to test against each other. {\color{gray} Additionally, the authors of CRP introduce multiple interpretation techniques using this method which potentially enable better human understanding. }Most of the proposed metrics are derived from existing work on evaluating feature importance in XAI \cite{Sixt2020, Karimi2023, Arras2022} \\
+Our goal is to compare the causal effect of an upstream intervention on the true feature importance and then the explained feature importance. After having defined multiple ways to measure the models true feature importance, we need to repeat the process for the concept-based explanation produced by CRP. It is not well known how humans perceive changes in an explanation and there is no agreed upon scale of importance, so we believe it is best to construct multiple measures to test against each other. Most of the proposed metrics are derived from existing work on evaluating feature importance in XAI \cite{Sixt2020, Karimi2023, Arras2022} 
+ {\color{gray} Additionally, the authors of CRP introduce multiple interpretation techniques using this method which potentially enable better human understanding. }\\
 
 Each candidate should be a variation of measuring the effect of intervening on $W$ on an explanation:
 \begin{center}
@@ -250,12 +255,11 @@ Average Causal Effect of latent factor $W$ on explanation $e$: \\
 \displaystyle ACE = \mathbb{E} [e \ | \ do(W=1) ] - \mathbb{E} [ e \ | \ do(W=0) ]
 \end{equation}
 \end{center}
-The core question is, whether the influence on the explanation of changing $\rho$ is completely mediated by our prediction. A perfect explanation assigns just as much importance to a feature as the model and does not depend on other factors. This is one way to describe the fidelity of the explanation to the model. The proposed measures however try to incorporate other notions of goodness applied for XAI such as \textit{intelligibility} and especially \textit{complexity}. \\
+The core question is, whether the influence on the explanation of changing $\rho$ is completely mediated by our prediction. A perfect explanation assigns just as much importance to a feature as the model and does not depend on other factors. This is one way to describe the fidelity of the explanation to the model. The proposed measures however partly incorporate other notions of goodness applied for XAI such as \textit{complexity}. This also has the practical reason that while an attribution map is visually compelling, it is not a very concise description of relevance. At least in the case where ground-truth concepts are known, we can estimate the explanation importance in a more compact form. \\
 
-The measures introduced in the following are roughly ordered from measures being most true to the numerical effect of intervention on the explanation to measures reducing the complexity of the explanation to what is understood. Although human perception is not part of our evaluation, aiming for less complex explanations seems to be more in line with a \textit{good} explanation. While the first measure would require the user to compare multiple heatmaps pixel-wise to find differences, later metrics use only one pixel or a reduced (hopefully more human-understandable) concept. \\
+The measures introduced in the following are roughly ordered from measures being most true to the numerical effect of intervention on the explanation to measures reducing the complexity of the explanation. Although human perception is not part of our evaluation, aiming for less complex explanations seems to be more in line with a \textit{good} explanation. While the first measure would require a pixel-wise comparison of multiple heatmaps to find differences, later metrics try to use only one pixel or a reduced (hopefully more human-understandable) concept. \\
 
-Many related works remove negative relevances in attribution maps to enable comparison with XAI methods that do not measure negative relevance. Another reason could be that incautious aggregation of negative and positive relevance could introduce cancelling-out effects. We believe, however, that a spurious feature can be negatively as well as positively attributed for a model to be biased. In a complex network, we cannot be sure that there are no neurons purely negatively associating a feature with one class. Therefore the measures mostly equally incorporate both the magnitude of the positive and negative relevance. 
-
+Many related works remove negative relevances in attribution maps to enable comparison with XAI methods that do not measure negative relevance. Another reason could be that incautious aggregation of attribution maps with negative and positive relevance could introduce cancelling-out effects. We believe, however, that a spurious feature can be negatively as well as positively attributed for a model to be biased. In a complex network, we cannot be sure that there are no neurons purely negatively associating a feature with one class. Therefore the measures mostly equally incorporate both the magnitude of the positive and negative relevance. 
 
 \subsection{Mean Attribution Change}
 The likely most straight-forward way to calculate explanation importance for neurons in a layer using CRP is to measure the average causal effect of an intervention on the attributions directly. This approach aims to emulate the \textit{mean logit change} of the prediction for the concept-based explanation. In a given layer $\ell \in L$, the relevance of each of the neurons $i in \ell$ for the overall prediction is used. As in \cite{Achtibat2022}, the relevances for the neurons are scaled to sum to 1 and are interpreted as relative importance percentages.
@@ -270,7 +274,7 @@ We compute the neurons relevance and their attribution map with the CRP method t
 The causal effect of intervening on the spurious watermark feature on one neuron is then the difference between its attribution map of one image with a watermark and the same image without a watermark. If the model has indeed learned distinct concepts for each feature, the same effect should also become visible, when just looking at the relevance values for each neuron in a layer.\\
 
 To look at the difference in explanation, multiple distance metrics could be applied. We compare multiple types of dissimilarity between the two heatmaps (i.e. 2-dimensional pixel maps). Firstly, we look at the mean absolute pixel-wise difference. The Euclidean distance seems the second natural approach. Because we compute the \textit{cosine distance} for the relevance values $r_i$ as proposed by the authors of CRP \cite{Achtibat2023}, we also compute the measure for the attribution maps for completeness.
-Lastly, we measure the kernelized treatment effect which Karimi et al. also use in their experiment \cite{Karimi2023}. \\ 
+Lastly, we measure the kernelized treatment effect which Karimi et al. also use in their experiment \cite{Karimi2023}. It is using a 2D convolution to multiple images. For 1 dimensional vectors like the predictions and the relevances, this corresponds to a simple dot product.   \\ 
 
 A sensible normalization for a set of attribution maps is not as trivial as for the output vector or the relevance vector. The naive approach would be again, to take the maximally opposing images difference. But it is not to be expected that any method would assign large positive or negative values to every pixel. Instead, the results of attribution methods only sparsely assign attribution to few pixels, usually within regions of objects and not to the background. 
 We therefore have to find a smaller divisor which scales a maximal difference between an image with and without watermark to approximately 1.
@@ -401,13 +405,15 @@ Easiest:
 To evaluate explanations, the model to test on can neither be to simple and therefore easy to explain, nor too large and therefore an overkill for the simple dataset at hand.
 Through a simple trial-and-error search the architecture detailed in \autoref{lst:cnnmodel} with 3 convolutional layers of 8 channels, one fully connected \textit{concept} layer with 6 neurons and finally the fully connected output layer was deemed most fitting for the task. While less convolutional channels or layers often resulted in the model not converging at all, having more neurons or potentially \textit{concepts} did not seem to add information but just redundancy.
 This model reliably yields test accuracies over 90\% when using the same feature distribution $\rho$ as used for training. As stated before, we fix all hyperparameters, as they are not part of this analysis, to values produced from a short search.
-The only hyperparameter we deemed necessary to control for, is the random initialization of weights and biases. In preliminary experiments it became clear that some seeds react profoundly differently to $\rho$ than others. For example, one instance is able to ignore the watermark even when it is perfectly correlated with the shape ($\rho = 1$), while others easily change their strategy to predict from this spurious feature (see \cref{fig:gt_over_seeds}). The ground-truth importance and the general performance of these models seem to not correlate at all, differently to what Karimi et al. observe \cite{Karimi2023}.
-For further information on hyperparameters and training, refer to \cref{appendix:model}
+The only hyperparameter we deemed necessary to control for, is the random initialization of weights and biases. In preliminary experiments it became clear that some seeds react profoundly differently to $\rho$ than others. For example, one instance is able to ignore the watermark even when it is perfectly correlated with the shape ($\rho = 1$), while others easily change their strategy to predict from this spurious feature (see \cref{fig:gt_over_seeds}). This ground-truth importance and the general performance of the models seem to not correlate with each other. For example seed 0 produces similarly high accuracies as seed 3, while their reaction to the spurious feature is completely different. Therefore it is right to keep those \textit{unbiased} models in the set of models and not exclude them. 
+For further information on hyperparameters and training, refer to \cref{appendix:model}.
 
 \begin{figure}
     \centering
-    \includegraphics[width=\textwidth]{thesis_latex_template/pics/compare_seeds.png}
-    \caption[Comparing Seeds]{Prediction Flip ($\phi$-coefficient between prediction and watermark) over 16 random seeds}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/compare_seeds_w_accuracy.png}
+    \caption[Comparing Seeds]{Prediction Flip ($\phi$-coefficient between prediction and watermark) over 16 random seeds (red)
+    compared to $\rho$ (green dashed), mutual information in distribution (blue dash-dotted) and training accuracy (gray dotted).
+    }
     \label{fig:gt_over_seeds}
 \end{figure}
 
