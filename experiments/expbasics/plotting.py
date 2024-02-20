@@ -1,3 +1,4 @@
+from platform import node
 from matplotlib import pyplot as plt
 import matplotlib as mpl
 import numpy as np
@@ -207,17 +208,22 @@ def draw_graph_with_images(nodes, connections, images, ax=None):
             dict(
                 weight=connections[i][j],
                 label=(
-                    str(round(connections[i][j] * 100, 2))
-                    if np.abs(connections[i][j]) >= 0.03
+                    f"{round(connections[i][j] * 100, 2)}%"
+                    if np.abs(connections[i][j]) >= 0.15
                     else ""
                 ),
             ),
         )
         for i in connections.keys()
         for j in connections[i].keys()
-        if connections[i][j] != 0
+        if np.abs(connections[i][j]) >= 0.15
     ]
     edges = sorted(edges)
+    nodes = [
+        n_node
+        for n_node in nodes
+        if (n_node in [e[0] for e in edges] or n_node in [e[1] for e in edges])
+    ]
     nodes = sorted(nodes)
     subsets = {i: i[0:-2] for i in nodes}
 
@@ -270,7 +276,7 @@ def draw_graph_with_images(nodes, connections, images, ax=None):
         pos=pos,
         edge_labels=labels,
         label_pos=0.59,
-        font_size=10,
+        font_size=18,
         clip_on=False,
         verticalalignment="baseline",
         bbox={"fc": "white", "alpha": 0.0, "ec": "white"},
@@ -281,8 +287,8 @@ def draw_graph_with_images(nodes, connections, images, ax=None):
     trans = ax.transData.transform
     trans2 = fig.transFigure.inverted().transform  # type: ignore
 
-    piesize = 0.1  # this is the image size
-    p2 = piesize / 2.0
+    piesize = 0.17  # this is the image size
+    p2 = piesize / 2
     for n in G.nodes:
         img, norm = images[n]
         xx, yy = trans(pos[n])  # figure coordinates
@@ -292,7 +298,10 @@ def draw_graph_with_images(nodes, connections, images, ax=None):
         )
         a.set_aspect("equal")
         a.imshow(img, cmap="bwr", norm=norm)
-        a.set_title(n)
+        if n.endswith("0"):
+            a.set_title(f"{' '.join(n.split('_')[:-1])}\n{n.split('_')[-1]}")
+        else:
+            a.set_title(n.split("_")[-1])
         a.yaxis.set_ticks([])
         a.xaxis.set_ticks([])
 

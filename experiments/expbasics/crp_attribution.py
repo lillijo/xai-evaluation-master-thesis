@@ -421,6 +421,7 @@ class CRPAttribution:
         image.requires_grad = True
         images = {}
         for li, l in enumerate(self.layer_id_map.keys()):
+            max_all = 0
             conditions = [{l: [i]} for i in self.layer_id_map[l]]
             attr = self.attribution(
                 image,
@@ -432,13 +433,20 @@ class CRPAttribution:
             for h in range(attr.heatmap.shape[0]):
                 heatmap = attr.heatmap[h]
                 maxv = max(float(heatmap.abs().max()), 0.0001)
+                max_all = max(maxv,max_all)
                 # minv = min(float(heatmap.min()), -0.0001)
                 center = 0.0
                 divnorm = mpl.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
-                images[f"{l}_{h}"] = [heatmap, divnorm]
+                images[f"{l}_{h}"] = [heatmap, None]
+            center = 0.0
+            divnorm = mpl.colors.TwoSlopeNorm(vmin=-max_all, vcenter=center, vmax=max_all)
+            for h in range(attr.heatmap.shape[0]):
+                images[f"{l}_{h}"][1] = divnorm
+
+
         images["original"] = [
             image[0, 0].detach().numpy(),
-            f"prediction: {label} label: {target}",
+            f"prediction: {label} label: {target}"
         ]
         return images
 
@@ -456,7 +464,7 @@ class CRPAttribution:
             composite=self.composite,
             concept_id=pred,
             layer_name="linear_layers.2",
-            width=[8, 6],  # [6,2,2,2]
+            width=[6,8], #[8, 6],  # 
             abs_norm=True,
             verbose=False,
             batch_size=1,
@@ -469,7 +477,7 @@ class CRPAttribution:
             edges[name] = {}
             in_counts[i[0]] += 1
             for j in connections[i]:
-                if j[2] != 0 and (i[0] == "linear_layers.2" or name in used_nodes):
+                if np.abs(j[2]) > 0.05 and (i[0] == "linear_layers.2" or name in used_nodes):
                     used_nodes.add(name)
                     j_name = f"{j[0]}_{j[1]}"
                     used_nodes.add(j_name)
@@ -478,7 +486,7 @@ class CRPAttribution:
             for target in edges[source].keys():
                 if in_counts[source[:-2]] > 0:
                     edges[source][target] = (
-                        edges[source][target] / in_counts[source[:-2]]
+                        edges[source][target] #/ in_counts[source[:-2]]
                     )
         node_labels = list(used_nodes)
         return node_labels, edges, images
