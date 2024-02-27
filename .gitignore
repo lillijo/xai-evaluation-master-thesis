@@ -16,6 +16,8 @@ experiments/heatmaps
 experiments/outputs/*
 *.pt
 experiments/model_*.*
+experiments/testdata
+experiments/test_background
 
 
 latex/thesis_latex_template/pics/

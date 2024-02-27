@@ -20,7 +20,7 @@ class ShapeConvolutionalNeuralNetwork(nn.Module):
     def __init__(self):
         super(ShapeConvolutionalNeuralNetwork, self).__init__()
         self.convolutional_layers = nn.Sequential(
-            nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=0),
+            nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=2),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.ReLU(),
             nn.Conv2d(8, 8, kernel_size=5, stride=1, padding=0),
@@ -30,7 +30,7 @@ class ShapeConvolutionalNeuralNetwork(nn.Module):
             nn.ReLU(),
         )
         self.linear_layers = nn.Sequential(
-            nn.Linear(392, 6),
+            nn.Linear(512, 6),
             nn.ReLU(),
             nn.Linear(6, 2),
         )
@@ -80,6 +80,8 @@ def train_one_epoch(
                 loss=float(np.round(last_loss, 2)),
                 acc=float(np.round(nccorrect, 2)),
             )
+            if last_loss < 0.03:
+                return last_loss
             running_loss = 0.0
             correct = 0
 
@@ -172,7 +174,7 @@ def train_network(
                     if hasattr(layer, "reset_parameters"):
                         layer.reset_parameters()  # type: ignore
         torch.save(model.state_dict(), model_path)
-        if avg_loss <= 0.15:
+        if avg_loss <= 0.2:
             break
 
     print(
