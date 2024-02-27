@@ -696,3 +696,46 @@ ___________________________________________________________________
 - use sparse subspace clustering (SSC) for clustering of feature maps
 - test concepts by masking out images with a classical inputation algorithm (Bertalmia 2001)
 - MCD-SSC is actually not the best, but they argue that the ones that are better consistently only find one concept and therefore have no benefit over classical attribution methods like LRP
+
+### From Anecdotal Evidence to Quantitative Evaluation Methods: A Systematic Review on Evaluating Explainable AI (Nauta2023)
+- viele andere Overview paper gecitet
+- interpretability hard to quantify or falsify
+- "anecdotal evidence" evaluation "only based on researchers intuition of what constifutes a good explanation"
+- my thought: the call for "perfect, automated evaluation of explanation" is slightly paradoxical. If we had this tool it would also be the perfect explanation technique
+- "consider causality out of scope" wtf???
+- goals of XAI: "An explanation is a presentation of (aspects of) the reasoning, functioning and/or behavior of a machine learning model in human-understandable terms"
+- reasoning: way data is processed, why input-> output
+- functioning: internal data structures, representation of data
+- behavior: observing input and output, might simplify interpretation
+- plausibility or correctness:  critique on "face-validity" and anecdotal evidence. "plausibility and convincingness" is different to correcntess
+- Petsiuk et al. [190] believe that “keeping humans out of the loop for evaluation makes it more fair and true to the classifier’s own view on the problem rather than representing a human’s view.”
+- "garbage in, garbage out" when trained on flawed data, learns nonsensical relations, which are shown by explanations. e might be perceived as wrong but in fact model is
+- related to my continuous experiment: Gilpin et al: unethical to optimize explanations towards hiding undesirable attributes: evaluate on "how they behave on the curve from maximum interpretability to maximum completeness"
+- other dichotomy: human evaluation or not: human expensive, maybe unethical, not repicable or comparable, produces bias towards "simpler" explanation, penalizing more complex but realistic explanations
+- "validating explanations with users can unintentionally [confound] (they say combine) evaluation of explanation with evaluation of model performance
+
+Evaluation Quality Properties:
+1. Correctness: faithfulness to model f
+2. Completeness (needs to be balanced with compactness and correctness), reasoning or output completeness
+3. Consistency: deterministic, identical inputs have identical explanations, 
+implementation invariance: 2 models exactly same output -> should have same explanations
+different random seeds should give same explanation "when they follow the same reasoning path" Atanasova2020
+Montavon2019: implementation invariance desired but without changing function for model-specific methods
+4. Continuity: small changes in input should not lead to large changes in explanation
+5. Contrastivity: discriminativeness, explain "relative to some other event that did not occur" counterfactual?
+6. Covariate Complexity: concepts used for explanation are human-understandable (can be distinct from input features)
+7. Compactness
+8. Composition: how presented
+9. Confidence: explanation has certainty or probability information: reflect confidence measure of prediction or truthfulness of explanation
+10. Context: take user and environment into account
+11. Coherence: consistent with relevant background knowledge, general consensus "agreement with human rationales" -> IoU methods kinda fall into this?
+12. Controllability: users ability to correct, interact with explanation 
+
+we are doing a mix of multiple properties to some degree:
+correctness (fidelity to the ground truth importance), 
+continuity (but on a different variable: models trained with slightly different rho should not have widely different importance), 
+contrastivity (but not target based but "feature" based: explanation saying watermark is important should strongly differ from shape explanation), 
+covariate complexity ".. Homogeneity" (are concepts human understandable and well disentangled) can be done with IoU stuff as well, 
+compactness: can simple methods like Pointing Game perform equally well? 
+confidence: how confident is explanation that watermark / shape was important, how does adding removing watermark change confidence
+coherence: use ground truth mask, highly biased models should attribute watermark strongly
