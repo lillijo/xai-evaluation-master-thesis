@@ -17,10 +17,13 @@ bad_seeds = {9: 379, 5: 967, 15: 29, 14: 719}
 
 
 class ShapeConvolutionalNeuralNetwork(nn.Module):
-    def __init__(self):
+    def __init__(self, model_type="watermark"):
+        padding = 0 if model_type=="watermark" else 2
+        linear_in = 392 if model_type=="watermark" else 512
+
         super(ShapeConvolutionalNeuralNetwork, self).__init__()
         self.convolutional_layers = nn.Sequential(
-            nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=0),
+            nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=padding),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.ReLU(),
             nn.Conv2d(8, 8, kernel_size=5, stride=1, padding=0),
@@ -30,7 +33,7 @@ class ShapeConvolutionalNeuralNetwork(nn.Module):
             nn.ReLU(),
         )
         self.linear_layers = nn.Sequential(
-            nn.Linear(392, 6),
+            nn.Linear(linear_in, 6),
             nn.ReLU(),
             nn.Linear(6, 2),
         )
@@ -80,15 +83,17 @@ def train_one_epoch(
                 loss=float(np.round(last_loss, 2)),
                 acc=float(np.round(nccorrect, 2)),
             )
+            if last_loss < 0.03:
+                return last_loss
             running_loss = 0.0
             correct = 0
 
     return last_loss
 
 
-def load_model(name, bias, num_it=0):
+def load_model(name, bias, num_it=0, model_type="watermark"):
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    model = ShapeConvolutionalNeuralNetwork()
+    model = ShapeConvolutionalNeuralNetwork(model_type)
     model = model.to(device)
     path = "{}_{}_{}.pickle".format(
         name,
@@ -120,6 +125,7 @@ def train_network(
     disable=True,
     num_it=0,
     seeded=False,
+    model_type="watermark"
 ):
     if seeded:
         if num_it in bad_seeds:
@@ -129,7 +135,7 @@ def train_network(
         else:
             torch.manual_seed(num_it)
             np.random.seed(num_it)
-    model = ShapeConvolutionalNeuralNetwork()
+    model = ShapeConvolutionalNeuralNetwork(model_type)
     device = f"cuda:{cuda_num}" if torch.cuda.is_available() else "cpu"
 
     model = model.to(device)
@@ -139,9 +145,11 @@ def train_network(
         str(num_it),
     )
     if load and os.path.exists(path):
+        print("loading")
         model.load_state_dict(torch.load(path, map_location=torch.device(device)))
         if not retrain:
             return model
+        print("retraining")
     if not disable:
         print(device)
         print(path)
@@ -173,7 +181,7 @@ def train_network(
                     if hasattr(layer, "reset_parameters"):
                         layer.reset_parameters()  # type: ignore
         torch.save(model.state_dict(), model_path)
-        if avg_loss <= 0.15:
+        if avg_loss <= 0.2:
             break
 
     print(

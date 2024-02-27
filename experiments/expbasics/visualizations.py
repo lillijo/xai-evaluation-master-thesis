@@ -349,13 +349,13 @@ def plot_accuracies(path, treshold=90, num_it=6, intervened=False):
     ecol = matplotlib.cm.spring(np.linspace(0, 1, 4))  # type: ignore
     fig = plt.figure(figsize=(8, 5))
     fig.set_facecolor(FACECOL)
-    plt.ylim([30, 100])
+    plt.ylim([0, 100])
 
     def to_arr(key, item):
         return np.array(
             [
                 [
-                    datas[i][x][key][item] for i in range(16)
+                    datas[i][x][key][item] for i in range(num_it)
                 ]  # [0,2,4,5,7,8,9,10,11,12,13,15]
                 for x in range(len(datas[0]))
             ]
@@ -363,7 +363,7 @@ def plot_accuracies(path, treshold=90, num_it=6, intervened=False):
 
     if intervened:
         all_wm_r = to_arr("all_wm_accuracy", 0)
-        all_wm_r_sigma = all_wm_r.std(axis=1) / np.sqrt(16)
+        all_wm_r_sigma = all_wm_r.std(axis=1) / np.sqrt(num_it)
         all_wm_r = all_wm_r.mean(axis=1)
         plt.plot(
             bis,
@@ -380,7 +380,7 @@ def plot_accuracies(path, treshold=90, num_it=6, intervened=False):
             alpha=0.3,
         )
         no_wm_e = to_arr("no_wm_accuracy", 1)
-        no_wm_e_sigma = no_wm_e.std(axis=1) / np.sqrt(16)
+        no_wm_e_sigma = no_wm_e.std(axis=1) / np.sqrt(num_it)
         no_wm_e = no_wm_e.mean(axis=1)
         plt.plot(
             bis,
@@ -891,7 +891,7 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False):
                     divnorm = matplotlib.colors.TwoSlopeNorm(
                         vmin=-maxv, vcenter=center, vmax=maxv
                     )
-                axs[il, n].imshow(images[il, n], cmap="bwr", norm=divnorm)
+                axs[il, n].imshow(images[il, n], cmap="bwr",) # norm=divnorm
             else:
                 axs[il, n].imshow(torch.zeros(64, 64), cmap="bwr", norm=divnorm)
                 # axs[il, n].axis("off")
