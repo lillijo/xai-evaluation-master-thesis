@@ -1,16 +1,19 @@
-from math import isnan
 import pickle
 import numpy as np
 import torch
 from tqdm import tqdm
 import math
-import copy
+from os import makedirs
+from os.path import isdir, isfile
 import gzip
 from sklearn.metrics import matthews_corrcoef, normalized_mutual_info_score
 from torch.utils.data import DataLoader, Subset
 from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 from expbasics.crp_attribution import CRPAttribution
 from expbasics.network import load_model
+from expbasics.background_dataset import BackgroundDataset
+from expbasics.test_dataset import TestDataset
+from expbasics.test_dataset_background import TestDataset as TestDatasetBackground
 
 
 def to_name(b, i):
@@ -21,8 +24,7 @@ def to_name(b, i):
 
 
 MAX_INDEX = 491519  # 491520 is true size, but not including last
-SAMPLE_SET_SIZE = 1000
-LATSIZE = [2, 2, 6, 40, 32, 32]
+SAMPLE_SET_SIZE = 128
 SEED = 42
 LAYER_ID_MAP = {
     "convolutional_layers.0": 8,
@@ -33,11 +35,8 @@ LAYER_ID_MAP = {
 }
 NAME = "../clustermodels/final"  # "../clustermodels/model_seeded"  #
 BIASES = list(np.round(np.linspace(0, 1, 51), 3))
-# list(np.round(np.linspace(0, 1, 11), 3))
-# list(np.round(np.linspace(0, 1, 51), 3))
-# list(np.round(np.linspace(0, 1, 21), 3))  #
-ITERATIONS = list(range(16))
 HEATMAP_FOLDER = "random_output"
+IMG_PATH = "../dsprites-dataset/images/"
 
 
 def find_else(element, list_element):
@@ -49,12 +48,12 @@ def find_else(element, list_element):
 
 
 class PerSampleInfo:
-    def __init__(self, rho, m, len_x):
+    def __init__(self, rho, m, len_x, experiment_name=HEATMAP_FOLDER):
         self.imgs = torch.zeros((len_x, 2, 8, 64, 64), dtype=torch.float16)
         self.pred = torch.zeros((len_x, 2, 2), dtype=torch.float16)
         self.pred_int = torch.zeros((len_x, 2), dtype=torch.uint8)
         self.rel = torch.zeros((len_x, 2, 8), dtype=torch.float16)
-        self.name = f"outputs/{HEATMAP_FOLDER}/{rho}_{m}.gz"
+        self.name = f"outputs/{experiment_name}/{rho}_{m}.gz"
 
     def add_x(self, index, hm0, hm1, pred0, pred1, predi_0, predi_1, rel0, rel1):
         self.imgs[index, 0] = hm0
@@ -75,18 +74,32 @@ class PerSampleInfo:
 class AllMeasures:
     def __init__(
         self,
-        img_path="",
+        img_path=IMG_PATH,
         sample_set_size=SAMPLE_SET_SIZE,
         layer_name="convolutional_layers.6",
+        model_path=NAME,
+        experiment_name=HEATMAP_FOLDER,
     ) -> None:
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.tdev = torch.device(self.device)
         self.max_index = MAX_INDEX
         self.len_x = sample_set_size
-        self.ds = BiasedNoisyDataset(0, 0.5, False, img_path=img_path)
-        self.rng = np.random.default_rng()  # seed=SEED
+        if model_path.endswith("final"):
+            self.ds = BiasedNoisyDataset(0, 0.5, False, img_path=img_path)
+            self.iterations = list(range(16))
+            self.model_type = "watermark"
+            self.test_data = TestDataset(length=300, im_dir="watermark_test_data")
+        else:
+            self.ds = BackgroundDataset(0, 0.5, False, img_path=img_path)
+            self.iterations = list(range(5))
+            self.model_type = "overlap"
+            self.test_data = TestDatasetBackground(
+                length=300, im_dir="overlap_test_data"
+            )
         self.layer_name = layer_name
         self.len_neurons = LAYER_ID_MAP[self.layer_name]
+        self.model_path = model_path
+        self.experiment_name = experiment_name
 
     def heatmaps(self, image: torch.Tensor, crpa: CRPAttribution, pred: int):
         conditions = [
@@ -116,15 +129,21 @@ class AllMeasures:
 
     def compute_per_sample(self, is_random=False):
         indices = np.round(np.linspace(0, MAX_INDEX, self.len_x)).astype(int)
+        if not isdir(f"outputs/{self.experiment_name}"):
+            print("creating folder", f"outputs/{self.experiment_name}")
+            makedirs(f"outputs/{self.experiment_name}")
+
         for rho_ind, rho in enumerate((pbar := tqdm(BIASES))):
-            for m in ITERATIONS:
-                model_name = to_name(rho, m)
-                model = load_model(NAME, rho, m)
-                crpa = CRPAttribution(model, self.ds, NAME, model_name)
+            for m in self.iterations:
+                model_name = f"{self.experiment_name}_{to_name(rho, m)}"
+                model = load_model(self.model_path, rho, m, self.model_type)
+                crpa = CRPAttribution(model, self.test_data, self.model_path, model_name)
                 pbar.set_postfix(m=m)
-                results_m_r = PerSampleInfo(rho_ind, m, self.len_x)
+                results_m_r = PerSampleInfo(
+                    rho_ind, m, self.len_x, self.experiment_name
+                )
                 if is_random:
-                    filename = f"outputs/attribution_output/{rho_ind}_{m}.gz"
+                    filename = f"outputs/{self.experiment_name}/{rho_ind}_{m}.gz"
                     with gzip.open(filename, mode="rb") as f:
                         r_m_info = pickle.load(f)
                     pred0s = r_m_info[1][:, 0].to(dtype=torch.float)
@@ -132,15 +151,10 @@ class AllMeasures:
                     permuted = np.zeros((256, 2))
                     permuted[:128] = pred0s
                     permuted[128:] = pred1s
-                    self.rng.shuffle(permuted, axis=0)
+                    rng = np.random.default_rng(seed=SEED)
+                    rng.shuffle(permuted, axis=0)
                     permuted = torch.from_numpy(permuted).view(128, 1, 2, 2)
                 for ind, x in enumerate(indices):
-                    _, _, offset = self.ds.get_item_info(x)
-                    mask = torch.zeros(64, 64).to(self.tdev)
-                    mask[
-                        max(0, 57 + offset[0]) : max(0, 58 + offset[0]) + 5,
-                        max(offset[1] + 3, 0) : max(offset[1] + 4, 0) + 10,
-                    ] = 1
                     # image W=0, W=1
                     image_1 = self.ds.load_image_wm(x, True)
                     image_0 = self.ds.load_image_wm(x, False)
@@ -255,6 +269,19 @@ class AllMeasures:
             return torch.sqrt(torch.abs(torch.sum(torch.diagonal(batched, 0))))
         return torch.sum(torch.diagonal(batched, 0))
 
+    def get_mask(self, index):
+        if self.model_path.endswith("final"):
+            _, _, offset = self.ds.get_item_info(index)
+            mask = torch.zeros(64, 64).to(self.tdev)
+            mask[
+                max(0, 57 + offset[0]) : max(0, 58 + offset[0]) + 5,
+                max(offset[1] + 3, 0) : max(offset[1] + 4, 0) + 10,
+            ] = 1
+        else:
+            mask = self.ds.load_watermark_mask(index)
+            mask = mask.view(64, 64).to(self.tdev)
+        return mask
+
     def easy_compute_measures(self):
         measures = [
             "m1_phi",
@@ -281,28 +308,28 @@ class AllMeasures:
 
         indices = np.round(np.linspace(0, MAX_INDEX, self.len_x)).astype(int)
         per_sample_values = torch.zeros(
-            (len(BIASES), len(ITERATIONS), self.len_x, len(measures))
+            (len(BIASES), len(self.iterations), self.len_x, len(measures))
         )
-        """ with gzip.open("all_measures_128_pred.pickle", "rb") as f:
-            old_values = pickle.load(f)
-        per_sample_values = old_values """
         softmax = torch.nn.Softmax(dim=1)
-        savepath = "all_measures_128_random.pickle"
+        savepath = f"all_measures_{self.len_x}_{self.experiment_name}.pickle"
         print(savepath)
+        if isfile(savepath):
+            with gzip.open(savepath, "rb") as f:
+                per_sample_values = pickle.load(f)
         for rho_ind, rho in enumerate((pbar := tqdm(BIASES))):
-            for m in ITERATIONS:
+            for m in self.iterations:
                 pbar.set_postfix(m=m)
-                filename = f"outputs/{HEATMAP_FOLDER}/{rho_ind}_{m}.gz"
+                filename = f"outputs/{self.experiment_name}/{rho_ind}_{m}.gz"
                 with gzip.open(filename, mode="rb") as f:
                     r_m_info = pickle.load(f)
                 hm0s = r_m_info[0][:, 0].to(dtype=torch.float)
                 hm1s = r_m_info[0][:, 1].to(dtype=torch.float)
-                pred0s = r_m_info[1][:, 0].to(dtype=torch.float)
+                """ pred0s = r_m_info[1][:, 0].to(dtype=torch.float)
                 pred1s = r_m_info[1][:, 1].to(dtype=torch.float)
-                rels0 = r_m_info[2][:, 0].to(dtype=torch.float)
+                rels0 = r_m_info[2][:, 0].to(dtype=torch.float) """
                 rels1 = r_m_info[2][:, 1].to(dtype=torch.float)
 
-                # phi correlation (=prediction flip) prediction
+                """ # phi correlation (=prediction flip) prediction
                 labels_true = torch.cat((r_m_info[3][:, 0], r_m_info[3][:, 1]))
                 labels_pred = torch.cat(
                     [torch.zeros(self.len_x), torch.ones(self.len_x)]
@@ -341,10 +368,6 @@ class AllMeasures:
                 per_sample_values[rho_ind, m, :, m_i("m2_rel_abs")] = (
                     torch.sum(torch.abs(rels1 - rels0), dim=1) / 2
                 )
-                # cosine distance relevances
-                per_sample_values[rho_ind, m, :, m_i("m2_rel_cosine")] = (
-                    self.cosine_distance(rels1, rels0)
-                )
                 # euclid distance relevances
                 per_sample_values[rho_ind, m, :, m_i("m2_rel_euclid")] = torch.sqrt(
                     self.kernel1d(rels1, rels0, dim=1)
@@ -352,63 +375,51 @@ class AllMeasures:
                 # kernel distance relevances
                 per_sample_values[rho_ind, m, :, m_i("m2_rel_l2square")] = (
                     self.kernel1d(rels1, rels0, dim=1)
-                )
+                ) """
 
                 # HEATMAPS
                 maxval = max(
                     hm0s.abs().sum(dim=(1, 2, 3)).max(),
                     hm1s.abs().sum(dim=(1, 2, 3)).max(),
                 )
-                hm0sabs = hm0s / maxval
-                hm1sabs = hm1s / maxval
+                if maxval > 0:
+                    hm0sabs = hm0s / maxval
+                    hm1sabs = hm1s / maxval
+                else:
+                    hm0sabs = hm0s
+                    hm1sabs = hm1s
                 # absolute difference heatmaps
                 # normalized by max total absolute relevance
-                per_sample_values[rho_ind, m, :, m_i("m2_mac_abs")] = torch.sum(
+                """ per_sample_values[rho_ind, m, :, m_i("m2_mac_abs")] = torch.sum(
                     torch.abs(hm1sabs - hm0sabs), dim=(1, 2, 3)
-                )
-                # cosine distance
-                per_sample_values[rho_ind, m, :, m_i("m2_mac_cosine")] = (
-                    self.cosine_distance(hm1s, hm0s)
-                )
+                ) """
 
                 for n, i in enumerate(indices):
-                    # kernel distance
+                    """# cosine distance relevances
+                    per_sample_values[rho_ind, m, n, m_i("m2_rel_cosine")] = (
+                        self.cosine_distance(rels1[n], rels0[n]) / 2
+                    )
+                    # kernel distance heatmaps
                     per_sample_values[rho_ind, m, n, m_i("m2_mac_l2square")] = (
                         self.kernel_distance(hm0s[n], hm1s[n])
                     )
                     # euclidean distance heatmaps
-                    per_sample_values[rho_ind, m, :, m_i("m2_mac_euclid")] = (
+                    per_sample_values[rho_ind, m, n, m_i("m2_mac_euclid")] = (
                         self.kernel_distance(hm0s[n], hm1s[n], kernel="l2")
                     )
+                    # cosine distance heatmaps
+                    per_sample_values[rho_ind, m, n, m_i("m2_mac_cosine")] = (
+                        self.cosine_distance(hm1s[n], hm0s[n]) / 2
+                    )"""
 
-                    # wm_mask = self.ds.load_watermark_mask(i)
-                    _, _, offset = self.ds.get_item_info(i)
-                    mask = torch.zeros(64, 64).to(self.tdev)
-                    mask[
-                        max(0, 57 + offset[0]) : max(0, 58 + offset[0]) + 5,
-                        max(offset[1] + 3, 0) : max(offset[1] + 4, 0) + 10,
-                    ] = 1
+                    mask = self.get_mask(i)
+
                     weight = rels1[n]
-                    hms_values1 = self.heatmap_values(hm1s[n], mask)
-                    hms_values0 = self.heatmap_values(hm0s[n], mask)
+                    hms_values1 = self.heatmap_values(hm1sabs[n], mask)
+                    hms_values0 = self.heatmap_values(hm0sabs[n], mask)
                     # rma weighted by absolute sum
-                    per_sample_values[rho_ind, m, n, m_i("m2_rma")] = (
-                        torch.sum(
-                            torch.abs(
-                                (
-                                    hms_values1["rel_within"]
-                                    / (hms_values1["rel_total"].abs() + 1e-10)
-                                )
-                                - (
-                                    hms_values0["rel_within"]
-                                    / (hms_values0["rel_total"].abs() + 1e-10)
-                                )
-                            )
-                        )
-                    ) / 2
-                    # relevance within summed
-                    per_sample_values[rho_ind, m, n, m_i("m2_bbox_rel")] = torch.sum(
-                        torch.square(
+                    per_sample_values[rho_ind, m, n, m_i("m2_rma")] = torch.sum(
+                        torch.abs(
                             (
                                 (
                                     hms_values1["rel_within"]
@@ -419,6 +430,13 @@ class AllMeasures:
                                     / (hms_values0["rel_total"].abs() + 1e-10)
                                 )
                             )
+                            * weight
+                        )
+                    )
+                    # relevance within summed
+                    per_sample_values[rho_ind, m, n, m_i("m2_bbox_rel")] = torch.sum(
+                        torch.abs(
+                            (hms_values1["rel_within"] - hms_values0["rel_within"])
                         )
                     )
                     # pg weighted sum
@@ -433,51 +451,45 @@ class AllMeasures:
                             )
                         )
                     )
+        savepath = f"1_{savepath}"
         with gzip.open(savepath, "wb") as f:
             pickle.dump(per_sample_values, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def prediction_flip(
-        self,
-    ):
-        per_sample_values = torch.zeros((len(BIASES), len(ITERATIONS), self.len_x, 1))
+    def prediction_flip(self):
+        per_sample_values = torch.zeros((len(BIASES), len(self.iterations), 1))
         for rho_ind, rho in enumerate((pbar := tqdm(BIASES))):
-            for m in ITERATIONS:
+            for m in self.iterations:
                 pbar.set_postfix(m=m)
-                filename = f"outputs/measures/{rho_ind}_{m}.gz"
+                filename = f"outputs/{self.experiment_name}/{rho_ind}_{m}.gz"
                 with gzip.open(filename, mode="rb") as f:
                     r_m_info = pickle.load(f)
                 # prediction flip
-                per_sample_values[rho_ind, m, :, 0] = (
+                per_sample_values[rho_ind, m, 0] = (
                     torch.count_nonzero(r_m_info[3][:, 1] != r_m_info[3][:, 0])
                     / self.len_x
                 )
-        with open("pf_128.pickle", "wb") as f:
+        with open(f"pf_{self.len_x}_{self.experiment_name}.pickle", "wb") as f:
             pickle.dump(per_sample_values, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def recompute_gt(self, length):
-        m1_mi = torch.zeros((len(BIASES), len(ITERATIONS), 3), dtype=torch.float)
+        m1_mi = torch.zeros((len(BIASES), len(self.iterations), 3), dtype=torch.float)
         indices = list(np.round(np.linspace(0, MAX_INDEX, length)).astype(int))
-        unbds = BiasedNoisyDataset()
-        my_subset = Subset(unbds, indices)
-        unbiased_loader = DataLoader(my_subset, batch_size=128)
+        my_subset = Subset(self.ds, indices)
+        unbiased_loader = DataLoader(my_subset, batch_size=256)
+        labels_wm = torch.tensor([int(self.ds.watermarks[ind]) for ind in indices])
+        labels_true = torch.tensor([self.ds.labels[ind][1] for ind in indices])
         for rho_ind, rho in enumerate((pbar := tqdm(BIASES))):
             with torch.no_grad():
-                for m in ITERATIONS:
-                    model = load_model(NAME, rho, m)
+                for m in self.iterations:
+                    model = load_model(self.model_path, rho, m, self.model_type)
                     pbar.set_postfix(m=m)
                     labels_pred = []
-                    labels_wm = []
-                    labels_true = []
                     for data in unbiased_loader:
-                        images, targets, watermarks = data
+                        images, _ = data
                         pred = model(images)
                         predi = pred.data.max(1)[1].int()
-                        labels_true.append(targets)
                         labels_pred.append(predi)
-                        labels_wm.append(watermarks.long())
                     labels_pred = torch.cat(labels_pred)
-                    labels_true = torch.cat(labels_true)
-                    labels_wm = torch.cat(labels_wm)
 
                     m1_mi[rho_ind, m, 0] = normalized_mutual_info_score(  # type: ignore
                         labels_pred, labels_wm
@@ -488,24 +500,52 @@ class AllMeasures:
                         torch.count_nonzero(labels_pred != labels_true) / length
                     )
 
-        with open(f"m1_mi_{length}.pickle", "wb") as f:
+        with open(f"m1_mi_{length}_{self.experiment_name}.pickle", "wb") as f:
             pickle.dump(m1_mi, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def gt_shape(self, length):
-        shape_gt = torch.zeros((len(BIASES), len(ITERATIONS), 2), dtype=torch.float)
+    def data_ground_truth(self, length):
+        m0_gt = torch.zeros((len(BIASES), len(self.iterations), 4), dtype=torch.float)
         indices = list(np.round(np.linspace(0, MAX_INDEX, length)).astype(int))
-        unbds = BiasedNoisyDataset()
-        my_subset = Subset(unbds, indices)
+        for rho_ind, rho in enumerate(tqdm(BIASES)):
+            if model_path.endswith("final"):
+                biased_ds = BiasedNoisyDataset(rho, 0.5, False)
+            else:
+                biased_ds = BackgroundDataset(rho, 0.5, False)
+            labels_pred = torch.tensor(
+                [int(biased_ds.watermarks[index]) for index in indices]
+            )
+            labels_true = torch.tensor(
+                [biased_ds.labels[index][1] for index in indices]
+            )
+            m0_gt[rho_ind, :, 0] = rho
+            m0_gt[rho_ind, :, 1] = normalized_mutual_info_score(  # type: ignore
+                labels_true, labels_pred
+            )
+            m0_gt[rho_ind, :, 2] = matthews_corrcoef(labels_true, labels_pred)
+            # accuracy drop
+            m0_gt[rho_ind, :, 3] = (
+                torch.count_nonzero(labels_pred != labels_true) / length
+            )
+
+        with open(f"m0_gt_{length}_{self.experiment_name}.pickle", "wb") as f:
+            pickle.dump(m0_gt, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def gt_shape(self, length):
+        shape_gt = torch.zeros(
+            (len(BIASES), len(self.iterations), 2), dtype=torch.float
+        )
+        indices = list(np.round(np.linspace(0, MAX_INDEX, length)).astype(int))
+        my_subset = Subset(self.ds, indices)
         unbiased_loader = DataLoader(my_subset, batch_size=128)
         for rho_ind, rho in enumerate((pbar := tqdm(BIASES))):
             with torch.no_grad():
-                for m in ITERATIONS:
-                    model = load_model(NAME, rho, m)
+                for m in self.iterations:
+                    model = load_model(self.model_path, rho, m, self.model_type)
                     pbar.set_postfix(m=m)
                     labels_pred = []
                     labels_true = []
                     for data in unbiased_loader:
-                        images, targets, _ = data
+                        images, targets = data
                         pred = model(images)
                         predi = pred.data.max(1)[1].int()
                         labels_true.append(targets)
@@ -519,16 +559,32 @@ class AllMeasures:
                     shape_gt[rho_ind, m, 1] = matthews_corrcoef(
                         labels_true, labels_pred
                     )
-        with open("shape_gt_6400.pickle", "wb") as f:
+        with open(f"shape_gt_{length}_{self.experiment_name}.pickle", "wb") as f:
             pickle.dump(shape_gt, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
     # parser = argparse.ArgumentParser("script_parallel")
     # parser.add_argument("layername", help="layer float", type=str)
-    allm = AllMeasures("../dsprites-dataset/images/", 128, "convolutional_layers.6")
-    # allm.compute_per_sample(is_random=True)
+    model_path = "../clustermodels/background"
+    experiment_name = "overlap_attribution"
+    sample_set_size = 128
+    layer_name = "convolutional_layers.6"
+    is_random = False
+    # model_type = "overlap"
+    # iterations = 5
+    # datasettype = BackgroundDataset
+    # mask = "shape"
+    # accuracypath = "outputs/unlocalized3.json"
+    allm = AllMeasures(
+        sample_set_size=sample_set_size,
+        layer_name=layer_name,
+        model_path=model_path,
+        experiment_name=experiment_name,
+    )
+    # allm.compute_per_sample(is_random=is_random)
     allm.easy_compute_measures()
-    # allm.recompute_gt(128)
     # allm.prediction_flip()
-    # allm.gt_shape(6400)
+    # allm.data_ground_truth(6400)
+    # allm.recompute_gt(6400)
+    # allm.gt_shape(640)
