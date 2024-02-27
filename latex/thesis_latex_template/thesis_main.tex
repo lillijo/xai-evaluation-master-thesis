@@ -43,7 +43,7 @@
 
 \usepackage{graphicx}  
 \usepackage{hyperref} 
-\usepackage{cleveref}
+\usepackage[noabbrev]{cleveref}
 % turn all your internal references into hyperlinks
 %\usepackage[pdfstartview=FitH,pdftitle={<<Titel der Arbeit>>}, pdfauthor={<<Autor>>}, pdfkeywords={<<Schlüsselwörter>>}, pdfsubject={<<Titel der Arbeit>>}, colorlinks=true, linkcolor=black, citecolor=black, urlcolor=black, hypertexnames=false, bookmarksnumbered=true, bookmarksopen=true, pdfborder = {0 0 0}]{hyperref}
 %
@@ -61,6 +61,7 @@
 \usepackage{pdfpages}
 \usepackage{float}
 \usepackage{times}
+\usepackage{cite}
 \usepackage[section]{placeins}
 
 %---------------------------------------------------
@@ -111,8 +112,7 @@
 \newcommand\stackequal[2]{%
   \mathrel{\stackunder[2pt]{\stackon[4pt]{=}{$\scriptscriptstyle#1$}}{%
   $\scriptscriptstyle#2$}}}
-
-
+% declare my measures as variables to have text above and below them 
 \DeclareMathOperator*{\MLC}{MLC}
 \DeclareMathOperator*{\MAC}{MAC}
 \DeclareMathOperator*{\RMA}{RMA}
@@ -202,6 +202,9 @@ appendix
     showtabs=false,                  
     tabsize=2
 }
+% TIKZ STUFF
+\usetikzlibrary{arrows.meta,arrows}
+\usetikzlibrary{shapes}
 
 \lstset{style=mystyle}
 %---------------------------------------------------

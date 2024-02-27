@@ -150,6 +150,15 @@ For the generation of 128x2x816 explanations about 30 minutes on a personal Dell
 \end{itemize}
 
 
+{\color{gray} \subsubsection{Relevance Maximization}
+To arrive at reference sets of the neurons in our selected layer, relevance maximization finds images that maximize concept-conditional relevance. As mentioned by \cite{Achtibat2022} using the whole dataset might make the selected images too similar to each other. Hence we compute the maximization for a subset of 1000 images to enforce more variance. Importantly, the sample we select from does not have the association between $S$ and $W$, meaning that watermarks are equally likely to occur on rectangle as on ellipse images. 
+The implementation provided by CRPs authors produces sets of 40 images for each neuron in each layer. 
+
+\subsubsection{Perceptive Field}
+Information on the concentration of the relevance within the images selected for each concept can be gained by applying concept localization. Following the approach of \cite{Yeh2020} and using tools from the existing LRP toolset \cite{Anders2023} Achtibat et al. visualize only the part of the selected images that contributed to the neurons activation. 
+The implementation of this and all previously described methods is made accessible by CRPs authors at \url{https://github.com/rachtibat/zennit-crp}.
+}
+
 \section{Human Interpretable Importance}
 \subsection{Interpretation Techniques from CRP Work}
 The authors of CRP embed the approach into a handful of concept-based interpretation techniques. Their motivation is to gain more abstract, reduced explanations, while still potentially using multiple concepts. The underlying assumption is that the neurons in layers of deep neural networks encode human-understandable concepts hierarchically from low-level to abstract \cite{Zeiler2013,Bau2017,Olah2017}. Although this assumption seems to be made mostly for large and deep CNN and complex image datasets, the general idea can be applied in our experiment too. 

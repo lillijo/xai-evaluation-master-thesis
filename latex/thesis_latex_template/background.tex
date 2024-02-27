@@ -1,492 +1,200 @@
 \chapter{Preliminaries}\label{chapter:background}
 
+To embed this thesis into existing work, we will first give a short introduction to the field of neural networks and explainable AI. This will be followed by a more in-depth look at layer-wise and concept relevance propagation which is to be evaluated in our analysis. We will then introduce the main ideas of the causality framework we are going to use and how it has been previously applied in the context of (evaluation of) explainable AI. 
 
-{\color{red} related works
-      about 4-6 pages
-
-      make a distinction between methods/papers that discuss similar approaches and methods/concepts used in this thesis}
-
-{ \color{red}
-
-    about 20-30 pages (rather less I guess?)
-
-    \begin{enumerate}
-        \item Introduction to XAI in general
-        \item Evaluation of XAI methods in general
-        \item Structural Causal Models and causal framework
-    \end{enumerate}
-}
 
 \section{Neural Networks}
-Among the many machine learning approaches that have been developed, the most popular but also most opaque are deep neural networks. In general, a neural network consists of neurons, which are computational nodes organized in layers. In a forward pass, each neuron creates a weighted sum of its inputs, offsets it with a bias and then feeds it through a non-linear function. The result is fed to the next layer of neurons until the output layer is reached. During training, a loss function between the output for a data instance and its true label is optimized by back-propagating its gradient and updating the weights and biases. For specifics on successful architectures and training procedures we refer to text books on deep learning, for example by Goodfellow et al. \cite{Goodfellow2016}. When trained with enough data the weights and biases together approximate an often highly non-linear function describing the training data accurately. This function however is hard to analyze and interpret for humans, trying to understand the reasoning of the network. Hence the emergence of many explanation methods attempting to uncover those inner workings in a human-interpretable way.
+Among the many machine learning approaches that have been developed, the most popular but arguably most opaque are deep neural networks. In general, a neural network consists of neurons, which are computational nodes organized in layers. In the most simple forward pass, each neuron weights its inputs, offsets them with a bias and then feeds the result through a non-linear function. This is repeated in the next layer of neurons until the output layer is reached. During training, a loss function between the predictions for data instances and their true labels is optimized by back-propagating its gradient and updating the internal weights and biases. For specifics on successful architectures and training procedures we refer to text books on deep learning, for example by Goodfellow et al. \cite{Goodfellow2016}. When trained with enough data the weights and biases together approximate a high-dimensional and non-linear function describing the training data. This function however is hard to analyze and interpret for humans when trying to understand the reasoning of the network. Hence the emergence of many explanation methods attempting to uncover those inner workings in a human-interpretable way.
 
 
-\section{The Field of Explainable Artificial Intelligence}
+\section{Explainable Artificial Intelligence}
 With the field of machine learning and particularly complex deep neural network models ever expanding, so is the demand for explanations of these models.
-As especially neural networks are so called \textit{black boxes} that inhibit a human understanding of their results, plenty of explanation methods have been developed, summarized under the term \textit{explainable AI} or short \textit{XAI}. 
-\todo{more on why XAI is necessary in general}
-\todo{post-hoc vs. interpretable models vs. ?}
-Those methods can generally be divided into local and global approaches. While local methods aim to explain the decision making for one specific example, for example in computer vision tasks one image, typically by attributing importance to input features like pixels, global methods make more general interpretations of a model, for example, which features are identified in the decision-making process. The first category prominently includes saliency map methods \todo{cite}, which are most often tested on computer-vision tasks, where they assign importance to pixels or regions of a sample image, creating a heatmap. The importance is in most cases computed through forms of back-propagation \todo{cite} or with the help of gradients \todo{cite}. The resulting saliency maps may generate insight into the locality of important objects, however this is usually only one facet of understanding the decision-making, especially for people not familiar with the data domain.
+As especially neural networks are so called \textit{black boxes} that inhibit a human understanding of their results, plenty of explanation methods have been developed, summarized under the term \textit{explainable AI} or short \textit{XAI}. The sub-field of interpretable AI aims to create inherently transparent models, but they come with a decrease in performance \cite{Lipton2018}. Therefore many XAI methods are explaining what a model has learned \textit{post-hoc}, either model-agnostic by only evaluating decisions based on input data or model-specific by using information on latent parameters of a model.
+The methods can also be generally divided into local and global approaches. Local methods aim to explain the decision making for one specific example, like one image in a computer vision task, typically by attributing importance to input features like pixels. Global methods on the other hand make more general interpretations of a model, for example, which abstract features are identified in the decision-making process. An example is activation-maximization \cite{Nguyen2016} which finds prototypical instances of classes or latent filters by maximizing their activation. 
+The first category prominently includes saliency map methods, which are most often applied on computer-vision tasks, where they assign importance to pixels or regions of a sample image, creating a heatmap. The importance is computed through forms of back-propagation \cite{Bach2015,Zhang2016,Kindermans2017}, with the help of gradients \cite{Sundararajan2017,Smilkov2017} or in a model-agnostic way by perturbing or occluding parts of the input \cite{Lundberg2017,Zeiler2013,Zintgraf2017,Agarwal2020}. Resulting saliency maps may generate insight into the locality of important objects, however this is usually only one facet of understanding the decision-making of a model, especially for people not familiar with the data domain. If the location of importance is identified, it is still not clear \textit{what} is important in this region.   Recently, there has therefore been a surge in combining local and global methods, through embedding local attribution maps into more global strategies of a model. Achtibat et al. \cite{Achtibat2022} use local attribution methods to aid in finding human-interpretable, abstract concepts that a model encodes. As a so-called \textit{concept-based} method it utilizes the latent space of a neural network to find components in the input space encoded by the model \cite{Bau2017,Bau2020,Kim2018, Ghorbani2019, Zhang2021, Fel2023a}. 
+Some approaches are partly supervised, in that a human has to first define what a concept is, e.g. by labelling a ground truth or by selecting a few images that belong to a certain concept \cite{Kim2018, Singla2022}. Others try to make sense of either the latent space spanned by the \textit{concept activation vectors} or the space of per-pixel attributions for example by clustering it \cite{Lapuschkin2019,Vielhaben2023} and disentangling and visualizing concepts  \cite{Ghorbani2019,Zhang2021,Leemann2023,Fel2023,Chormai2022, Singla2022}.
 
-\subsubsection{Local Attribution Methods}
-\begin{itemize}
-    \item what are local attribution methods?
-    assign importance to each input feature
-    most prominently used for computer vision tasks
-    roughly divided into model-agnostic and backpropagation methods
-    backpropagation further parted into gradient based and modified back-propagation methods
-    \item common problems with local attribution methods: what is 100\%?
-    what is a good explanation and what does "pixel is important" really tell us
-    need not only where but also what is important about pixel
-    therefore concept-based approaches got introduced
-    \item lead over to more specifically just backgpropagation methods
-\end{itemize}
-
-
-\subsection{Backpropagation Methods}
-GuidedBP, RectGrad, DTD, LRP (with different rules), PatternAttribution, DeepLIFT, Gradient, gradientXinput, Integrated Gradients...?
-
-other modified backpropagation algorithms, everything that can be justified/ theoretically by taylor decomposition stuff
-tell more about taylor decomposition?
-
-\todo{LRP and surroundings: also other applications like pruning (if you can "prune" certain neurons, their causal effect must be none or extremely small \cite{Yeom2019})}
-
-interpretation techniques based on backpropagation methods or building on top of them: 
-\textit{activation maximization, feature attack (generative approaches), activation atlas, specific local and global models ... }
-
-
-\todo{more overview papers and map of XAI papers}
-categorization \cite{Samek2021}
-
-
-\subsubsection{Layer-wise Relevance Propagation}
-Layer-wise relevance propagation \cite{Bach2015} is the basis for concept relevance propagation and is among the most highly cited local attribution methods in XAI. Being introduced almost 10 years ago, it has been justified theoretically with Deep Taylor Decomposition \cite{Montavon2017}. It belongs to the class of (modified) back-propagation methods which propagate a custom value instead of a gradient back to the input. A visual representation of this strategy can be found in \cref{fig:crp_vs_lrp} \textbf{(a)}. As other saliency methods, LRP is commonly used in computer vision tasks to attribute importance to each pixel in an image, which can then be visualized as a heatmap, but is also applicable to other data formats. In the following I will summarize the basic functioning of LRP for neural networks as described in \cite{Bach2015}:
-
-LRP assumes that the model has multiple layers of computation it can be decomposed into, starting from the input layer, for example the pixels of an image, to all latent layers $l$ and finally to the output layer. Further each of those layers has $V(l)$ dimensions for which a Relevance Score $R^{(l)}_d$ could be determined so that the following equation holds:
+\subsection{Layer-wise Relevance Propagation}\label{section:lrp}
+Layer-wise relevance propagation \cite{Bach2015} is the basis for concept relevance propagation, which we will analyse in this thesis, and is among the most highly cited local attribution methods in XAI. Being introduced almost 10 years ago, it has been justified mathematically with Deep Taylor Decomposition \cite{Montavon2017}. It belongs to the class of (modified) back-propagation methods which propagate a custom value back to the input through a set of backpropagation rules. A visual representation of this strategy can be found in \cref{fig:crp_vs_lrp} \textbf{(a)}. As other saliency methods, LRP is commonly used in computer vision tasks to attribute importance to each pixel in an image, which can then be visualized as a heatmap, but is also applicable to other data formats. In the following we will summarize the basic functioning of LRP for neural networks as described in \cite{Bach2015}:\\
+The general idea is to find how input features contribute to a prediction in relation to a root point of maximal uncertainty $f(\mathbf{x}_0) = 0$ so that the positive or negative relevances of separate pixels roughly sum up to the output for that instance.
+\begin{equation}\displaystyle
+    f(\mathbf{x}) \approx \sum_{d \in \mathbf{x}} R_d
+\end{equation}
+LRP assumes that the model has multiple layers of computation it can be decomposed into, starting from the input layer, for example the pixels of an image, to all latent layers $\ell$ and finally to the output layer. Further, each of those layers has $|\ell|$ dimensions for which a relevance score $R^{\ell}_d$ can be determined so that the following equation holds:
 
 \begin{equation}
-    f(x) = ... = \sum_{d \in l+1} R^{(l+1)}_d =  \sum_{d \in l} R^{(l)}_d = ... =  \sum_{d} R^{(1)}_d
+    f(\mathbf{x}) = ... = \sum_{d \in \ell+1} R^{(\ell+1)}_d =  \sum_{d \in \ell} R^{(\ell)}_d = ... =  \sum_{d} R^{(1)}_d
 \end{equation}
 
-In neural networks, the general forward step for one layer most often includes weighing the previous layers outputs $x_i$ with the current layers weights $z_{ij} = x_i w_{ij}$, summing the results for all connected neurons and their bias $z_{j} = \sum_{i} z_{ij} + b_j$ and running this through a non-linear activation function $x_j = \sigma (z_j)$.
-The idea then is to follow the flow of relevance from the output, where usually the prediction value is taken to initialize the relevance $R^(1)_d$, back to the input layer by decomposition. In the simplest case relevance is proportionally propagated back to the previous layer where the relevance of all connected neurons is aggregated in the following way:
+In neural networks, the general forward step for a layer $j$ means weighing the previous layers $i$ outputs $f_i(\mathbf{x})$ with the current layers weights $z_{ij} = f_i(\mathbf{x}) w_{ij}$, summing the results for all connected neurons and their bias $z_{j} = \sum_{i} z_{ij} + b_j$ and running this through a non-linear activation function $f_j(\mathbf{x}) = \sigma (z_j)$.
+The intuition then is to follow the flow of relevance from the output, where usually the prediction value $f(\mathbf{x})$ is taken to initialize the relevance $R^(1)_d$, back to the input layer by decomposition. In the simplest case relevance is proportionally propagated back to the previous layer where the relevance of all connected neurons is aggregated in the following way:
 \begin{equation}
-    R_i = \sum_{j}  R_{i_j} = \sum_{j} \frac{z_{ij}}{z_j} R_j
+    R_i = \sum_{j}  R_{i \leftarrow j} = \sum_{j} \frac{z_{ij}}{z_j} R_j
 \end{equation}
 
-To apply LRP, best practices and rules have emerged \cite{Kohlbrenner2020, Montavon2019, Samek2021}. Depending on the type and location of a layer within a neural network the propagation rule can be varied. However in this thesis we stick to the propagation rule that the authors of CRP use, namely the composite $LRP_{\epsilon-z+-\flat}$-rule (or "epsilon-plus-flat"), which is recommended by \cite{Kohlbrenner2020} and uses different rules for different parts of the model, further described in the appendix \autoref{appendix:lrprules}.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.9\textwidth]{thesis_latex_template/pics/crp_vs_lrp_from_paper.png}
-    \caption[CRP vs. LRP]{\textbf{a}: output value back-propagated through network, \textbf{b} output conditioned on concepts, i.e. certain neurons are masked out in back-propagation (taken from Achtibat et al. Concept-Relevance Propagation paper \cite{Achtibat2023}) }
-    \label{fig:crp_vs_lrp}
-\end{figure}
-
-\subsection{Concept-Based Explanation Methods}
-methods related to CRP
-for example the ones mentioned in TCAV etc. 
-
-CRP is not the only method that has extended on a known local attribution method to recover some human-readable abstract concepts.
-Mostly, methods do not make the assumption that hidden features represent human-understandable abstract concepts, but further structure/transform the latent space to get distinct concepts.
-Many approaches are supervised, in that a human has to first define what a concept is, e.g. by labelling a ground truth or by selecting a few images that belong to a certain concept.
+To apply LRP, best practices and rules have emerged \cite{Kohlbrenner2020, Montavon2019, Samek2021}. Depending on the type and location of a layer within a neural network the propagation rule can be varied. In this thesis we stick to the propagation rule that the authors of CRP use, namely the composite $LRP_{\epsilon-z+-\flat}$-rule (read "epsilon-plus-flat"), which is recommended by \cite{Kohlbrenner2020} and composes different rules for different parts of the model, further described in the \cref{appendix:lrprules}.
 
 \subsection{Concept Relevance Propagation}\label{section:crp_background}
 
-Concept Relevance Propagation, a recent method by \cite{Achtibat2022}, claims to be a \textit{glocal} XAI method, extending on the established local attribution method Layerwise Relevance Propagation (LRP) \cite{Bach2015} with more global methods like \textit{relevance maximization}. 
-Layerwise Relevance Propagation, as a local XAI method, produces saliency maps for single data samples through a modified backpropagation process further described in \autoref{chapter:background}. By filtering on subsets of latent features within the layers of the model during this modified backpropagation, CRP yields saliency maps, which could in principle produce more specific explanations. With the help of feature visualization methods CRP's authors try to go beyond the pure \textit{"where"} of saliency maps, towards a \textit{what}, explaining which (human understandable?) concepts a model has recognized in a specific image region. This more global idea is integrating into a growing field of \textit{concept-based} explanation methods \todo{cite}.
-These have in common that they try to disentangle the large latent feature space of models into human-understandable concepts.
+Concept Relevance Propagation, a recent contribution by \cite{Achtibat2022}, is called a \textit{glocal} XAI method by its authors, extending on the established local attribution technique Layerwise Relevance Propagation (LRP) \cite{Bach2015} and applying other more global methods like \textit{relevance maximization}. 
+Layerwise Relevance Propagation, as a local XAI method, produces saliency maps for single data samples through a modified backpropagation process further described in the previous \cref{section:lrp}. By filtering on subsets of latent features within the layers of the model during this modified backpropagation, CRP yields saliency maps, which could in principle produce more targeted explanations. With the help of global feature visualization methods CRP's authors try to go beyond the pure \textit{"where"} of saliency maps, towards a \textit{"what"}, explaining which (human understandable?) concepts a model has recognized in a specific image region. This idea is integrating into the mentioned growing field of \textit{concept-based} explanation methods.
 
+\begin{figure}[t!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{thesis_latex_template/pics/crp_vs_lrp_from_paper.png}
+    \caption[CRP vs. LRP]{\textbf{a} (LRP): output value back-propagated through network, \textbf{b} (CRP): output conditioned on concepts, i.e. certain neurons are masked out in back-propagation (taken from Achtibat et al.'s more recent paper summarizing Concept-Relevance Propagation \cite{Achtibat2023})}
+    \label{fig:crp_vs_lrp}
+\end{figure}
 
 LRP aggregates the significance of all latent layers and their neurons into one importance map, where the intermediate layers outputs are merely a side-product of the computation.
-Achtibat et. al. propose in their recent work \cite{Achtibat2022} to use those intermediate results to further disentangle the attributions. While in LRP the initialization at the output layer usually takes the value of one class output $y$ w.r.t input $\mathbf{x}$, all other output neurons set to zero, and thereby produces a class-conditional attribution ($R(\mathbf{x}|y)$), a similar thing can be done in latent layers too. Although it is yet unclear how to interpret the attribution to these hidden features, the authors of CRP propose to obtain importance scores for them by computing "(multi-)concept-conditional" relevances $R(\mathbf{x}|\theta)$. The variable $\theta$ here describes a set of conditions $c_l$ which in essence \textit{filters} for certain \textit{concepts} i.e. features in potentially multiple layers by masking out all other features' contributions:
+Achtibat et. al. propose in their work \cite{Achtibat2022} to use those intermediate results to disentangle the attributions. While in LRP the initialization at the output layer usually takes the value of one class output $y= f(\mathbf{x})$ w.r.t input $\mathbf{x}$, all other output neurons set to zero, and thereby produces a class-conditional attribution ($R(\mathbf{x}|y)$), a similar thing can be done in latent layers too. Although it is yet unclear how to interpret the attribution to these hidden features, the authors of CRP propose to obtain importance scores for them by computing "(multi-)concept-conditional" relevances $R(\mathbf{x}|\theta)$. The variable $\theta$ here describes a set of conditions $c_{\ell}$ which in essence \textit{filters} for certain \textit{concepts} i.e. neurons in potentially multiple layers by masking out all other neurons contributions:
 
-\begin{equation}
-    R^{(l-1, l)}_{i_j} (\mathbf{x} | \theta \cup \theta_l) = \frac{z_{ij}}{z_j} \cdot \sum_{c_l \in \theta_l} \delta_{jc_l} \cdot R^{l}_j (\mathbf{x} | \theta )
+\begin{equation}\displaystyle
+    R^{(\ell-1, \ell)}_{i \leftarrow j} (\mathbf{x} | \theta \cup \theta_{\ell}) = \frac{z_{ij}}{z_j} \cdot \sum_{c_{\ell} \in \theta_{\ell}} \delta_{jc_{\ell}} \cdot R^{\ell}_j (\mathbf{x} | \theta )
 \end{equation}
 
-$\delta_{jc_l}$ is the Kronecker-Delta selecting the relevance $R^l_j$ of feature $j$ in layer $l$ if that index is in the condition $c_l$, masking out all other features in that layer. If no condition is set for a particular layer, the relevance from that layer is not masked. The authors note that conditions within the same layer compare to logical OR operations and across layers to AND operations. In the following a small example illustrates the process (\autoref{fig:crp_example_condition}):
+$\delta_{jc_l}$ is the Kronecker-Delta selecting the relevance $R^l_j$ of feature $j$ in layer $l$ if that index is in the condition $c_l$, masking out all other features in that layer. If no condition is set for a particular layer, the relevance from that layer is not masked. The authors note that conditions within the same layer compare to logical OR operations and across layers to AND operations. 
 
-\todo{mention new paper which is more summarized: \cite{Achtibat2023}}
+\paragraph{Interpretation Techniques with CRP}
+Heatmaps produced by conditional attribution can be looked at in a similar fashion to the traditional class-specific heatmaps produced by LRP. The hindrance is that the meanings of the conditioned on latent features are not known, so it is unclear how to interpret the importance of some pixels for concept $c$ in layer $\ell$. For large, complex models some human-understandable concepts can emerge in hidden layers from simpler more local concepts in earlier to more abstract concepts in later layers \cite{Bau2017, Hohman2020, Olah2017, Bau2020}. However this is not a fact to rely on and seems to regularly fail, especially for smaller models or simpler problems as is becoming visible in some of the examples in this work and other evaluations \cite{Kim2018,Singla2022, Sixt2022a}.
 
-\begin{figure}[htbp]
-    \centering
-    \tikzset{%
-        neuron/.style={
-                circle,
-                draw,
-                minimum size=8mm
-            },
-        neuronlabel/.style={
-                circle=none,
-                draw=none,
-                text height=0.7cm,
-            },
-        edgelabel/.style={
-                circle=none,
-                draw=none,
-                text height=0.8cm,
-            },
-        conditioned/.style={
-                fill=gray
-            },
-    }
-    \begin{tikzpicture}[>=stealth,
-            every node/.style={ draw, minimum size=8mm, align=center},]
+CRP's authors therefore construct a framework for the understanding of these latent features. The global method of \textit{Activation Maximization} (\cite{Nguyen2016}) is used to find the samples for which the neuron (set) of a concept has the highest activation. They extend on the idea of it when proposing \textit{Relevance Maximization}, where samples maximize the conditional relevance of a concept $c$ instead of the activation for that filter. Both methods yield a set of images or samples (see \cref{fig:act_rel_max}), which can be enhanced further by masking out the less relevant parts of the image. This way, class- and concept-specific reference samples are collected. They also recommend carefully selecting or extending the pool of samples to maximize on so as to improve the diversity of references. By maximizing the \textit{relevance} of a filter instead of its activation for a specific class, the authors claim to find a better outcome-specific illustration. Though the success of this technique depends on whether humans are able to identify the concept strongest overlapping within the reference set. It can be seen that this is not a trivial task in the given sample (\cref{fig:act_rel_max}) and we will extend on this within our experiments later.  
+% We evaluate relevance maximization along the main output of CRP for its ability to score relative feature importance. 
 
-        % First layer
-        \foreach \x in {1,2,3} {
-                \node [neuron] (X\x) at (0,{-\x* 1.8}) {$X_\x$};
-            }
-        \node [edgelabel]  (ti1) at (2.5,-0.5) {Forward};
-        % Second layer
-        \foreach \x in {1,2,3}{
-                \pgfmathparse{\x==1 || \x ==3}
-                \ifnum \pgfmathresult=1
-                    \node  [neuron, conditioned]  (L\x) at (2.5,{-\x* 1.8}) {$L_\x$};
-                \else
-                    \node  [neuron]  (L\x) at (2.5,{-\x* 1.8}) {$L_\x$};
-                \fi
-            }
-
-        % Last layer
-        \foreach \x in {1,2} {
-                \ifnum \x = 2
-                    \node [neuron, conditioned]  (Y\x) at (5,{-\x* 1.8 - 0.7}) {$Y_\x$};
-                    %\node [neuronlabel] at (Y\x.south) {$R_{Y_\x} = f(x)$};
-                \else
-                    \node  [neuron]  (Y\x) at (5,{-\x* 1.8 - 0.7}){$Y_\x$};
-                \fi
-            }
-
-        % Connect nodes
-        \foreach \y in {1,2,3}
-        \foreach \x in {1,2,3}{
-                \ifnum\x=\y
-                    \draw[<-] (X\x) -- (L\y);
-                    %node[midway, edgelabel] {$R_{X_\x  \gets L\y}$};
-                \else
-                    \pgfmathparse{2 > \x-\y && 2 > \y-\x}
-                    \ifthenelse{\pgfmathresult=1}{\draw[<-] (X\x) -- (L\y);}{}
-                \fi
-            }
-        \foreach \x in {1,2,3}
-        \foreach \y in {1,2}
-        \draw[->] (L\x) -- (Y\y);
-
-        \draw[->] (5.5,-3.5) -- (6,-3.5);
-
-        % OTHER GRAPH
-        % First layer
-        \foreach \x in {1,2,3} {
-                \node [neuron] (X\x) at (7,{-\x* 1.8}) {$X_\x$};
-            }
-
-        % Second layer
-        \node [edgelabel]  (ti2) at (9.1,-0.5) {Conditional Propagation};
-        \foreach \x in {1,2,3}{
-                \pgfmathparse{\x==1 || \x ==3}
-                \ifnum \pgfmathresult=1
-                    \node  [neuron, conditioned]  (L\x) at (9.5,{-\x* 1.8}) {$L_\x$};
-                \else
-                    \node  [neuron]  (L\x) at (9.5,{-\x* 1.8}) {$L_\x$};
-                \fi
-            }
-
-        % Last layer
-        \foreach \x in {1,2} {
-                \ifnum \x = 2
-                    \node [neuron, conditioned]  (Y\x) at (12,{-\x* 1.8 - 0.7}) {$Y_\x$};
-                    \node [neuronlabel] at (12.7,{-\x* 1.8 - 1.3}) {$R_{Y_\x} = f(x)$};
-                \else
-                    \node  [neuron]  (Y\x) at (12,{-\x* 1.8 - 0.7}){$Y_\x$};
-                \fi
-            }
-
-        % Connect nodes
-        \foreach \y in {1,3}
-        \foreach \x in {1,2,3}{
-                \pgfmathparse{2 > \x-\y && 2 > \y-\x}
-                \ifthenelse{\pgfmathresult=1}{\draw[<-] (X\x) -- (L\y)  node[midway, edgelabel] {$R_{X_\x  \gets L_\y}$};}{}
-            }
-        \foreach \x in {1,3}
-        \foreach \y in {2}
-        \draw[<-] (L\x) -- (Y\y) node[midway,align=center, edgelabel] {$R_{L_\x  \gets Y_\y}$};
-    \end{tikzpicture}
-
-    \caption[CRP Intuition]{\textbf{CRP Intuition:} Left side: simple neural network forward pass with input layer X, one hidden layer L and output layer Y. Conditioning set $\theta = \{L_1, L_3, Y_2\}$ \\ Right side: only the relevance of the neurons matching the conditioning set is propagated back \\
-        Result at input pixel $R_{X_2} = \sum_{j}  R_{X_2 \gets L_j} =  \sum_i \sum_{j} \cdot \frac{a_i w_{ij}}{\sum_h a_h w_{hj}} R_j \dots$ }
-    \label{fig:crp_example_condition}
+\begin{figure}[t!]
+\centering
+\begin{minipage}{0.48\textwidth}
+    ActMax 700k images \\
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/act_max_no_diversity_uncropped.png}\\
+    ActMax 1k images \\
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/act_max_with_diversity_uncropped.png}\\
+    RelMax 700k images\\
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/rel_max_no_diversity_uncropped.png}\\
+    RelMax 1k images \\
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/rel_max_with_diversity_uncropped.png}
+\end{minipage}
+\begin{minipage}{0.48\textwidth}
+    zoomed into receptive field \\
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/act_max_no_diversity.png}\\
+    zoomed into receptive field \\
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/act_max_with_diversity.png}\\
+    zoomed into receptive field \\
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/rel_max_no_diversity.png}\\
+    zoomed into receptive field \\
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/rel_max_with_diversity.png}
+\end{minipage}
+\caption[ActMax vs. RelMax]{Activation Maximization in Comparison to Relevance Maximization for W-dSprites (8 maximal samples for 7th neuron in last convolutional layer of a model using a Clever-Hans feature). The comparison also shows different diversity of images when selected from the whole dataset (700k) vs. a small randomly chosen subset (1k). 
+The image is cropped to the region with highest activation/relevance. }
+\label{fig:act_rel_max}
 \end{figure}
 
-\subsubsection{Interpretation Techniques}
+The resulting interpretation tools for global concepts are combined with methods for a local explanation, i.e. the analysis of a single sample or image. A \textit{Concept Atlas} inspired by Carter et. al.'s \textit{Activation Atlas} \cite{Carter2019} colors parts of an image based on the most relevant concept in that region. \textit{Hierarchical attribution graphs} decompose the relevant concepts for an image into their lower layer sub-concept channels, showing prototypical images for each of them. The presumption is that the spread of relevance into lower level features helps in the understanding of decomposed relevant concepts for a sample. For our analysis we use similar visualizations to identify at which layer one might find the most abstract but at the same time disentangled and therefore potentially human-interpretable concepts.\\
 
-Heatmaps produced by conditional attribution could be analyzed in a similar fashion to the traditional class-specific heatmaps produced by LRP. The hindrance is that the meanings of the conditioned on latent features are not known, so it is unclear how to interpret the importance of some pixels for feature $i$ in layer $l$. For large, complex models some human-understandable concepts can emerge in hidden layers from simpler more local concepts in earlier and more abstract concepts in later layers \cite{Bau2017, Hohman2020, Olah2017, Bau2020}. However this is not a fact to rely on and seems to regularly fail for smaller models or simpler problems as noted before and in other work \todo{cite}.
-
-CRP's authors therefore construct a framework for the understanding of these latent features. \textit{Activation Maximization} is used to find the samples for which the neuron (set) of a concept has the highest activation. They build on the idea of activation maximization when proposing \textit{Relevance Maximization}, where samples maximize the conditional relevance of a concept instead of the activation. Both methods yield a set of images or samples (see \autoref{fig:act_rel_max}), which can be enhanced further by masking out the irrelevant parts of the image, creating class specific reference samples and carefully selecting or extending the pool of samples to choose from. 
-
-talk about Band-aid usage scenario, which is kinda "watermark" scenario. Why is the "perturbation" of activations / filters not a good idea? or is it?
-
-is more of a \textit{human-in-the-loop} approach for finding/ removing Clever-Hans features. Example of actual watermark
-\begin{quote}
-From the graph, it can be inferred that the Clever Hans filters help the model in prediction, but they are not decisive for correct classification. Thus, the model relies on other potential non-Clever Hans features to detect the safe verifying the correct functioning of the model in cases of samples without watermarks.
-\end{quote}
-
-\begin{figure}[htbp]
-    \centering
-	\includegraphics[width=0.7\textwidth]{thesis_latex_template/pics/act_vs_relmax.png}
-    \caption[ActMax vs. RelMax]{Activation Maximization in Comparison to Relevance Maximization. The image is cropped to the region with highest activation/relevance. }
-    \label{fig:act_rel_max}
-\end{figure}
-\todo{image of ActMax and RelMax examples (using my dataset?)}
-
-The resulting interpretation tools for single concepts are combined with methods for a local explanation, i.e. the analysis of a single sample or image. A \textit{Concept Atlas} (\cref{fig:attr_graph}) inspired by Carter et. al.'s \textit{Activation Atlas} \todo{cite} colors parts of an image based on the most relevant concept in that region. \textit{Hierarchical attribution graphs} (\cref{fig:attr_graph}) decompose the relevant concepts for an image into their lower layer sub-concept channels. The presumption being that the spread of relevance into lower level features helps in the understanding of relevant concepts for a sample.
-
-\begin{figure}[htpb]
-    \centering  
-  \begin{minipage}[t]{0.45\textwidth}
-  \vspace{-\topskip}
-	\includegraphics[width=\textwidth]{thesis_latex_template/pics/concept_atlas.png}
-    \end{minipage}
-  \begin{minipage}[t]{0.45\textwidth}
-  \vspace{-\topskip}
-	\includegraphics[width=\textwidth]{thesis_latex_template/pics/example_hierarchical_attribution.png}
-    \end{minipage}
-    \label{fig:attr_graph}
-    \caption[Concept Atlas and Hierarchical Attribution Graph]{Concept Atlas and Hierarchical Attribution Graph for an image in our dataset, looking at the last convolutional layer. The result is not as easy to interpret as in the example used in the CRP paper}
-\end{figure}
-
-
-
-papers using, extending on, similar to, evaluating CRP
-which papers have been published on this
-\begin{itemize}
-    \item global: Assessing Concept Similarity in Latent Space
-    \item papers with crp and more global explanation / concept clustering stuff 
-\cite{Vielhaben2022,Vielhaben2023,Dreyer2023,Dreyer2023a,Fel2023,Fel2023a,Pahde2023}
-    \item user evaluation study of authors in next paper \cite{Achtibat2023}
-    \item 
-      \item reveal to revise: whole framework for XAI using CRP as one of the methods for concept/bias discovery \cite{Pahde2023}
-      \item using CRP to identify and unlearn bias 'Right Reason Class Artifact Compensation (RR-ClArC)' \cite{Dreyer2023a}
-      \item newest summary paper, saying basically the same thing as old one, but with a (not so great) human evaluation study \cite{Achtibat2023}
-      \item disentangle representations, similar to PCA, uses LRP \cite{Chormai2022}
-\end{itemize}
+The method of CRP and related techniques have already been embedded into an extensive framework to uncover bias and even correct it by removing the filters that have learned the spurious correlation \cite{Pahde2023,Dreyer2023,Dreyer2023a}. One takeaway from the experiments of Dreyer et al. \cite{Dreyer2023a} is that while spurious features which are localized and separable from the core features are successfully discovered and unlearned, for overlapping or unlocalized Clever-Hans artifacts this is not the case. 
 
 \section{Evaluation of XAI Methods}
-The research on quantification and evaluation of XAI methods has increased with their rising popularity. 
+The research on quantification and evaluation of XAI methods has increased with their rising popularity \cite{Nauta2023}. 
 Explainable AI method's purpose is to describe the decision strategies of a machine learning model to ensure it is safe and fair to deploy for an application. 
 Unless we can guarantee that an explanation indeed accurately identifies \textit{why} a decision has been made, it can not be used as a justification.
 The core problem of evaluation explanation methods is that there is no agreed upon, mathematical definition of a \textit{good} explanation. However, attempts to rigorously compare XAI methods have been made using proxies:\\
 
-A successful explanation is not only correct (i.e. faithful to the model), but also sufficient, technically applicable and understandable by humans \cite{Samek2021}. Work on evaluating XAI methods can therefore be generally divided into these categories, with different metrics or experiments to measure respective performance. One can try to measure those factors on real problems, create benchmarks with known ground truth explanations or conduct human studies. Within these possibilities we focus on evaluation methods for local attribution methods, back-propagation methods and concept-based methods, applicable to our study subject \textit{CRP}.
+A successful explanation is not only correct (i.e. faithful to the model), but also sufficient, technically applicable and understandable by humans \cite{Samek2021}. An extensive set of properties to evaluate and applicable quantitative methods have also been brought forward by Nauta et al. \cite{Nauta2023}. Work on evaluating XAI methods can therefore be generally divided based on which property they evaluate, with different metrics or experiments to measure respective performance. One can measure those factors using quantitative metrics, create benchmarks with known ground truth explanations or conduct human studies possibly within realistic application settings. We limit ourselves to functional evaluation because the properties we intend to analyze are difficult to evaluate within an application-grounded setting or human-grounded setting as described in the taxonomy of \cite{Nauta2023}. Within this realm we focus on evaluation methods for local attribution methods, back-propagation methods and concept-based methods, applicable to our study subject \textit{CRP}. 
 
-\subsection{Fidelity, Correctness, Faithfulness}
+\subsection{Correctness}
+A multitude of metrics and theoretical analyses have examined the fidelity, especially of local attribution methods, to the model they are trying to explain. Evaluations commonly used by authors of new XAI methods are related to feature ablation which is sequential removal of important features by ''flipping'' the important pixels or input features yielded by the method to an uninformative value \cite{Samek2017a}. 
+These metrics hypothesize that removing the actually most important features from the input should reduce the models ability to predict accurately more than removing random features if the explanation is faithful to the model.\\
 
-Recently, a multitude of benchmarks and theoretical analyses have examined the fidelity, especially of local attribution methods, to the model they are trying to explain. Evaluations commonly used by authors of new XAI methods include feature ablation \cite{Samek2017} and data randomization (e.g. pixel flipping) \cite{Adebayo2018}. 
-These metrics hypothesize that changing or removing the most important features from the input should significantly reduce the models ability to predict accurately.
+While these approaches to some degree follow the idea of measuring the effect between prediction and explanation, they ignore the generating factors of a dataset which do not necessarily surface within single input features. It is also questionable whether identifying the most important single pixels within an image really covers the full extent of a models workings. Related to that, it has been shown that most attribution methods are vulnerable to adversarial attacks, which change images imperceptibly while producing maximally different explanations \cite{Ghorbani2019a, Anders2020, Dombrowski2022,Dombrowski2019}. One issue here is that removing the most important features potentially leaks information about them, for example because the boundary of the object region might still resemble the removed object \cite{Rong2022}.
+The procedure can also not be fully interpreted as a \textit{causal} effect estimation; among other things, because the choice of a proper baseline distribution for the removed pixels or image regions is in itself a hard task \cite{Chang2019,Hooker2019, Popescu2021, Rong2022}. \\
 
-While this does to some degree follow a causal idea, it ignores the generating factors which do not necessarily surface within single pixels and is prone to errors because the choice of a proper baseline is in itself a hard task as the true causal pathways in the data distribution are usually not known. Another issue is that removing the most important features does not necessarily remove their whole information, because the boundary of the image region might still resemble the removed object.
-When choosing the baseline by averaging over the existing training set, one might introduce biases, but just greying out pixels is out of the distribution of true images too.
+Similar to removing the most important input features with pixel-flipping, some authors also suggest masking or randomizing (sets of) model parameters that have been identified as important to quantify the resulting decrease in performance \cite{Ghorbani2019,Zhang2021,Achtibat2022, Fel2023}. 
+This analysis can suffer from comparable limitations as the pixel-flipping approach due to out-of-distribution parameters. At least, it does not necessitate a change to the input data and only intervenes on a models weights or biases without requiring retraining.
+Techniques like this are especially applicable to concept-based methods such as the here studied CRP and are also applied by CRPs authors under the term of \textit{filter flipping}. \\
 
-\cite{Bluecher2022}
-- interactions of different concepts with each other
-- close / similar to shapely values
--
+Another line of work evaluating attribution methods, which is especially relevant to concept-based methods, is comparing attribution maps to ground-truth images akin to image segmentation \cite{Kim2018,Yang2019,Bau2020,Arras2022,Clark2023}. These techniques are mostly applicable for tasks where one or multiple localizable concepts within an image ought to be the reason for a classification. The majority of the importance is therefore expected to lie within the the boundary of these objects. While Yang et al. \cite{Yang2019} use such an approach to measure \textit{relative} feature importance, we are not convinced whether these relative differences are perceptible to humans. Adding to that, just because the majority of attribution lies within an objects boundaries, it does not necessarily attribute for the correct reasons or in accordance with the models ground truth. For example, if color is a spurious feature to shape in a task, an explanation might value pixels because of their color and not due to belonging to a shape. The most extreme example of such an evaluation technique is the \textit{pointing game} method which only tests whether the most important pixel lies within an object \cite{Zhang2016}. In some scenarios this has been shown to give high scores even to naive strategies like highly attributing pixels in the center of the image \cite{Gu2019}. According to Nauta et al. \cite{Nauta2023} if these methods are not carefully combined with gathering ground truth importance of the trained model, they are evaluating \textit{coherence} or ''agreement with human rationales'' which is often falsely conflated with the correctness or faithfulness to the model. 
+\\
 
-\cite{Rong2022}
-- eliminates problem that perturbing "important" pixels has information leakage as shape is visible
-- ROAD
-- new evaluation strategy for attribution methods: remove and debias
-
-
-\subsection{Sensitivity, Sufficiency}
-\cite{Wilming2023, Clark2023}
-
-
-
-\paragraph*{XAI-TRIS:}
-(could also fit into "with known ground truth importance" category)
-\cite{Clark2023}
-Gleich
-\begin{itemize}
-      \item similar "causal" model for benchmarks
-      \item idea of signal-to-noise ratio style setup from here
-\end{itemize}
-
-Anders
-\begin{itemize}
-      \item they say suppressor variables should not be important. However if they have a causal effect on the model (which they do, cause prediction is worse without them) in our opinion they should be important.
-      \item question is: what should the correct explanation be, when constant vector shift or out-of-distribution sample makes good prediction impossible?
-      \item in my opinion: putting attention onto the suppressor feature is a good way to show that the model can't deal with it well
-      \item Performance Metrics: Precision? / Earth Mover's Distance (Wasserstein) between binary gt and heatmap
-\end{itemize}
-
-\paragraph{Wilming, Suppressor Variables}
-\cite{Wilming2023,Clark2023}
-\begin{itemize}
-    \item their experiment is based on the idea that a model explanation should be able to distinguish between a \textit{spurious} (in their case \textit{suppressor} feature and a \textit{core} feature. 
-    \item in the simple model they create, $X_1$ is a collider for the core $Y$ and the other $X_2$ feature, so the SCM is not the same. But learning $X_2$ might still help.
-    \item in our example, the other generating factors such as scale and rotation are similar to the suppressor variable they propose. 
-    \item we believe that it would be strange to assume the model to assign 0 importance to those features, as they have to be learned to understand the model space
-    \item While the explanation in our experiment is not independent of the other generating factors, in general the causal effect of changing these is magnitudes lower than changing the core or spuriously correlated features. 
-    \item they only find methods which purposefully include the data distribution of the training data into the explanation to be successful
-    \item we argue that, while getting insights into that, it does not explain what the \textbf{model} itself is doing.
-    \item As we show in our experiment, the relationship between what is present in the data and what a model learns, while it generally follows a trend, is not exactly linear
-    \item hence our title \textit{are we explaining the data or the model?}
-    \item nothing wrong with explaining the underlying data too. but in application cases we don't have that information. Or we want good explanations independent on the data the model was trained on
-\end{itemize}
-
-\cite{Clark2023} on XAI papers: 
-\begin{quote}
-A recent survey showed that one in three XAI papers evaluate methods exclusively with anecdotal
-evidence, and one in five with user studies Nauta et al. (2023). Other work in the field tends to
-focus on secondary criteria (such as stability and robustness Rosenfeld et al. (2021-03-27); Hedström
-et al. (2022)) or subjective or potentially circular criteria (such as fidelity and faithfulness Gevaert et al. (2022); Nauta et al. (2023)). We doubt that such validation approaches can fully replace metrics assessing objective notions of ‘correctness’ of explanations, considering that XAI methods are widely intended to be used as means of quality assurance for machine learning systems in critical applications.
-\end{quote}
-
-\subsection{Human Interpretability}
+\subsection{Sensitivity, Robustness and Input Invariance}
+Next to an explanation being correct, i.e. identifying the most important input features for the model, it also needs to be sensitive to the models explanation strategy and fulfill other properties like the ones defined in \cite{Nauta2023}.
+Other evaluation works therefore study the relationship of model and explanation through the randomization of parameters within a model \cite{Adebayo2018, Sixt2020, MORE}. The hypothesis of these evaluations is that the explanations produced for a randomized model should have low similarity to the ones produced for a trained model. With respect to that, local attribution maps have been shown to perform less than ideal. Often, explanations for random models are visually almost indistinguishable to their trained counterpart and both seem close to images produced by simple edge detection algorithms \cite{Adebayo2018, Clark2023}.
+The evaluation of \textit{input invariance} as put forward by Kindermans et al. \cite{Kindermans2019, Kindermans2017} posits that an explanation should not differ when a constant vector shift is applied to data which does not affect the prediction. They show in their evaluation that many local attribution methods are not able to attribute correctly, when a constant vector shift not affecting the prediction is added to the images. LRP which the here analyzed CRP is built on also fails this test, but their method PatternAttribution which is a variation of LRP using the ''natural direction of variance'' as the reference point, is by construction input invariant.
+Similar work has recently more rigorously defined and theoretically analyzed this problem \cite{Wilming2023,Wilming2022, Clark2023} using a causal data generation framework. Wilming et al. aim to formalize what \textit{feature importance} is and identify constant vector shifts and other potentially correlated features within the data distribution to be \textit{suppressor variables}.
+They argue that while spuriously correlated or Clever-Hans features are statistically associated with the prediction target and it can be expected that feature importance is assigned to them, suppressor variables are independent of the target yet often still have importance attributed to them. They state that ''in practice, XAI methods do not distinguish whether a feature is a confounder or a suppressor, which can lead to misunderstandings about a model's performance and interpretation'' \cite{Wilming2023}. Although we deem the differentiation between generating mechanisms of data an important field of study for XAI, we argue that it might be futile to look for this in explanations when the models themselves are unable to establish that distinction. 
+However we employ their definition of feature importance and construct our experiment with a similar data generation process.
+ 
 {\color{gray} 
-evaluation studies, old notes:
 \begin{enumerate}
-      \item \cite{Sixt2022a}: evaluation of heatmaps/saliency methods not enough based on actual user studies and human performance / explanation quality
-            \\ task: look at explanation and rate, weather each feature is relevant or irrelevant
-            \textit{Similar to our work they investigate how well users can quantify biases of a model, one of the most important applications of XAI methods.}
-      \item \cite{Wilming2023}: explanation of suppressor variables (that have no statistical association with target) gives false impression that of dependency if their inclusion into the model improves it
-            \\ task: linear model with 1 real and 1 suppressor variable, saliency methods mark both suppressor variable and core variable as important
       \item \cite{Sixt2020}: because matrix is converging to rank 1 in BP methods that dont use negative relevance scores appropriately, heatmaps are not class sensitive
             \\ task: randomize more and more network parameters, look at heatmap for and against class
-      \item \cite{Kindermans2019}: heatmap methods are sensitive to constant shift in input data, but should fulfill input invariance
-            \\ task: add “watermark style” input shift, test if model still predicts accurately and then if heatmap does same as model
-      \item \cite{Karimi2023}: explanation depends more on hyperparameters than on model weights and prediction itself
-            \\ task: quantify treatment effect when changing hyperparameters in comparison to changing model weights
-      \item \cite{Adebayo2018}: some saliency methods are independent to both the model and the data generating factors (not testing LRP)
-            \\ task: compare explanation trained on true model with explanation trained with random labels, also compare to simple edge detector which is very similar often
-      \item \cite{Sixt2022}: deep taylor decomposition fails, when only positive relevance taken into account, matrix falls to rank 1 \\ task: theoretical analysis
+      \item \cite{Sixt2022}: deep taylor decomposition fails, when only positive relevance taken into account, matrix falls to rank 1 \\ task: theoretical analysis.  
+      this might be related to concept-based methods not being able to properly differentiate when spurious features are overlapping target features?
 \end{enumerate}
 }
 
+\paragraph{Evaluation for the Concept-Based Method CRP}
+Next to \textit{filter flipping}, which is the deactivation of single neurons analogous to pixel flipping \cite{Samek2017a}, CRPs authors employ an experiment quite similar in its goals to our experiment. 
+Having background knowledge on a Clever-Hans feature and the concepts that encode it for a benchmark dataset, they analyze how gradually mixing this feature into samples or removing it from them changes both model output and relevance of the concepts in question. 
+Though the experiment produces the result expected by the authors, the criticism brought up by Hooker et al. \cite{Hooker2019} holds; introducing a concept gradually by linearly alpha-blending its pixels with the real image can produce images out of distribution. Furthermore, due to the more complex dataset the authors test this on, other factors are harder to control for. The assumption they make on being able to identify one or few concepts which are effectively and visibly encoding the Clever-Hans feature only holds for specific datasets and when one has the leisure to thoroughly analyze many samples. Without already knowing the spuriously correlated features, such an analysis is impossible.  \\
 
-From \cite{Yang2019}:
-\begin{itemize}
-    \item Sensitivity and Robustness: explanation changes same as model/output changes \cite{Adebayo2018,Ghorbani2019a}
-    \item Correctness: e.g. feature ablation (=faithfulness, fidelity) \cite{Samek2017a,Fong2017,Hooker2019} Hooker use retraining, others don't: but they do not specifically mention fixing the random initialization. as becomes clear in our results, this might be fatal for the comparability of retrained importances
-    \item with ground truth knowledge of feature importance \cite{Kim2018, Yang2019, Clark2023,Arras2022,Bau2017,Parafita2019,Singla2022}
-    \item with humans in the loop \cite{Singla2022, Ribeiro2016, Rong2023,Kim2018}
-\end{itemize}
+An interesting point the authors bring up is the relative importance of Clever-Hans or spurious features. In an experiment with watermarked images they find that while the watermark is encoded and attributed by the network, it only has low relevance for the prediction. They also show in their prominent example of a dog image (see \cref{fig:crp_vs_lrp}), that the fur of the dog actually has larger total relevance but in the heatmap the snout seems to be more important because its attribution is more concentrated. A similar thing could happen with a spurious feature like a watermark because it is often smaller than the shape itself. So although relevance scores may help in deciding whether a model indeed uses a Clever Hans feature, the related attribution maps could potentially rather lead to more confusion.
+The evaluation of relative importance of Clever Hans features is therefore an interesting task especially for concept-based methods. 
+Yang et al. \cite{Yang2019} attempt in their evaluation to measure relative importance in a way that is related to our approach. However, their analysis is not founded on the causal framework and only looks at general and not concept-specific attribution. 
+Our experiment with a similar problem therefore analyzes the potential benefits or shortcomings of this concept-based method for relative feature importance more rigorously. \\
 
-From \cite{Samek2021}:
-\begin{itemize}
-    \item Faithfulness/Sufficiency: 'pixel-flipping' \cite{Samek2017}
-    \item Human Interpretability \cite{Kim2018}, file size of explanation
-    \item Applicability and Runtime
-\end{itemize}
-
-From \cite{Arras2022}:
-\begin{itemize}
-    \item Pixel Perturbation == feature ablation pixel flipping \cite{Samek2017a, Samek2021, Bach2015, Lundberg2017}
-    \item Data Randomization \cite{Adebayo2018}
-    \item Model Randomization \cite{Adebayo2018,Sixt2020}
-    \item Remove and Retrain \cite{Hooker2019}
-    \item Object Localization / Segmentation \cite{Simonyan2014}
-    \item Pointing Game
-\end{itemize}
-
-
-\subsection{With Known Ground Truth}
-Additionally, more complex benchmarks \cite{Kim2018, Arras2022, Bau2017, Singla2022} which are often human-supervised aim at comparing XAI outputs to human-understandable concepts.
-
-In the quantitative evaluation of \cite{Kim2018} a similar approach to ours is put into action:
-a noise parameter controls the correlation of an image and a label on it and the accuracy for images without the label is tested. If the label was not learned as an important feature, the TCAV score should be low. User studies showed that saliency maps for TCAVs did not help in identifying the important feature. This is an important insight and corresponds with \cite{Sixt2022a}. It seems that saliency maps are misleading more often than not. If there is no additional insight as with CRPs relevance images or similar, one can not expect to tell spurious from core features only using saliency maps.
-
-\begin{itemize}
-      \item examples of often used evaluations for local attribution methods and concept-based methods:
-            \begin{itemize}
-                  \item feature ablation and related methods
-                  \item TCAVs \cite{Kim2018} with benchmark feature set (hard and often not applicable)
-                  \item clevr-xai? \cite{Arras2022}
-            \end{itemize}
-      \item clever XAI artificial benchmark dataset \cite{Arras2022}
-      \item NetDissect dataset with concept-segmented images \cite{Bau2017}
-      \item also other concept/neuron dissection by same authors, similar idea to CRP \cite{Bau2020}
-      \item creates new dataset (human-supervised) to detect core vs spurious features \cite{Singla2022}
-\end{itemize}
-
-\cite{Yang2019}
-- Common Feature Measure -> how many of the (10) classes have this feature in background (e.g. dog)
-- vary cf measure from 0.1 (only one class has feature = watermark) to 0.9 (9 out of 10 classes have feature)
-- measure MCS = Model Contrast Score = how different is importance of cf in different models
-
-\cite{Arras2022}
-- clevr-xai = known ground truth importance
-- Mass Accuracy = relevance within feature bounding box / total relevance in image
-- Rank Accuracy = how many of the pixels inside bounding box are in K most important pixels
-
-
-{\color{red} outline which problems CRP solves well, draw connections between unsolved criticism and causal perspective}
-
-Although a general lack of dependence between explanations and their model \cite{Adebayo2018,Karimi2023} has so far only been studied for attribution methods that are not concept-based, current research still draws a less than ideal picture of their fidelity.
-Kindermans et al. \cite{Kindermans2019} show that a constant vector shift on the input data, which is not affecting the performance of the model, can lead to misleading explanations. The theoretical and empirical analysis of \cite{Sixt2020} finds the class insensitivity of some back-propagation methods to be due to their improper use of negative relevance.
-While authors of new methods often underline their applicability with user studies \cite{Achtibat2023,Fel2023,Ghorbani2019,Zhang2021}, Sixt et al. \cite{Sixt2022a} among others \cite{Singla2022} show that XAI methods do not necessarily increase humans skill at identifying relevant features. Similarly, Rong et al. \cite{Rong2023} criticizes a lack of comparability between user studies in the field of XAI. 
-
-Constructing an evaluation test which is neither too simple and therefore too far away from realistic application scenarios nor not quantifiable empirically due to its \textit{human} component or unidentifiable ground truth, poses a challenge which \cite{Clark2023} tries to tackle. This benchmark is based on recent analysis \cite{Wilming2023} of suppressor variables, which can be for example the background color of an image, that are used by the model without having an association to the core features to normalize the image and improve the prediction.
-They introduce a generation process for mixing the suppressor and real features which serves as inspiration for the structural causal model applied in our case.
-
-\begin{itemize}
-      \item explanations are independent of later layers (no negative relevance) \cite{Sixt2020}
-      \item suppressor variable "in practice, XAI methods do not distinguish whether a feature is a confounder or a suppressor, which can lead to misunderstandings about a model's performance and interpretation"
-      \item kinda stupid, because neural network also does not make a difference between suppressors and confounders \cite{Wilming2023}
-      \item the (un-)reliability of saliency methods: should fulfill 'input invariance'
-      \item saliency method mirrors sensitivity of model with respect to transformations of the input
-      \item normal LRP root point (zero) not working
-      \item pattern attribution reference point works (direction of variation in data, determined by covariances) \cite{Kindermans2019}
-\end{itemize}
-
+Although human-grounded evaluation is out of scope for this thesis we still want to highlight some work that relates to the problem of spurious feature importance for concept-based method we explore. 
+Prominently, multiple user studies have found attribution maps to be insufficient for the discovery of spurious or Clever-Hans features or concepts in general \cite{Sixt2022a,Rong2023,Kim2018}. 
+The human subject study by Sixt et al. \cite{Sixt2022a} explicitly deals with a Clever-Hans scenario and asks users to identify whether a model uses a spurious feature or not. In comparison to just looking at images sorted by their respective prediction, two methods are evaluated and especially the concept-based method introduced by Zhang et al. \cite{Zhang2021} which is closely related to CRP performs poorly. When spurious and core features overlap, concept-based methods are not expected to be effective at distinguishing the more important one. The small human-subject study conducted by the authors of CRP \cite{Achtibat2023} shows that their \textit{glocal} approach, incorporating concept-specific examples, performs significantly better than methods purely based on attribution. However, in their scenario the artefact (i.e. Clever-Hans feature) is not spatially overlapping with the target feature, making it unclear how the method performs in such a case. Although they show anecdotal evidence of their methods ability to answer the \textit{what} question and therefore potentially enabling the identification of a spurious feature overlapping with a core feature, they do not attempt to evaluate this more thoroughly. Our framework therefore aims to evaluate this potential benefit or weakness of CRP. 
 
 \section{Causal Inference}
 In the following we summarize the causal inference and estimation framework used for our analysis. 
-Although the principles of causality seem to be innate in human rational thinking, they have been formalized not so long ago \cite{Spirtes1993, Halpern2005, Pearl2000} and efforts to include causal notions into fields like AI have also been met with doubts and caution. 
+Although the principles of causality seem to be innate in human rational thinking, they have been formalized into a framework not so long ago \cite{Spirtes1993, Halpern2005, Pearl2009, Peters2017}. The theory of causality and AI are intertwined but efforts to include causal terminology into AI research have also been met with doubts and caution \cite{Schoelkopf2019}. Typical AI models find statistical associations and are not expected to recover truly causal relationships. As Schölkopf puts it: ''machine learning is also bad at \textit{thinking} in the sense of Konrad Lorenz, i.e., acting in an imagined space'' \cite{Schoelkopf2019}.
 
 \subsection{Ladder of Causation}
-As mentioned before, most machine learning methods including deep neural networks do not attempt to learn causal relationships but merely \textit{associations}. These are on the first ladder of causation as described by Pearl \cite{Pearl2000}. Many explanation methods do not go beyond the statistical associations as found in the models output either and ask questions like \textit{How does seeing prediction Y change my believe that X is important}. However in recent years there has been an effort to climb the ladder of causation and answer \textit{what if} questions like \textit{how does the model output Y change if I change X} by creating \textit{interventions} on the input or the model parameters. The highest rank of causation, \textit{counterfactuals}, answers \textit{why} questions. One concrete example would be: \textit{How would the output Y have changed, if X had been different}. 
+The ladder of causation as described by Judea Pearl \cite{Pearl2009} is a conceptualizations of what kind of questions can be answered depending on the causal steps taken.
+The first rank is that of observations or \textit{associations}. Here, data is only observed to answer questions like \textit{''how does seeing x change my believe of y?''}.
+The next rank arrives at answering questions about causal relationships like \textit{''how does y change if I change x?''} by interventions (here on \textit{x}). The ultimate \textit{counterfactual} rank requires being able to answer question about past or imagined events, i.e. \textit{''how would y have changed if I x had been different?''}.
+As mentioned before, most machine learning methods including deep neural networks do not attempt to generalize a problems task to related tasks or out-of-distribution data but merely learn \textit{associations} \cite{Schoelkopf2019}. Many explanation methods do not go beyond the statistical associations as found in a models output either and ask questions like: \textit{''how does seeing prediction Y change my believe that concept X is important for the model?''}. However in recent years there has been an effort to climb the ladder of causation and by answering how a model output \textit{Y} changes if an input feature, model parameter, or more abstract concept \textit{X} is intervened on. One example of reaching a counterfactual rank for explanations would be: \textit{How would the output Y have changed, if concept X had not been there}. Similarly, causal reasoning about explanations could happen on this last rank by investigating e.g. how an explantion would have changed if a concept had not been there. 
 
 \subsection{Structural Causal Models}
 To analyze and quantify causal relationships, \textit{structural causal models} are defined, based on the observable variables \textbf{X}, the unobserved or noise variables \textit{U} and their probability distribution $P_u$, and structural assignments \textit{f}. The structural assignments represent causal mechanisms between a variable $x_i$ and its parents $Pa(x_i) \in (X \setminus \{x_i\}) \cup U$  such that $\forall x_i \in X, x_i = f_i(Pa(x_i),u_i)$. 
-Structural causal models, or short SCMs, can be represented by a directed acyclic graph (DAG) $G(V,E)$ known as a causal Bayesian network. The nodes $V$ are the endogenous (or observable) variables and the directed edges represent the causal mechanisms $f$ from each parent variable in $PA^i$ to its child $x_i$. We assume that \textit{structural minimality} holds for the SCM and its graph, which means that if a directed edge between two variables X and Y exists, there is a non-zero causal effect from X to Y. 
-In general the structural assignments $f$ can take any shape, though restricted SCMs pose assumptions on the type of functions possible. Importantly, if no assumptions are made, the direction of causal links is not always identifiable \cite{Peters2017}. Even though in practice one can for example often assume that the noise is not exactly Gaussian, which makes identification possible, this is not necessarily the case for complex image data. As we will see later, the directions of causal links cannot be easily identified for typical image classification tasks and this shall not be the goal of this work. By generating a toy dataset with a predefined SCM we can estimate causal effects because the causal directions are known.
+Structural causal models, or short SCMs, can be represented by a directed acyclic graph (DAG) $G(V,E)$ known as a causal Bayesian network or causal graph. The nodes $V$ are the endogenous (or observable) variables and the directed edges represent the causal mechanisms $f$ from each parent variable in $PA^i$ to its child $x_i$. We assume that \textit{structural minimality} holds for the SCM and its graph, which means that if a directed edge between two variables X and Y exists, there is a non-zero causal effect from X to Y. 
+In general the structural assignments $f$ can take any shape, though restricted SCMs pose assumptions on the type of functions possible. Importantly, if no assumptions are made, the direction of causal links is not always identifiable \cite{Peters2017}. In an SCM conditioning on a variable X, i.e. setting it to a fixed value or interval, can help in identifying causal directions, which is applied in many causal discovery algorithms. However, when X is a collider of two other causal variables Y and Z, so they are both its parents, then conditioning on X or a descendant of X introduces \textit{selection bias}. This is because the two variables Y and Z both contain information about X and therefore a common constraint is put on them. Hence, when it is not known whether such a conditioning has occurred in a dataset, be it by unobserved variables, the causal pathways are hard to identify. 
+Even though in practice one can for example often assume that the noise is not exactly Gaussian, which makes identification possible, this is not necessarily the case for complex image data. As we will see later, the actual directions of causal links cannot be easily identified for typical image classification tasks and this shall not be the goal of this work. By generating a toy dataset with a predefined SCM we can estimate causal effects because the causal directions are known.
 
-Something about \textit{independent mechanisms}
+% Similarly, a soft intervention is restricting variable $X$ to an interval or distribution, for example $do(X:= \mathcal{U})$ with $\mathcal{U} \sim [0,1]$. 
 
 \subsection{Causal Effect Estimation}
-A hard intervention on a variable $X$, denoted as $do(X := x_0)$ is replacing the previous structural assignment of that variable ($X = f(PA_x, \eta_x)$) with a fixed value $x_0$.  
+An intervention on a variable $X$, denoted as $do(X := x_0)$ is replacing the previous structural assignment of that variable ($X = f(PA_x, \eta_x)$) with a fixed value $x_0$. 
 In the associated causal graph this is equivalent to removing all in-going edges of $X$.
-When the causal model is at least partly known, causal effects can be estimated by intervention. The average causal effect of a binary variable $X$ on another variable $Y$ is defined as follows:
+When the causal model is known and can be approximated by a linear model, causal effects can be estimated by intervention. The average causal effect of a binary variable $X$ on another variable $Y$ is defined as follows:
 
 \begin{equation}
-\displaystyle ACE = \mathbb{E} [ y \ | \ do(x=1) ] - \mathbb{E} [ y \ | \ do(x=0) ] 
+\displaystyle ACE = \mathbb{E} [ Y \ | \ do(X=1) ] - \mathbb{E} [ Y \ | \ do(X=0) ] 
 \end{equation}
-In recent years a multitude of work has taken variants of this average causal effect and of SCMs to either explain AI models directly or to evaluate explanations. 
+This often necessitates adjusting for other known factors which confound $X$ and $Y$.
+\begin{equation}
+\frac{\partial}{\partial \mathrm{x}} \mathbb{E} [ y \ | \ do(X=\mathrm{x}) ] = 
+\mathbb{E}_Z \left\{ \frac{\partial}{\partial \mathrm{x}} [ y \ | \ do(X=\mathrm{x}), Z=z ] \right\}
+\end{equation}
+The full framework of intervention and adjustment was formulated within Pearls \textit{do}-calculus \cite{Pearl2009} but for our case very simple forms of it suffice.
+In recent years a multitude of work has taken variants of this average causal effect and of SCMs to improve or explain AI models directly or to evaluate given explanations. 
 
 \section{Towards More Causal Evaluation of XAI}\label{section:causal_xai}
 
-There is a long-standing relationship between causality and AI research and explaining a models decision is in itself a causal task.
+There is a more and more explored relationship between causality and AI research and especially explaining a models decision has been described as a inherently causal task \cite{Moraffah2020a, Beckers2022, Halpern2005a}.
 As Schölkopf argues, ''the hard open problems of machine learning and AI are intrinsically related to causality'' \cite{Schoelkopf2019}.
-Built on a philosophical and theoretical foundation \cite{Woodward2004, Halpern2005, Schoelkopf2019} many authors have already started using more causal language when describing the goals of explanation methods. Moraffah et al. \cite{Moraffah2020a} survey current causal XAI methods as well as causal evaluation of XAI methods. Beckers \cite{Beckers2022} formally defines \textit{sufficient} and \textit{counterfactual explanations} as well as \textit{actual causation} in the 'action-guiding' setting that is XAI. He argues that a good explanation not only shows which things ought to be changed for a different outcome but also makes clear which ''\textit{may not be manipulated}''. In computer vision tasks there is no standard way of explaining the contextual data distribution that ought to stay fixed. 
-
-There is therefore a growing variance of generating counterfactual explanations \cite{Moraffah2020a}. Similarly, feature attribution needs to make decisions on how to explain in the context of the training distribution. 
-Some authors \cite{Kindermans2017,Wilming2023, Wilming2022} argue, that explanation methods should learn to ignore the underlying data distribution with potential spurious correlations by incorporating it into the explanation process. Others believe that one of the core use-cases of explanation methods is to uncover these \textit{Clever-Hans} artifacts, stemming from skewed training distributions. It seems not advisable to apply a biased model to an out-of-distribution scenario, even though the learned spurious features (or suppressor variables) might not have an effect on the outcome (yet).\\
+Built on a more philosophical and theoretical foundation \cite{Woodward2004, Halpern2005,Halpern2005a, Schoelkopf2019} many authors have already started using more causal language when describing the goals of explanation methods. Moraffah et al. \cite{Moraffah2020a} survey current causal XAI methods as well as causal evaluation of XAI methods. Beckers \cite{Beckers2022} formally defines \textit{sufficient} and \textit{counterfactual explanations} as well as \textit{actual causation} in the 'action-guiding setting that is XAI'. He argues that a good explanation not only shows which things ought to be changed for a different outcome but also makes clear which \textit{may not be manipulated}. In computer vision tasks there is no standard way of explaining the contextual data distribution that ought to stay fixed. This is in our opinion a main factor of why formally defining what a \textit{good} explanation is, has evaded research so far. 
+Feature attribution needs to make decisions on how to explain in the context of the training distribution a model was trained on.
+Some authors \cite{Kindermans2017,Wilming2023, Wilming2022} argue that explanation methods should learn to ignore the underlying data distribution with potential spurious correlations by incorporating it into the explanation process. Others believe that one of the core use-cases of explanation methods is to uncover these \textit{Clever-Hans} artifacts, stemming from skewed training distributions. It seems not advisable to apply a biased model to an out-of-distribution scenario, even if the learned spurious features (or suppressor variables) might not have an effect on the outcome within the given data distribution.\\
 
 Causal methods can be applied in multiple ways in a prediction/explanation setting.
-Some authors use more fine-grained features like single pixels as implicit causal variables, especially for scenarios without a known ground truth importance \cite{Zeiler2013,Fong2017,Samek2017a}. Others use known ground truth factors or learn abstract concepts as causal variables in an unsupervised manner \cite{Goyal2019, Tran2022, Reimers2019, Reimers2020, Harradon2018}. The third approach is to interpret the neural network itself as a causal graph and hidden neurons as causal variables that can be intervened on \cite{Narendra2018, Chattopadhyay2019}. Karimi et al. \cite{Karimi2023} on the other hand, interpret the whole process from hyperparameters to the explanation as one causal model and intervene on model hyperparameters. 
-In all cases, the goal is to estimate the effect of interventions on the model prediction and explanation, either to construct a new (counterfactual) explanation method or to evaluate existing methods.
-Our work in principle also intervenes on a variable in order to measure causal effects. Similar to Karimi et al. \cite{Karimi2023} our variable can be seen as a hyperparameter to the whole model training and explanation generation process and we do not aim to generate explanations but study their relationship with the prediction. In their work, they intervene on many training hyperparameters in order to compare the influence on the prediction to the influence on the explanation. Their hypothesis is that a good explanation should be determined only by the prediction and therefore the effects of the hyperparameters on the explanation should be completely mediated by the prediction. By carefully constructing a process where only one variable in a data distribution changes, we conduct a similar experiment. 
+Some authors use more fine-grained features like single pixels as implicit causal variables, especially for scenarios without a known ground truth importance \cite{Zeiler2013,Fong2017,Samek2017a}. Others use well-defined ground truth factors or learn abstract concepts as causal variables in an unsupervised manner \cite{Goyal2019, Tran2022, Reimers2019, Reimers2020, Harradon2018}. The third approach is to interpret the neural network itself as a causal graph and hidden neurons as causal variables that can be intervened on \cite{Narendra2018, Chattopadhyay2019}. Karimi et al. \cite{Karimi2023} on the other hand, interpret the whole process from hyperparameters of a model to the explanation as one causal model. 
+In most cases, the goal is to estimate the effect of interventions on the model prediction and explanation, either to construct a new (counterfactual) explanation method or to evaluate existing methods.
+Our work in principle also intervenes on a variable in order to measure causal effects. Similar to Karimi et al. \cite{Karimi2023} our variable can be seen as a hyperparameter to the whole model training and explanation generation process. We do not aim to generate new types of explanations but study their relationship with the prediction. In their work, Karimi et al. intervene on many training hyperparameters in order to compare the influence on the prediction to the influence on the explanation. Their hypothesis is that a good explanation should be determined only by the prediction and therefore the effects of the hyperparameters on the explanation should be completely mediated by the prediction. By carefully constructing a process where only one variable in a data distribution changes, we conduct a similar experiment. Because the explanation method we analyze is model-specific and hence has a deterministic relationship with the weights and biases of the model, we do not expect the explanation to only depend on the prediction. In opposite, if the model is well-trained on the given training set, its latent parameters should not be independent of the data distribution. Subsequently, a good explanation should reflect those dependencies as accurately as possible. 
 
-
-\subsection{Interpreting The Explanation Process as a Causal Model}
-
-\begin{itemize}
-    \item observational study looking at real world correlated datasets disentanglement, correlated things are not properly disentangled \cite{Traeuble2021} 
-\end{itemize}
-
- \cite{Yang2019} Benchmarking attribution methods with relative feature importance
-
-
+{\color{gray}
+observational study looking at real world correlated datasets disentanglement, correlated things are not properly disentangled \cite{Traeuble2021} 
+more about suppressor variables, collider case
+more about clever hans features and what they are causally? (or in method)
+more about artifacts that are localized or background. what is the causal difference for them? (i guess second is more similar to collider case)
+}

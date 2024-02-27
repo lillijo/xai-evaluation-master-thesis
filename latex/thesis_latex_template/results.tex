@@ -11,32 +11,51 @@
     \end{itemize}
 }
 
-\section{The Ground Truth Trained Models}
+\section{Trained Models}
 Here we report the general results of training 816 models with 16 different random initializations and 51 different values of $\rho$ (in 0.02 steps from 0 to 1).
 The details on the model architecture and training process can be found in the \cref{appendix:model}. 
-As already noted in the method section, the model is fairly small but still has high performance for the simple benchmark data we test it on. 
-
-\begin{itemize}
-    \item trained on 
-\end{itemize}
-
-
-\begin{figure}
+As already noted in the method section, the model architecture is fairly minimal but still has high performance for the simple benchmark problems we test it on. 
+For the shape vs. watermark scenario the average performance is above 95\% and seems to not be dependent on the coupling ration $\rho$ as is visible in \cref{fig:basic_accuracy}.
+% Almost identical results are achieved for the non-localized and suppressor variable benchmark problems.
+\begin{figure}[t!]
     \centering
-    \includegraphics{thesis_latex_template/pics/basic_accuracy.png}
-    \caption[Accuracy]{Mean accuracy for models with the same coupling ratio $\rho$ (16 per bucket)}
+    \includegraphics[width=0.5\textwidth]{thesis_latex_template/pics/basic_accuracy.png}
+    \caption[Accuracy]{Average accuracy for models with the same coupling ratio $\rho$ (16 per bucket)}
     \label{fig:basic_accuracy}
 \end{figure}
 
 
-\begin{figure}
+A first impression on how much the coupling ratio (i.e. the biasedness of the model) affects the performance for instances that go against this bias can be seen in \cref{fig:accuracy_intervened}. We will in the following examine this \textit{ground truth importance} of the model in more detail with the measures $m_1$ discussed in the method \cref{section:gt_measure}.
+
+\begin{figure}[t!]
     \centering
-    \includegraphics{thesis_latex_template/pics/accuracy_intervened.png}
-    \caption[Accuracy for intervened Subsets]{Accuracy for models with the same coupling ratio $\rho$ (16 per bucket). As expected, for ellipses without and rectangles with the watermark, the accuracy drops as $\rho$ raises.}
-    \label{fig:basic_accuracy}
+    \includegraphics[width=0.5\textwidth]{thesis_latex_template/pics/accuracy_intervened.png}
+    \caption[Accuracy for intervened Subsets]{Average accuracy for the 16 models per coupling ratio $\rho$. As expected, for ellipses without and rectangles with the watermark, the accuracy drops as $\rho$ raises.}
+    \label{fig:accuracy_intervened}
 \end{figure}
 
-\begin{figure}
+Like expected, the spurious feature becomes more important to the model as its coupling with the target feature gets stronger. Both the mean logit change and the prediction flip (i.e. $\phi$-coefficient) reflect this (\cref{fig:m1_results}). It is interesting to note the variance of importance increasing the stronger the coupling gets. While all models seem to learn to ignore the spurious feature up until a correlation in the data distribution of about 0.7, some continue to mostly dismiss it as the correlation gets even stronger, while others start using the watermark for prediction. Therefore we found it important to also show each set of models trained with the same random initialization separately (\cref{fig:gt_over_seeds}). We speculate this robustness to spurious features some instances of initial weights and biases seem to display to be, because the local minimum concentrating around the spurious feature is far from the initial point in the gradient function. It certainly is a phenomenon worth studying and multiple authors have set to explicitly de-biasing networks using e.g. adapted cost functions, adversarial methods or human-in-the-loop correction \cite{Anders2022,Pahde2023,Reimers2021, Reimers2021b, Dreyer2023a}.
+
+A second noteworthy observation one can make from this individual view is that some seeds seem to be more unstable in performance than others (i.e. 1, 3, 6, 14). Nevertheless no relationship between this instability and the models reaction to the spurious feature is apparent so we do not remove these seeds from our analysis.
+
+\begin{figure}[t!]
+    \centering
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/m1_phi_mlc.png}
+    \caption[Ground Truth Importance $m_1$]{Ground Truth Importance of watermark feature $W$, plotted against coupling ratio $\rho$.}
+    \label{fig:m1_results}
+\end{figure}
+
+\begin{figure}[t!]
+    \centering
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/compare_seeds_w_accuracy.png}
+    \caption[Comparing Seeds]{Mean Logit Change when intervening on watermark over 16 random seeds (red)
+    compared to $\rho$ (green dashed), correlation in data distribution (blue dash-dotted) and training accuracy (gray dotted).
+    }
+    \label{fig:gt_over_seeds}
+\end{figure}
+
+
+\begin{figure}[t!]
     \centering
     \includegraphics[width=\textwidth]{thesis_latex_template/pics/unnormalized_some_measures.png}
     \caption{Comparison of Measures Unnormalized}
@@ -44,7 +63,7 @@ As already noted in the method section, the model is fairly small but still has 
 \end{figure}
 
 
-\begin{figure}
+\begin{figure}[t!]
     \centering
     \includegraphics[width=\textwidth]{thesis_latex_template/pics/normalized_some_measures.png}
     \caption{Comparison of Measures Normalized to [0,1]}
