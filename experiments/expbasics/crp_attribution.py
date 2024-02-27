@@ -77,10 +77,14 @@ class CRPAttribution:
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.tdev = torch.device(self.device)
         self.attribution = CondAttribution(model, no_param_grad=True, device=self.tdev)
-        path = f"crp-data/{name}_{model_name}_fv"
+        path = f"crp-data/{model_name}_fv"
         self.fv_path = path
-        self.fv = FeatureVisualization(self.attribution, self.dataset, self.layer_map)  # type: ignore
-
+        self.cache = ImageCache(path=self.fv_path + "-cache")
+        self.max_target = "sum"
+        self.fv = FeatureVisualization(
+            self.attribution, self.dataset, self.layer_map, path=self.fv_path, cache=self.cache,  # type: ignore
+            max_target=self.max_target
+        )
         self.output_shape = get_output_shapes(
             model, self.fv.get_data_sample(0)[0], self.layer_names
         )
@@ -98,13 +102,13 @@ class CRPAttribution:
         self.antimask = antimask
 
     def compute_feature_vis(self):
-        print("computing feature vis")
-        if not isfile(self.fv_path):
-            self.cache = ImageCache(path=self.fv_path + "-cache")
-            self.fv = FeatureVisualization(
-                self.attribution, self.dataset, self.layer_map, path=self.fv_path, cache=self.cache  # type: ignore
-            )
-        saved_files = self.fv.run(self.composite, 0, 1000, 128, 500)
+        if not isfile(f"{self.fv_path}/ActMax_{self.max_target}_normed/linear_layers.0_rel.npy"): 
+            print("computing feature vis")
+            print("len dataset", len(self.dataset))
+            saved_files = self.fv.run(self.composite, 0, len(self.dataset), 128, len(self.dataset))
+        else:
+            print("feature vis is computed")
+            saved_files = []
         """ self.fv.precompute_ref(
             self.layer_id_map,
             plot_list=[vis_simple],
@@ -149,8 +153,8 @@ class CRPAttribution:
             relact,
             (0, no_ref_samples),
             composite=self.composite,
-            rf=True,
-            # plot_fn=vis_heat,
+            rf=False,
+            #plot_fn=vis_simple,#vis_heat,#
         )
         plot_grid(
             ref_c,
