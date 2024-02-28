@@ -5,7 +5,7 @@ from os.path import isfile, join
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 
-from crp.image import vis_opaque_img, plot_grid, imgify
+from crp.image import vis_opaque_img, plot_grid, imgify, get_crop_range
 
 from zennit.canonizers import SequentialMergeBatchNorm
 from zennit.composites import EpsilonPlusFlat
@@ -20,12 +20,15 @@ from crp.attribution import AttributionGraph
 from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 from expbasics.test_dataset import TestDataset
 
+from torchvision.transforms.functional import gaussian_blur
+from crp.helper import max_norm
+
 
 def vis_simple(
-    data_batch, heatmaps, rf=False, alpha=1.0, vis_th=0.0, crop_th=0.0, kernel_size=9
+    data_batch, heatmaps, rf=False, alpha=1.0, vis_th=0.2, crop_th=0.2, kernel_size=9
 ):
     return vis_opaque_img(
-        data_batch, heatmaps, rf=rf, alpha=0.0, vis_th=0.0, crop_th=0.0
+        data_batch, heatmaps, rf=rf, alpha=0.0, vis_th=0.001, crop_th=0.1
     )
 
 
@@ -37,6 +40,71 @@ def vis_relevances(
     )
 
 
+def vis_img_heat(
+    data_batch,
+    heatmaps,
+    rf=True,
+    crop_th=0.1,
+    kernel_size=19,
+    cmap="bwr",
+    vmin=None,
+    vmax=None,
+    symmetric=True,
+):
+
+    img_list, heat_list = [], []
+
+    for i in range(len(data_batch)):
+
+        img = data_batch[i]
+        heat = heatmaps[i]
+
+        if rf:
+            filtered_heat = max_norm(
+                gaussian_blur(heat.unsqueeze(0), kernel_size=kernel_size)[0]
+            )
+            row1, row2, col1, col2 = get_crop_range(filtered_heat, crop_th)
+            print(row1, row2, col1, col2)
+            img_t = img[..., row1:row2, col1:col2]
+            heat_t = heat[row1:row2, col1:col2]
+
+            if img_t.sum() != 0 and heat_t.sum() != 0:
+                # check whether img or vis_mask is not empty
+                img = img_t
+                heat = heat_t
+
+        heat = imgify(heat, cmap=cmap, vmin=vmin, vmax=vmax, symmetric=symmetric)
+        img = imgify(img)
+
+        img_list.append(img)
+        heat_list.append(heat)
+
+    return img_list, heat_list
+
+
+def get_bbox(
+    data_batch,
+    heatmaps,
+    rf=True,
+    crop_th=0.1,
+    kernel_size=19,
+    cmap="bwr",
+    vmin=None,
+    vmax=None,
+    symmetric=True,
+):
+    heat_list = []
+    for i in range(len(data_batch)):
+        heat = heatmaps[i]
+        if rf:
+            filtered_heat = max_norm(gaussian_blur(heat.unsqueeze(0), kernel_size=kernel_size)[0])
+            row1, row2, col1, col2 = get_crop_range(filtered_heat, crop_th)
+            heat_list.append([row1, row2, col1, col2])
+
+    return heat_list
+
+
+
 def vis_heat(
     data_batch,
     heatmaps,
@@ -44,7 +112,7 @@ def vis_heat(
     alpha=1.0,
     vis_th=0.0,
     crop_th=0.0,
-    kernel_size=9,
+    kernel_size=[5, 5],
     cmap="bwr",
     vmin=None,
     vmax=None,
@@ -82,8 +150,12 @@ class CRPAttribution:
         self.cache = ImageCache(path=self.fv_path + "-cache")
         self.max_target = "sum"
         self.fv = FeatureVisualization(
-            self.attribution, self.dataset, self.layer_map, path=self.fv_path, cache=self.cache,  # type: ignore
-            max_target=self.max_target
+            self.attribution,
+            self.dataset,
+            self.layer_map,
+            path=self.fv_path,
+            cache=self.cache,  # type: ignore
+            max_target=self.max_target,
         )
         self.output_shape = get_output_shapes(
             model, self.fv.get_data_sample(0)[0], self.layer_names
@@ -102,10 +174,14 @@ class CRPAttribution:
         self.antimask = antimask
 
     def compute_feature_vis(self):
-        if not isfile(f"{self.fv_path}/ActMax_{self.max_target}_normed/linear_layers.0_rel.npy"): 
+        if not isfile(
+            f"{self.fv_path}/ActMax_{self.max_target}_normed/linear_layers.0_rel.npy"
+        ):
             print("computing feature vis")
             print("len dataset", len(self.dataset))
-            saved_files = self.fv.run(self.composite, 0, len(self.dataset), 128, len(self.dataset))
+            saved_files = self.fv.run(
+                self.composite, 0, len(self.dataset), 128, len(self.dataset)
+            )
         else:
             print("feature vis is computed")
             saved_files = []
@@ -146,7 +222,7 @@ class CRPAttribution:
         )
 
     def make_all_references(self, cond_layer, neurons, relact="relevance"):
-        no_ref_samples = 8
+        no_ref_samples = 10
         ref_c = self.fv.get_max_reference(
             neurons,
             cond_layer,
@@ -154,7 +230,7 @@ class CRPAttribution:
             (0, no_ref_samples),
             composite=self.composite,
             rf=False,
-            #plot_fn=vis_simple,#vis_heat,#
+            plot_fn=vis_img_heat,  #
         )
         plot_grid(
             ref_c,
@@ -437,20 +513,21 @@ class CRPAttribution:
             for h in range(attr.heatmap.shape[0]):
                 heatmap = attr.heatmap[h]
                 maxv = max(float(heatmap.abs().max()), 0.0001)
-                max_all = max(maxv,max_all)
+                max_all = max(maxv, max_all)
                 # minv = min(float(heatmap.min()), -0.0001)
                 center = 0.0
                 divnorm = mpl.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
                 images[f"{l}_{h}"] = [heatmap, None]
             center = 0.0
-            divnorm = mpl.colors.TwoSlopeNorm(vmin=-max_all, vcenter=center, vmax=max_all)
+            divnorm = mpl.colors.TwoSlopeNorm(
+                vmin=-max_all, vcenter=center, vmax=max_all
+            )
             for h in range(attr.heatmap.shape[0]):
                 images[f"{l}_{h}"][1] = divnorm
 
-
         images["original"] = [
             image[0, 0].detach().numpy(),
-            f"prediction: {label} label: {target}"
+            f"prediction: {label} label: {target}",
         ]
         return images
 
@@ -468,7 +545,7 @@ class CRPAttribution:
             composite=self.composite,
             concept_id=pred,
             layer_name="linear_layers.2",
-            width=[6,8], #[8, 6],  # 
+            width=[6, 8],  # [8, 6],  #
             abs_norm=True,
             verbose=False,
             batch_size=1,
@@ -481,7 +558,9 @@ class CRPAttribution:
             edges[name] = {}
             in_counts[i[0]] += 1
             for j in connections[i]:
-                if np.abs(j[2]) > 0.05 and (i[0] == "linear_layers.2" or name in used_nodes):
+                if np.abs(j[2]) > 0.05 and (
+                    i[0] == "linear_layers.2" or name in used_nodes
+                ):
                     used_nodes.add(name)
                     j_name = f"{j[0]}_{j[1]}"
                     used_nodes.add(j_name)
@@ -489,9 +568,9 @@ class CRPAttribution:
         for source in edges.keys():
             for target in edges[source].keys():
                 if in_counts[source[:-2]] > 0:
-                    edges[source][target] = (
-                        edges[source][target] #/ in_counts[source[:-2]]
-                    )
+                    edges[source][target] = edges[source][
+                        target
+                    ]  # / in_counts[source[:-2]]
         node_labels = list(used_nodes)
         return node_labels, edges, images
 

@@ -25,13 +25,23 @@ for f in onlyfiles:
             rname = name.group(2)
             rest = a.replace(name.group(), "").replace("))))", "").replace("'", '"')
             new_value = json.loads(rest)
-            if rname not in accuracies or new_value["train_accuracy"][2] > accuracies[rname]["train_accuracy"][2]:
+            if (
+                rname not in accuracies
+                or new_value["train_accuracy"][2]
+                > accuracies[rname]["train_accuracy"][2]
+            ):
                 if rname in accuracies:
-                    print(rname, f,accuracies[rname]["train_accuracy"][2], new_value["train_accuracy"][2])
+                    print(
+                        rname,
+                        f,
+                        accuracies[rname]["file"],
+                        accuracies[rname]["train_accuracy"][2],
+                        new_value["train_accuracy"][2],
+                    )
                 accuracies[rname] = new_value
                 accuracies[rname]["file"] = f
 
-with open("../outputs/unlocalized3.json", "w") as fd:
+with open("../outputs/overlap1.json", "w") as fd:
     json.dump(accuracies, fd, indent=2)
 
-#unlocalized
+# unlocalized

@@ -24,6 +24,7 @@ class TestDataset(Dataset):
         self.img_dir = (
             im_dir if bias == 0.0 else f"{im_dir}_{str(bias).replace('.','i')}"
         )
+        self.img_path = img_path
         if not os.path.isdir(self.img_dir):
             print("making new test dataset")
             os.makedirs(self.img_dir, exist_ok=True)
@@ -38,6 +39,7 @@ class TestDataset(Dataset):
                     latents=latents,
                     has_watermark=has_watermark,
                     offset=offset,
+                    original_index=i
                 )
                 with open(f"{self.img_dir}/{count}.npy", "wb") as f:
                     np.save(f, img.numpy(), allow_pickle=True)
@@ -64,6 +66,13 @@ class TestDataset(Dataset):
         has_watermark = self.labels[index]["has_watermark"]
         # offset = self.labels[index]["offset"]
         return (latents, has_watermark, [])  # offset
+
+    def load_watermark_mask(self, index):
+        original_index = self.labels[index]["original_index"]
+        img_path = os.path.join(self.img_path, f"{original_index}.npy")
+        image = np.load(img_path, mmap_mode="r")
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(64, 64)
+        return image
 
 
 def get_test_dataset(batch_size=128):

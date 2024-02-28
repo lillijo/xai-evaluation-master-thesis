@@ -91,7 +91,7 @@ class AllMeasures:
             self.test_data = TestDataset(length=300, im_dir="watermark_test_data")
         else:
             self.ds = BackgroundDataset(0, 0.5, False, img_path=img_path)
-            self.iterations = list(range(5))
+            self.iterations = list(range(10))
             self.model_type = "overlap"
             self.test_data = TestDatasetBackground(
                 length=300, im_dir="overlap_test_data"
@@ -137,7 +137,9 @@ class AllMeasures:
             for m in self.iterations:
                 model_name = f"{self.experiment_name}_{to_name(rho, m)}"
                 model = load_model(self.model_path, rho, m, self.model_type)
-                crpa = CRPAttribution(model, self.test_data, self.model_path, model_name)
+                crpa = CRPAttribution(
+                    model, self.test_data, self.model_path, model_name
+                )
                 pbar.set_postfix(m=m)
                 results_m_r = PerSampleInfo(
                     rho_ind, m, self.len_x, self.experiment_name
@@ -313,9 +315,9 @@ class AllMeasures:
         softmax = torch.nn.Softmax(dim=1)
         savepath = f"all_measures_{self.len_x}_{self.experiment_name}.pickle"
         print(savepath)
-        if isfile(savepath):
+        """ if isfile(savepath):
             with gzip.open(savepath, "rb") as f:
-                per_sample_values = pickle.load(f)
+                per_sample_values = pickle.load(f) """
         for rho_ind, rho in enumerate((pbar := tqdm(BIASES))):
             for m in self.iterations:
                 pbar.set_postfix(m=m)
@@ -324,12 +326,12 @@ class AllMeasures:
                     r_m_info = pickle.load(f)
                 hm0s = r_m_info[0][:, 0].to(dtype=torch.float)
                 hm1s = r_m_info[0][:, 1].to(dtype=torch.float)
-                """ pred0s = r_m_info[1][:, 0].to(dtype=torch.float)
+                pred0s = r_m_info[1][:, 0].to(dtype=torch.float)
                 pred1s = r_m_info[1][:, 1].to(dtype=torch.float)
-                rels0 = r_m_info[2][:, 0].to(dtype=torch.float) """
+                rels0 = r_m_info[2][:, 0].to(dtype=torch.float)
                 rels1 = r_m_info[2][:, 1].to(dtype=torch.float)
 
-                """ # phi correlation (=prediction flip) prediction
+                # phi correlation (=prediction flip) prediction
                 labels_true = torch.cat((r_m_info[3][:, 0], r_m_info[3][:, 1]))
                 labels_pred = torch.cat(
                     [torch.zeros(self.len_x), torch.ones(self.len_x)]
@@ -375,7 +377,7 @@ class AllMeasures:
                 # kernel distance relevances
                 per_sample_values[rho_ind, m, :, m_i("m2_rel_l2square")] = (
                     self.kernel1d(rels1, rels0, dim=1)
-                ) """
+                )
 
                 # HEATMAPS
                 maxval = max(
@@ -390,12 +392,12 @@ class AllMeasures:
                     hm1sabs = hm1s
                 # absolute difference heatmaps
                 # normalized by max total absolute relevance
-                """ per_sample_values[rho_ind, m, :, m_i("m2_mac_abs")] = torch.sum(
+                per_sample_values[rho_ind, m, :, m_i("m2_mac_abs")] = torch.sum(
                     torch.abs(hm1sabs - hm0sabs), dim=(1, 2, 3)
-                ) """
+                )
 
                 for n, i in enumerate(indices):
-                    """# cosine distance relevances
+                    # cosine distance relevances
                     per_sample_values[rho_ind, m, n, m_i("m2_rel_cosine")] = (
                         self.cosine_distance(rels1[n], rels0[n]) / 2
                     )
@@ -410,7 +412,7 @@ class AllMeasures:
                     # cosine distance heatmaps
                     per_sample_values[rho_ind, m, n, m_i("m2_mac_cosine")] = (
                         self.cosine_distance(hm1s[n], hm0s[n]) / 2
-                    )"""
+                    )
 
                     mask = self.get_mask(i)
 
@@ -451,7 +453,6 @@ class AllMeasures:
                             )
                         )
                     )
-        savepath = f"1_{savepath}"
         with gzip.open(savepath, "wb") as f:
             pickle.dump(per_sample_values, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -571,11 +572,12 @@ if __name__ == "__main__":
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
     is_random = False
-    # model_type = "overlap"
-    # iterations = 5
+    model_type = "overlap"
+    # iterations = 10
     # datasettype = BackgroundDataset
     # mask = "shape"
     # accuracypath = "outputs/unlocalized3.json"
+    # relsetds = TestDatasetBackground(length=300, im_dir="overlap_test_data")
     allm = AllMeasures(
         sample_set_size=sample_set_size,
         layer_name=layer_name,
@@ -584,7 +586,7 @@ if __name__ == "__main__":
     )
     # allm.compute_per_sample(is_random=is_random)
     allm.easy_compute_measures()
-    # allm.prediction_flip()
+    allm.prediction_flip()
     # allm.data_ground_truth(6400)
     # allm.recompute_gt(6400)
-    # allm.gt_shape(640)
+    allm.gt_shape(640)
