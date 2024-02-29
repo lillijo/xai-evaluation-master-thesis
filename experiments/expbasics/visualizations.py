@@ -451,7 +451,7 @@ def plot_accuracies(path, treshold=90, num_it=6, intervened=False):
         # borderaxespad=0.0,
         reverse=True,
     )
-    plt.ylabel("Accuracy in %")
+    plt.ylabel("Accuracy in \%")
     plt.xlabel("Coupling Ratio Rho")
     return bads
 
@@ -866,8 +866,8 @@ def fancy_attributions(unbiased_ds, crp_attribution):
 
 def my_plot_grid(images, rows, cols, resize=1, norm=False):
     fig, axs = plt.subplots(
-        max(rows, 2),
-        max(cols, 2),
+        rows,
+        cols,
         figsize=(
             cols * resize,
             rows * resize,
@@ -879,22 +879,44 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False):
     maxv = max(float(images.abs().max()), 0.001)
     center = 0.0
     divnorm = matplotlib.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
-    for il in range(max(rows, 2)):
-        for n in range(max(cols, 2)):
-            axs[il, n].xaxis.set_visible(False)
-            axs[il, n].yaxis.set_visible(False)
-            if il < rows and n < cols and torch.any(images[il, n] != 0):
+    if min(rows, cols) == 1:
+        for n in range(max(cols, rows)):
+            axs[n].xaxis.set_visible(False)
+            axs[n].yaxis.set_visible(False)
+            if torch.any(images[n] != 0):
                 if not norm:
-                    maxv = max(float(images[il, n].abs().max()), 0.001)
+                    maxv = max(float(images[n].abs().max()), 0.001)
                     # minv = min(float(images[il, n].min()), -0.001)
                     center = 0.0
                     divnorm = matplotlib.colors.TwoSlopeNorm(
                         vmin=-maxv, vcenter=center, vmax=maxv
                     )
-                axs[il, n].imshow(images[il, n], cmap="bwr",) # norm=divnorm
+                axs[n].imshow(
+                    images[n],
+                    cmap="Greys",
+                )  # norm=divnorm
             else:
-                axs[il, n].imshow(torch.zeros(64, 64), cmap="bwr", norm=divnorm)
-                # axs[il, n].axis("off")
+                axs[n].imshow(torch.zeros(64, 64), cmap="Greys", norm=divnorm)
+    else:
+        for il in range(max(rows, 2)):
+            for n in range(max(cols, 2)):
+                axs[il, n].xaxis.set_visible(False)
+                axs[il, n].yaxis.set_visible(False)
+                if il < rows and n < cols and torch.any(images[il, n] != 0):
+                    if not norm:
+                        maxv = max(float(images[il, n].abs().max()), 0.001)
+                        # minv = min(float(images[il, n].min()), -0.001)
+                        center = 0.0
+                        divnorm = matplotlib.colors.TwoSlopeNorm(
+                            vmin=-maxv, vcenter=center, vmax=maxv
+                        )
+                    axs[il, n].imshow(
+                        images[il, n],
+                        cmap="Greys",
+                    )  # norm=divnorm
+                else:
+                    axs[il, n].imshow(torch.zeros(64, 64), cmap="Greys", norm=divnorm)
+                    # axs[il, n].axis("off")
     # return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     # Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
 

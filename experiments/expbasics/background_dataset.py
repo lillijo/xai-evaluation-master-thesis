@@ -102,7 +102,9 @@ class BackgroundDataset(Dataset):
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
         shape_mask = np.load(img_path, mmap_mode="r")
-        shape_mask = torch.from_numpy(np.asarray(shape_mask, dtype=np.float32)).view(1, 64, 64)
+        shape_mask = torch.from_numpy(np.asarray(shape_mask, dtype=np.float32)).view(
+            1, 64, 64
+        )
         img_noiser = np.random.default_rng(seed=self.seeds[index])
         if self.watermarks[index]:
             image = shape_mask * img_noiser.normal(0.7, 0.5, (64, 64))
@@ -110,14 +112,6 @@ class BackgroundDataset(Dataset):
         else:
             image = shape_mask * img_noiser.normal(0.5, 0.2, (64, 64))
         image = image + img_noiser.normal(0.0, 0.01, (64, 64))
-        #image = image / (image.abs().max())
-        """ if self.watermarks[index]:
-            image = image * img_noiser.normal(0.0, 0.5, (64, 64))
-            image = self.blur(image)
-        else:
-            image = image * img_noiser.normal(0.0, 0.2, (64, 64))
-        image = image + img_noiser.normal(0.0, 0.01, (64, 64))
-        image = (image) / (image.abs().max()) """
 
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         target = self.labels[index][1]
@@ -132,7 +126,9 @@ class BackgroundDataset(Dataset):
     def load_image_wm(self, index, watermark):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
         shape_mask = np.load(img_path, mmap_mode="r")
-        shape_mask = torch.from_numpy(np.asarray(shape_mask, dtype=np.float32)).view(1, 64, 64)
+        shape_mask = torch.from_numpy(np.asarray(shape_mask, dtype=np.float32)).view(
+            1, 64, 64
+        )
         img_noiser = np.random.default_rng(seed=self.seeds[index])
         if watermark:
             image = shape_mask * img_noiser.normal(0.5, 0.5, (64, 64))
@@ -140,7 +136,7 @@ class BackgroundDataset(Dataset):
         else:
             image = shape_mask * img_noiser.normal(0.5, 0.2, (64, 64))
         image = image + img_noiser.normal(0.0, 0.01, (64, 64))
-        #image = image / (image.abs().max())
+        # image = image / (image.abs().max())
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         if torch.cuda.is_available():
             image = image.cuda()
@@ -149,16 +145,8 @@ class BackgroundDataset(Dataset):
         return image
 
     def load_image_empty(self, index):
-        img_path = os.path.join(self.img_dir, "empty.npy")
-        image = np.load(img_path, mmap_mode="r")
-        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
         img_noiser = np.random.default_rng(seed=self.seeds[index])
-        image = image + img_noiser.normal(0.0, 0.01, (64, 64))
-        """     image = image * img_noiser.normal(0, 0.3, (64, 64))
-        image = image + img_noiser.normal(0.0, 0.05, (64, 64)) """
-        """ image = image + img_noiser.normal(BIAS_NOISE_OFFSET, 0.05, (64, 64))
-        else:
-            image = image + img_noiser.normal(0.0, 0.05, (64, 64)) """
+        image = img_noiser.normal(0.0, 0.01, (64, 64))
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         target = self.labels[index][1]
         return (image, target)
@@ -172,9 +160,29 @@ class BackgroundDataset(Dataset):
         image.requires_grad = True
         return image
 
+    def load_flipped_latent(self, index):
+        latents = self.labels[index]
+        flip_latents= copy.deepcopy(latents)
+        flip_latents[1] = (latents[1] + 1) % 2
+        flip_index = self.latent_to_index(flip_latents)
+        img_path = os.path.join(self.img_dir, f"{flip_index}.npy")
+        shape_mask = np.load(img_path, mmap_mode="r")
+        shape_mask = torch.from_numpy(np.asarray(shape_mask, dtype=np.float32)).view(
+            1, 64, 64
+        )
+        img_noiser = np.random.default_rng(seed=self.seeds[index])
+        if self.watermarks[index]:
+            image = shape_mask * img_noiser.normal(0.7, 0.5, (64, 64))
+            image = self.blur(image) * shape_mask
+        else:
+            image = shape_mask * img_noiser.normal(0.5, 0.2, (64, 64))
+        image = image + img_noiser.normal(0.0, 0.01, (64, 64))
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32))
+        return image  # , self.watermarks[index]
+
     def load_watermark_mask(self, index):
         shape_mask = self.load_shape_mask(index)
-        shape_mask = (self.blur(shape_mask) > 0).int()
+        shape_mask = (self.blur(shape_mask) > 0.9).int()
         return shape_mask  # (shape_mask + 1) % 2
         """ img_path = os.path.join(self.img_dir, f"{index}.npy")
         image = np.load(img_path, mmap_mode="r")
