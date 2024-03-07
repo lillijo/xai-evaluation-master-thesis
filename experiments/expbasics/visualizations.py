@@ -4,9 +4,11 @@ from matplotlib import pyplot as plt
 import pickle
 import json
 import torch
+from typing import Dict, List, Union, Any, Tuple, Iterable
 from PIL import Image
 import matplotlib.gridspec as gridspec
 import math
+from crp.image import vis_opaque_img, plot_grid, imgify, get_crop_range
 
 METHOD = 2
 FACECOL = "#fff"
@@ -920,7 +922,6 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False):
     # return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     # Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
 
-
 def plot_nmfs(cav_images, num_neighbors, n_basis):
     fig = plt.figure(figsize=(16, 4))
     subfigs = fig.subfigures(1, n_basis, wspace=0.0, hspace=0.0)
@@ -944,3 +945,76 @@ def plot_nmfs(cav_images, num_neighbors, n_basis):
                 ax.imshow(cav_images[outerind, innerind], cmap="bwr", norm=divnorm)
             else:
                 ax.axis("off")
+
+
+def plot_dict_grid(
+    ref_c: Dict[int, Any],
+    cmap_dim=1,
+    cmap="bwr",
+    vmin=None,
+    vmax=None,
+    symmetric=True,
+    resize=None,
+    padding=True,
+    figsize=(6, 6),
+):
+    keys = list(ref_c.keys())
+    nrows = len(keys)
+    value = next(iter(ref_c.values()))
+
+    if cmap_dim > 1 or cmap_dim < 0 or cmap_dim == None:
+        raise ValueError("'cmap_dim' must be 0 or 1 or None.")
+
+    if isinstance(value, Tuple) and isinstance(value[0], Iterable):
+        nsubrows = len(value)
+        ncols = len(value[0])
+    elif isinstance(value, Iterable):
+        nsubrows = 1
+        ncols = len(value)
+    else:
+        raise ValueError(
+            "'ref_c' dictionary must contain an iterable of torch.Tensor, np.ndarray or PIL Image or a tuple of thereof."
+        )
+
+    fig = plt.figure(figsize=figsize)
+    outer = gridspec.GridSpec(nrows, 1, wspace=0, hspace=0.2)
+
+    for i in range(nrows):
+        inner = gridspec.GridSpecFromSubplotSpec(
+            nsubrows, ncols, subplot_spec=outer[i], wspace=0, hspace=0.1
+        )
+
+        for sr in range(nsubrows):
+
+            if nsubrows > 1:
+                img_list = ref_c[keys[i]][sr]
+            else:
+                img_list = ref_c[keys[i]]
+
+            for c in range(ncols):
+                ax = plt.Subplot(fig, inner[sr, c])
+
+                if sr == cmap_dim:
+                    img = imgify(
+                        img_list[c],
+                        cmap=cmap,
+                        vmin=vmin,
+                        vmax=vmax,
+                        symmetric=symmetric,
+                        resize=resize,
+                        padding=padding,
+                    )
+                else:
+                    img = imgify(img_list[c], resize=resize, padding=padding)
+
+                ax.imshow(img)
+                ax.set_xticks([])
+                ax.set_yticks([])
+
+                if sr == 0 and c == 0:
+                    ax.set_ylabel(keys[i])
+
+                fig.add_subplot(ax)
+
+    outer.tight_layout(fig)
+    fig.show()

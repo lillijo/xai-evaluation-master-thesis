@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 import torch
 from tqdm import tqdm
-import math
+import json
 from time import sleep
 from os import makedirs
 from os.path import isdir, isfile
@@ -80,6 +80,7 @@ class AllMeasures:
         layer_name="convolutional_layers.6",
         model_path=NAME,
         experiment_name=HEATMAP_FOLDER,
+        max_target="sum",
     ) -> None:
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.tdev = torch.device(self.device)
@@ -101,105 +102,235 @@ class AllMeasures:
         self.len_neurons = LAYER_ID_MAP[self.layer_name]
         self.model_path = model_path
         self.experiment_name = experiment_name
+        self.max_target = max_target
+
+    def load_values(self, path, len_set):
+        values = {}
+        for aggreg in ["max", "sum"]:
+            for target in ["Rel", "Act"]:
+                data = np.load(
+                    f"{path}/{target}Max_{aggreg}_normed/{self.layer_name}_data.npy",
+                )
+                rels = np.load(
+                    f"{path}/{target}Max_{aggreg}_normed/{self.layer_name}_rel.npy",
+                )
+                stats0 = np.load(
+                    f"{path}/{target}Stats_{aggreg}_normed/{self.layer_name}/0_data.npy",
+                )
+                stats1 = np.load(
+                    f"{path}/{target}Stats_{aggreg}_normed/{self.layer_name}/1_data.npy",
+                )
+                statsrel0 = np.load(
+                    f"{path}/{target}Stats_{aggreg}_normed/{self.layer_name}/0_rel.npy",
+                )
+                statsrel1 = np.load(
+                    f"{path}/{target}Stats_{aggreg}_normed/{self.layer_name}/1_rel.npy",
+                )
+
+                values[f"{target}_{aggreg}"] = {
+                    "data": torch.from_numpy(
+                        np.asarray(data[:len_set], dtype=np.int64)
+                    ),
+                    "rels": torch.from_numpy(np.asarray(rels[:len_set])),
+                    "stats0": torch.from_numpy(
+                        np.asarray(stats0[:len_set], dtype=np.int64)
+                    ),
+                    "stats1": torch.from_numpy(
+                        np.asarray(stats1[:len_set], dtype=np.int64)
+                    ),
+                    "statsrel0": torch.from_numpy(np.asarray(statsrel0[:len_set])),
+                    "statsrel1": torch.from_numpy(np.asarray(statsrel1[:len_set])),
+                }
+
+        return values
 
     def compute_relevance_maximization(self):
-        rel_max_measures = torch.zeros(len(BIASES), len(self.iterations), 3)
-        savepath = f"relmax_measures_{self.len_x}_{self.experiment_name}.pickle"
         for rho_ind, rho in enumerate(BIASES):
             for m in self.iterations:
+                model_name = f"{self.experiment_name}_{to_name(rho, m)}"
+                model = load_model(self.model_path, rho, m, self.model_type)
+                print(model_name, "sum")
+                crpa = CRPAttribution(
+                    model, self.test_data, self.model_path, model_name, max_target="sum"
+                )
+                crpa.compute_feature_vis()
+                print(model_name, "max")
+                crpa = CRPAttribution(
+                    model, self.test_data, self.model_path, model_name, max_target="max"
+                )
+                crpa.compute_feature_vis()
+
+    def compute_relmax_measures(self):
+        rel_max_measures = torch.zeros(len(BIASES), len(self.iterations), 20)
+        savepath = f"relmax_measures_{self.len_x}_{self.experiment_name}.pickle"
+        targets = torch.tensor([self.test_data.labels[a]["target"] for a in range(300)])
+        watermarks = torch.tensor(
+            [int(self.test_data.labels[a]["has_watermark"]) for a in range(300)]
+        )
+        for rho_ind, rho in enumerate((pbar := tqdm(BIASES))):
+            for m in self.iterations:
+                pbar.set_postfix(m=m, rho=rho)
                 model_name = f"{self.experiment_name}_{to_name(rho, m)}"
                 model = load_model(self.model_path, rho, m, self.model_type)
                 crpa = CRPAttribution(
                     model, self.test_data, self.model_path, model_name
                 )
-                crpa.compute_feature_vis()
-                sleep(1)
-                # print("start measures", rho, m)
-                len_set = 8
+                len_set = 10
                 filename = f"outputs/{self.experiment_name}/{rho_ind}_{m}.gz"
                 with gzip.open(filename, mode="rb") as f:
                     r_m_info = pickle.load(f)
                 rels0 = r_m_info[2][:, 0].to(dtype=torch.float)
                 rels1 = r_m_info[2][:, 1].to(dtype=torch.float)
-                with open(
-                    f"{crpa.fv_path}/RelMax_sum_normed/convolutional_layers.6_data.npy",
-                    "rb",
-                ) as f:
-                    data = torch.from_numpy(np.load(f))
-                ref_c = crpa.fv.get_max_reference(
-                    list(range(self.len_neurons)),
-                    self.layer_name,
-                    "relevance",
-                    (0, len_set),
-                    composite=crpa.composite,
-                    rf=True,
-                    plot_fn=get_bbox,
-                )
-                info = torch.zeros((self.len_neurons, len_set, 3))
-                overlap = torch.zeros((self.len_neurons, 2))
-                for neuron in range(self.len_neurons):
-                    indices = data[:len_set, neuron]
-                    for i, ind in enumerate(indices):
-                        ind = int(ind)
-                        img, label = self.test_data[ind]
-                        (latents, has_watermark, offset) = self.test_data.get_item_info(
-                            ind
+                # Indices of all Maximizations:
+                values = self.load_values(crpa.fv_path, len_set)
+                relmax_vals = {}
+                for k, maximiz in values.items():
+                    overlap = torch.zeros((self.len_neurons, 9))
+                    for neuron in range(self.len_neurons):
+                        # measure with_wm / max(shape)
+                        indices = maximiz["data"][:, neuron]
+                        overlap[neuron, 0] = torch.count_nonzero(
+                            watermarks[indices]
+                        ) / max(
+                            float(torch.count_nonzero(targets[indices] == 1)),
+                            float(torch.count_nonzero(targets[indices] == 0)),
                         )
-                        info[neuron, i, 0] = label
-                        info[neuron, i, 1] = int(has_watermark)
-                        if has_watermark:
-                            m1 = self.test_data.load_watermark_mask(ind)
-                            m2 = torch.zeros(64, 64)
-                            m2[
-                                ref_c[neuron][i][0] : ref_c[neuron][i][1],
-                                ref_c[neuron][i][2] : ref_c[neuron][i][3],
-                            ] = 1
-                            jaccard = (m1 * m2).sum() / (
-                                m1.sum() + m2.sum() - (m1 * m2).sum()
+
+                        # mean relevance of images with watermark
+                        wm_indices = torch.where(watermarks[indices] == 1)
+                        if len(wm_indices[0]) > 0:
+                            rels = maximiz["rels"][wm_indices]
+                            overlap[neuron, 1] = torch.mean(rels[:, neuron], dim=0)
+
+                        # mean relevance of images no watermark
+                        nwm_indices = torch.where(watermarks[indices] == 0)
+                        if len(nwm_indices[0]) > 0:
+                            rels = maximiz["rels"][nwm_indices]
+                            overlap[neuron, 6] = torch.mean(rels[:, neuron], dim=0)
+
+                        # stats relevance
+                        statsindices0 = maximiz["stats0"][:, neuron]
+                        statsindices1 = maximiz["stats1"][:, neuron]
+
+                        overlap[neuron, 2] = (
+                            torch.count_nonzero(watermarks[statsindices0])
+                        ) / (len_set)
+                        overlap[neuron, 3] = (
+                            torch.count_nonzero(watermarks[statsindices1])
+                        ) / (len_set)
+
+                        # stats: shape = 0, wm = 1
+                        wm_statsindices0 = torch.where(watermarks[statsindices0] == 1)
+                        if len(wm_statsindices0[0]) > 0:
+                            rels = maximiz["statsrel0"][wm_statsindices0]
+                            overlap[neuron, 4] = torch.mean(rels[:, neuron], dim=0)
+                        # stats: shape = 0, wm = 0
+                        nwm_statsindices0 = torch.where(watermarks[statsindices0] == 0)
+                        if len(nwm_statsindices0[0]) > 0:
+                            rels = maximiz["statsrel0"][nwm_statsindices0]
+                            overlap[neuron, 7] = torch.mean(rels[:, neuron], dim=0)
+
+                        # stats: shape = 1, wm = 1
+                        wm_statsindices1 = torch.where(watermarks[statsindices1] == 1)
+                        if len(wm_statsindices1[0]) > 0:
+                            rels = maximiz["statsrel1"][wm_statsindices1]
+                            overlap[neuron, 5] = torch.mean(rels[:, neuron], dim=0)
+                        # stats: shape = 1, wm = 0
+                        nwm_statsindices1 = torch.where(watermarks[statsindices1] == 0)
+                        if len(nwm_statsindices1[0]) > 0:
+                            rels = maximiz["statsrel1"][nwm_statsindices1]
+                            overlap[neuron, 8] = torch.mean(rels[:, neuron], dim=0)
+
+                    relmax_vals[f"{k}_diff"] = torch.sum(
+                        torch.abs(
+                            rels1.mean(dim=0) * overlap[:, 0]
+                            - rels0.mean(dim=0) * overlap[:, 0]
+                        )
+                    )
+                    relmax_vals[f"{k}_m_rels"] = torch.sum(
+                        torch.abs(
+                            overlap[:, 0] * (overlap[:, 1])
+                            - overlap[:, 0] * (overlap[:, 6])
+                        )
+                    )
+
+                    relmax_vals[f"{k}_stats"] = torch.sum(
+                        torch.abs(
+                            (
+                                overlap[:, 2] * overlap[:, 4]
+                                - overlap[:, 2] * overlap[:, 7]
                             )
-                            info[neuron, i, 2] = jaccard
-                    overlap[neuron, 0] = torch.count_nonzero(info[neuron, :, 1]) / (
-                        max(
-                            torch.count_nonzero(info[neuron, :, 0] == 1),
-                            torch.count_nonzero(info[neuron, :, 0] == 0),
+                            + (
+                                overlap[:, 3] * overlap[:, 5]
+                                - overlap[:, 3] * overlap[:, 8]
+                            )
                         )
+                        / 2
                     )
-                    overlap[neuron, 1] = torch.sum(info[neuron, :, 2])
-                rel_max_measures[rho_ind, m, 0] = torch.sum(
-                    torch.abs(
-                        rels1.mean(dim=0) * overlap[:, 0]
-                        - rels0.mean(dim=0) * overlap[:, 0]
+
+                    relmax_vals[f"{k}_stats_diff"] = torch.sum(
+                        torch.abs(
+                            (
+                                (rels1.mean(dim=0) * overlap[:, 2] * overlap[:, 4])
+                                - (
+                                    rels0.mean(dim=0)
+                                    * (1 - overlap[:, 2])
+                                    * overlap[:, 7]
+                                )
+                            )
+                            + (
+                                (rels1.mean(dim=0) * overlap[:, 3] * overlap[:, 5])
+                                - (
+                                    rels0.mean(dim=0)
+                                    * (1 - overlap[:, 3])
+                                    * overlap[:, 8]
+                                )
+                            )
+                        )
+                        / 2
                     )
-                )
-                rel_max_measures[rho_ind, m, 1] = torch.sum(
-                    torch.abs((overlap[:, 1]) * rels1.mean(dim=0))
-                )
-                rel_max_measures[rho_ind, m, 2] = torch.sum(
-                    torch.abs((overlap[:, 0]) * rels1.mean(dim=0))
-                )
+                for vi, val in enumerate(relmax_vals.values()):
+                    rel_max_measures[rho_ind, m, vi] = val
+
+        measures = list([f"m2_{a}" for a in relmax_vals.keys()])
 
         with gzip.open(savepath, "wb") as f:
             pickle.dump(rel_max_measures, f, protocol=pickle.HIGHEST_PROTOCOL)
+        with open("relmax_measures.json", "w") as f:
+            json.dump(measures, f)
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser("script_parallel")
-    # parser.add_argument("layername", help="layer float", type=str)
+    # Experiment 1:
+    """ model_path = "../clustermodels/final"
+    experiment_name = "attribution_output"
+    sample_set_size = 128
+    layer_name = "convolutional_layers.6"
+    is_random = False """
+    # model_type = "watermark"
+    # iterations = 16
+    # datasettype = BiasedNoisyDataset
+    # mask = "bounding_box"
+    # accuracypath = "outputs/retrain.json"
+    # relsetds = TestDataset(length=300, im_dir="watermark_test_data")
+
+    # Experiment 2:
     model_path = "../clustermodels/background"
     experiment_name = "overlap_attribution"
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
     is_random = False
-    model_type = "overlap"
-    iterations = 10
-    datasettype = BackgroundDataset
-    mask = "shape"
-    accuracypath = "outputs/overlap1.json"
-    relsetds = TestDatasetBackground(length=300, im_dir="overlap_test_data")
+    # model_type = "overlap"
+    # iterations = 10
+    # datasettype = BackgroundDataset
+    # mask = "shape"
+    # accuracypath = "outputs/overlap1.json"
+    # relsetds = TestDatasetBackground(length=300, im_dir="overlap_test_data")
     allm = AllMeasures(
         sample_set_size=sample_set_size,
         layer_name=layer_name,
         model_path=model_path,
         experiment_name=experiment_name,
     )
-    allm.compute_relevance_maximization()
+    # allm.compute_relevance_maximization()
+    allm.compute_relmax_measures()

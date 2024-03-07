@@ -182,7 +182,7 @@ class BackgroundDataset(Dataset):
 
     def load_watermark_mask(self, index):
         shape_mask = self.load_shape_mask(index)
-        shape_mask = (self.blur(shape_mask) > 0.9).int()
+        #shape_mask = (self.blur(shape_mask) > 0.9).int()
         return shape_mask  # (shape_mask + 1) % 2
         """ img_path = os.path.join(self.img_dir, f"{index}.npy")
         image = np.load(img_path, mmap_mode="r")

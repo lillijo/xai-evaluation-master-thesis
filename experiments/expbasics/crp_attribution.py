@@ -19,6 +19,7 @@ from crp.attribution import AttributionGraph
 
 from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 from expbasics.test_dataset import TestDataset
+from expbasics.visualizations import plot_dict_grid
 
 from torchvision.transforms.functional import gaussian_blur
 from crp.helper import max_norm
@@ -64,7 +65,6 @@ def vis_img_heat(
                 gaussian_blur(heat.unsqueeze(0), kernel_size=kernel_size)[0]
             )
             row1, row2, col1, col2 = get_crop_range(filtered_heat, crop_th)
-            print(row1, row2, col1, col2)
             img_t = img[..., row1:row2, col1:col2]
             heat_t = heat[row1:row2, col1:col2]
 
@@ -74,7 +74,8 @@ def vis_img_heat(
                 heat = heat_t
 
         heat = imgify(heat, cmap=cmap, vmin=vmin, vmax=vmax, symmetric=symmetric)
-        img = imgify(img)
+        maxv = max(float(img.abs().max()), 0.001)
+        img = imgify(img, cmap=cmap, vmin=-maxv, vmax=maxv)
 
         img_list.append(img)
         heat_list.append(heat)
@@ -97,12 +98,13 @@ def get_bbox(
     for i in range(len(data_batch)):
         heat = heatmaps[i]
         if rf:
-            filtered_heat = max_norm(gaussian_blur(heat.unsqueeze(0), kernel_size=kernel_size)[0])
+            filtered_heat = max_norm(
+                gaussian_blur(heat.unsqueeze(0), kernel_size=kernel_size)[0]
+            )
             row1, row2, col1, col2 = get_crop_range(filtered_heat, crop_th)
             heat_list.append([row1, row2, col1, col2])
 
     return heat_list
-
 
 
 def vis_heat(
@@ -129,7 +131,7 @@ def vis_heat(
 
 
 class CRPAttribution:
-    def __init__(self, model, dataset, name, model_name):
+    def __init__(self, model, dataset, name, model_name, max_target="sum"):
         # Feature Visualization:
         # device = "cuda:0" if torch.cuda.is_available() else "cpu"
         # canonizers = [SequentialMergeBatchNorm()]
@@ -148,7 +150,7 @@ class CRPAttribution:
         path = f"crp-data/{model_name}_fv"
         self.fv_path = path
         self.cache = ImageCache(path=self.fv_path + "-cache")
-        self.max_target = "sum"
+        self.max_target = max_target
         self.fv = FeatureVisualization(
             self.attribution,
             self.dataset,
@@ -196,33 +198,34 @@ class CRPAttribution:
         ) """
         return saved_files
 
-    def make_stats_references(self, cond_layer, neurons):
-        no_ref_samples = 8
+    def make_stats_references(self, cond_layer, neurons, relact="relevance"):
+        no_ref_samples = 6
         all_refs = {}
         for i in neurons:
             targets, rel = self.fv.compute_stats(
-                i, cond_layer, "relevance", top_N=1, norm=True
+                i, cond_layer, relact, top_N=2, norm=True
             )
-            ref_c = self.fv.get_stats_reference(
-                i,
-                cond_layer,
-                [targets],
-                "relevance",
-                (0, no_ref_samples),
-                composite=self.composite,
-                rf=True,
-                # plot_fn=vis_heat,
-            )
-            all_refs[f"{i}:{targets}"] = ref_c[f"{i}:{targets}"]
+            for t in targets:
+                ref_c = self.fv.get_stats_reference(
+                    i,
+                    cond_layer,
+                    [t],
+                    relact,
+                    (0, no_ref_samples),
+                    composite=self.composite,
+                    rf=False,
+                    plot_fn=vis_img_heat,
+                )
+                all_refs[f"{i}:{t}"] = ref_c[f"{i}:{t}"]
         plot_grid(
             all_refs,
-            figsize=(no_ref_samples, len(neurons)),
+            figsize=(no_ref_samples, 4*len(neurons)),
             padding=True,
             symmetric=True,
         )
 
     def make_all_references(self, cond_layer, neurons, relact="relevance"):
-        no_ref_samples = 10
+        no_ref_samples = 8
         ref_c = self.fv.get_max_reference(
             neurons,
             cond_layer,
@@ -232,11 +235,13 @@ class CRPAttribution:
             rf=False,
             plot_fn=vis_img_heat,  #
         )
-        plot_grid(
+        plot_dict_grid(
             ref_c,
             figsize=(no_ref_samples, 2 * len(neurons)),
             padding=True,
-            symmetric=True,
+            symmetric=False,
+            cmap="Greys",
+            cmap_dim=1,
         )
 
     def all_layers_rel(self, image):
