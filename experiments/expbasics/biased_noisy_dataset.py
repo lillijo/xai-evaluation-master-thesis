@@ -126,7 +126,10 @@ class BiasedNoisyDataset(Dataset):
         image = image / (torch.max(image) + 1e-10) """
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         target = self.labels[index][1]
-        return (image, target,) # , self.watermarks[index]
+        return (
+            image,
+            target,
+        )  # , self.watermarks[index]
 
     def latent_to_index(self, latents):
         return np.dot(latents, self.latents_bases).astype(int)
@@ -177,7 +180,7 @@ class BiasedNoisyDataset(Dataset):
         return image
 
     def load_watermark_mask(self, index):
-        image = torch.zeros(1,64,64)
+        image = torch.zeros(1, 64, 64)
         offset_water_image = self.water_image + np.array(
             [[0], [self.offset_y[index]], [self.offset_x[index]]]
         )
@@ -186,19 +189,17 @@ class BiasedNoisyDataset(Dataset):
         if torch.cuda.is_available():
             image = image.cuda()
         image = image.view(1, 1, 64, 64)
-        #image.requires_grad = True
+        # image.requires_grad = True
         return image
-    
+
     def load_flipped_latent(self, index):
         latents = self.labels[index]
-        flip_latents= copy.deepcopy(latents)
+        flip_latents = copy.deepcopy(latents)
         flip_latents[1] = (latents[1] + 1) % 2
         flip_index = self.latent_to_index(flip_latents)
         img_path = os.path.join(self.img_dir, f"{flip_index}.npy")
         image = np.load(img_path, mmap_mode="r")
-        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(
-            1, 64, 64
-        )
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
         if self.watermarks[index]:
             offset_water_image = self.water_image + np.array(
                 [[0], [self.offset_y[index]], [self.offset_x[index]]]
@@ -207,8 +208,26 @@ class BiasedNoisyDataset(Dataset):
         img_noiser = np.random.default_rng(seed=self.seeds[index])
         image = image + img_noiser.normal(0.0, 0.05, (64, 64))
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
-        return image# , self.watermarks[index]
+        return image  # , self.watermarks[index]
 
+    def load_flipped_each_latent(self, index, latent_index, latent_value):
+        latents = self.labels[index]
+        flip_latents = copy.deepcopy(latents)
+        flip_latents[latent_index] = latent_value
+        flip_index = self.latent_to_index(flip_latents)
+        img_path = os.path.join(self.img_dir, f"{flip_index}.npy")
+        image = np.load(img_path, mmap_mode="r")
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 64, 64)
+        if self.watermarks[index]:
+            offset_water_image = self.water_image + np.array(
+                [[0], [self.offset_y[index]], [self.offset_x[index]]]
+            )
+            image[offset_water_image] = 1.0
+        img_noiser = np.random.default_rng(seed=self.seeds[index])
+        image = image + img_noiser.normal(0.0, 0.05, (64, 64))
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 1, 64, 64)
+        image.requires_grad = True
+        return image, flip_latents
 
     def get_item_info(self, index):
         has_watermark = self.watermarks[index]

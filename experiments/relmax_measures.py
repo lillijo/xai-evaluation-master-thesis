@@ -185,7 +185,7 @@ class AllMeasures:
                 values = self.load_values(crpa.fv_path, len_set)
                 relmax_vals = {}
                 for k, maximiz in values.items():
-                    overlap = torch.zeros((self.len_neurons, 9))
+                    overlap = torch.zeros((self.len_neurons, 10))
                     for neuron in range(self.len_neurons):
                         # measure with_wm / max(shape)
                         indices = maximiz["data"][:, neuron]
@@ -207,16 +207,16 @@ class AllMeasures:
                         if len(nwm_indices[0]) > 0:
                             rels = maximiz["rels"][nwm_indices]
                             overlap[neuron, 6] = torch.mean(rels[:, neuron], dim=0)
-
+                        overlap[neuron, 9] = maximiz["rels"][:, neuron].mean()
                         # stats relevance
                         statsindices0 = maximiz["stats0"][:, neuron]
                         statsindices1 = maximiz["stats1"][:, neuron]
 
                         overlap[neuron, 2] = (
-                            torch.count_nonzero(watermarks[statsindices0])
+                            torch.count_nonzero(watermarks[statsindices0] == 1)
                         ) / (len_set)
                         overlap[neuron, 3] = (
-                            torch.count_nonzero(watermarks[statsindices1])
+                            torch.count_nonzero(watermarks[statsindices1] == 1)
                         ) / (len_set)
 
                         # stats: shape = 0, wm = 1
@@ -244,28 +244,33 @@ class AllMeasures:
                     relmax_vals[f"{k}_diff"] = torch.sum(
                         torch.abs(
                             rels1.mean(dim=0) * overlap[:, 0]
-                            - rels0.mean(dim=0) * overlap[:, 0]
+                            - rels0.mean(dim=0) * (1 - overlap[:, 0])
                         )
                     )
-                    relmax_vals[f"{k}_m_rels"] = torch.sum(
-                        torch.abs(
-                            overlap[:, 0] * (overlap[:, 1])
-                            - overlap[:, 0] * (overlap[:, 6])
+                    total_max_rel = overlap[:, 9].abs().sum()
+                    if total_max_rel != 0:
+                        relmax_vals[f"{k}_m_rels"] = torch.sum(
+                            torch.abs(
+                                overlap[:, 0] * (overlap[:, 1])
+                                - (1 - overlap[:, 0]) * (overlap[:, 6])
+                            )
+                            / (total_max_rel * 2)
                         )
-                    )
+                    else:
+                        relmax_vals[f"{k}_m_rels"] = 0
 
                     relmax_vals[f"{k}_stats"] = torch.sum(
                         torch.abs(
                             (
-                                overlap[:, 2] * overlap[:, 4]
-                                - overlap[:, 2] * overlap[:, 7]
+                                overlap[:, 2]  # * overlap[:, 4]
+                                - (1 - overlap[:, 2]) #* overlap[:, 7]
                             )
                             + (
-                                overlap[:, 3] * overlap[:, 5]
-                                - overlap[:, 3] * overlap[:, 8]
+                                overlap[:, 3]  # * overlap[:, 5]
+                                - (1 - overlap[:, 3]) #* overlap[:, 8]
                             )
                         )
-                        / 2
+                        / 16
                     )
 
                     relmax_vals[f"{k}_stats_diff"] = torch.sum(
@@ -302,11 +307,11 @@ class AllMeasures:
 
 if __name__ == "__main__":
     # Experiment 1:
-    """ model_path = "../clustermodels/final"
+    """model_path = "../clustermodels/final"
     experiment_name = "attribution_output"
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
-    is_random = False """
+    is_random = False"""
     # model_type = "watermark"
     # iterations = 16
     # datasettype = BiasedNoisyDataset

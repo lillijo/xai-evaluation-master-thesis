@@ -162,7 +162,7 @@ class BackgroundDataset(Dataset):
 
     def load_flipped_latent(self, index):
         latents = self.labels[index]
-        flip_latents= copy.deepcopy(latents)
+        flip_latents = copy.deepcopy(latents)
         flip_latents[1] = (latents[1] + 1) % 2
         flip_index = self.latent_to_index(flip_latents)
         img_path = os.path.join(self.img_dir, f"{flip_index}.npy")
@@ -180,9 +180,30 @@ class BackgroundDataset(Dataset):
         image = torch.from_numpy(np.asarray(image, dtype=np.float32))
         return image  # , self.watermarks[index]
 
+    def load_flipped_each_latent(self, index, latent_index, latent_value):
+        latents = self.labels[index]
+        flip_latents = copy.deepcopy(latents)
+        flip_latents[latent_index] = latent_value
+        flip_index = self.latent_to_index(flip_latents)
+        img_path = os.path.join(self.img_dir, f"{flip_index}.npy")
+        shape_mask = np.load(img_path, mmap_mode="r")
+        shape_mask = torch.from_numpy(np.asarray(shape_mask, dtype=np.float32)).view(
+            1, 64, 64
+        )
+        img_noiser = np.random.default_rng(seed=self.seeds[index])
+        if self.watermarks[index]:
+            image = shape_mask * img_noiser.normal(0.7, 0.5, (64, 64))
+            image = self.blur(image) * shape_mask
+        else:
+            image = shape_mask * img_noiser.normal(0.5, 0.2, (64, 64))
+        image = image + img_noiser.normal(0.0, 0.01, (64, 64))
+        image = torch.from_numpy(np.asarray(image, dtype=np.float32)).view(1, 1, 64, 64)
+        image.requires_grad = True
+        return image, flip_latents
+
     def load_watermark_mask(self, index):
         shape_mask = self.load_shape_mask(index)
-        #shape_mask = (self.blur(shape_mask) > 0.9).int()
+        # shape_mask = (self.blur(shape_mask) > 0.9).int()
         return shape_mask  # (shape_mask + 1) % 2
         """ img_path = os.path.join(self.img_dir, f"{index}.npy")
         image = np.load(img_path, mmap_mode="r")

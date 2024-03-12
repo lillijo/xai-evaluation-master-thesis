@@ -747,42 +747,40 @@ def plot_fancy_distribution(dataset=None, s=[], w=[]):
         )
     plt.scatter(s[:TOTAL], w[:TOTAL], color="#C8D672", s=16)
     plt.ylabel(
-        "watermark",
+        "spurious feature",
     )
     plt.xlabel("shape")
 
-    ax.tick_params(axis="y", direction="in", pad=-22)
-    ax.tick_params(axis="x", direction="in", pad=-15)
+    #ax.tick_params(axis="y", direction="in", pad=-24)
+    #ax.tick_params(axis="x", direction="in", pad=-17)
     # ax.yaxis.set_ticks(list(np.round(np.linspace(lim_y[0], lim_y[1], 5), decimals=2)))
     # ax.xaxis.set_ticks(list(np.arange(lim_x[0], lim_x[1], 0.2)))
     plt.text(
-        lim_x[0] + 0.1,
+        lim_x[0] + 0.01,
         lim_y[1] * 0.65 - dataset.strength,
-        "rectangle\nno watermark",
+        "rectangle\nW = 0",
         size=12,
     )
     plt.text(
-        lim_x[0] + 0.1,
+        lim_x[0] + 0.01,
         lim_y[0] + 0.35 + dataset.strength,
-        "rectangle\nwith watermark",
+        "rectangle\nW = 1",
         size=12,
     )
     plt.text(lim_x[0] + 0.1, dataset.strength + 0.02, "strength", size=12)
     plt.text(
-        lim_x[1] - 0.5,
+        lim_x[1] - 0.4,
         lim_y[1] * 0.65 - dataset.strength,
-        "ellipse \nno watermark",
+        "ellipse \nW = 0",
         size=12,
     )
     plt.text(
-        lim_x[1] - 0.5,
+        lim_x[1] - 0.4,
         lim_y[0] + 0.35 + dataset.strength,
-        "ellipse\nwith watermark",
+        "ellipse\nW = 1",
         size=12,
     )
-    plt.text(
-        (lim_x[0] + lim_x[1]) / 2,
-        lim_y[1],
+    plt.title(
         f"$\\rho$ = {dataset.bias}",
         c="red",
         size=12,
@@ -799,8 +797,8 @@ def plot_fancy_distribution(dataset=None, s=[], w=[]):
     )
 
     plt.text(
-        (lim_x[0] + lim_x[1]) * 0.5 - 0.2,
-        (lim_y[0] + lim_y[1]) * 0.5 - 0.2,
+        (lim_x[0] + lim_x[1]) * 0.5 - 0.1,
+        (lim_y[0] + lim_y[1]) * 0.5 - 0.1,
         "1 - $\\rho$",
         c="red",
         size=12,
@@ -809,12 +807,12 @@ def plot_fancy_distribution(dataset=None, s=[], w=[]):
     )
     plt.plot(
         [
-            (lim_x[0] + lim_x[1]) * 0.5 - (1 - dataset.bias) * 0.5,
-            (lim_x[0] + lim_x[1]) * 0.5 + (1 - dataset.bias) * 0.5,
+            (lim_x[0] + lim_x[1]) * 0.5 - (1 - dataset.bias) * 0.15,
+            (lim_x[0] + lim_x[1]) * 0.5 + (1 - dataset.bias) * 0.15,
         ],
         [
-            (lim_y[0] + lim_y[1]) * 0.5 + (1 - dataset.bias) * 0.5,
-            (lim_y[0] + lim_y[1]) * 0.5 - (1 - dataset.bias) * 0.5,
+            (lim_y[0] + lim_y[1]) * 0.5 + (1 - dataset.bias) * 0.15,
+            (lim_y[0] + lim_y[1]) * 0.5 - (1 - dataset.bias) * 0.15,
         ],
         c="red",
         linewidth=5,
@@ -866,7 +864,7 @@ def fancy_attributions(unbiased_ds, crp_attribution):
         c += 1
 
 
-def my_plot_grid(images, rows, cols, resize=1, norm=False):
+def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles= None):
     fig, axs = plt.subplots(
         rows,
         cols,
@@ -895,12 +893,21 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False):
                     )
                 axs[n].imshow(
                     images[n],
-                    cmap="Greys",
-                )  # norm=divnorm
+                    cmap=cmap,norm=divnorm
+                )  
+                if titles is not None:
+                    axs[n].set_title(titles[n])
             else:
                 axs[n].imshow(torch.zeros(64, 64), cmap="Greys", norm=divnorm)
     else:
         for il in range(max(rows, 2)):
+            if norm == "rows":
+                maxv = max(float(images[il].abs().max()), 0.001)
+                # minv = min(float(images[il, n].min()), -0.001)
+                center = 0.0
+                divnorm = matplotlib.colors.TwoSlopeNorm(
+                    vmin=-maxv, vcenter=center, vmax=maxv
+                )
             for n in range(max(cols, 2)):
                 axs[il, n].xaxis.set_visible(False)
                 axs[il, n].yaxis.set_visible(False)
@@ -914,8 +921,10 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False):
                         )
                     axs[il, n].imshow(
                         images[il, n],
-                        cmap="Greys",
-                    )  # norm=divnorm
+                        cmap=cmap,norm=divnorm
+                    )  
+                    if titles is not None:
+                        axs[il,n].set_title(titles[il][n])
                 else:
                     axs[il, n].imshow(torch.zeros(64, 64), cmap="Greys", norm=divnorm)
                     # axs[il, n].axis("off")

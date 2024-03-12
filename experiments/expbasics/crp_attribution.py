@@ -237,7 +237,7 @@ class CRPAttribution:
         )
         plot_dict_grid(
             ref_c,
-            figsize=(no_ref_samples, 2 * len(neurons)),
+            figsize=(2*no_ref_samples, 4 * len(neurons)),
             padding=True,
             symmetric=False,
             cmap="Greys",
@@ -280,7 +280,7 @@ class CRPAttribution:
             for h in range(attr.heatmap.shape[0]):
                 images[li, h] = attr.heatmap[h]
         fig, axs = plt.subplots(
-            lenl, 8, figsize=(10, 8), gridspec_kw={"wspace": 0.1, "hspace": 0.2}
+            lenl, 8, figsize=(20, 16), gridspec_kw={"wspace": 0.1, "hspace": 0.2}
         )
         # fig.suptitle("Concept-Conditional Heatmap per concept in layer")
         # fig.set_facecolor("#2BC4D9")
@@ -291,9 +291,15 @@ class CRPAttribution:
                 axs[il, n].yaxis.set_visible(False)
                 if n < len(self.layer_id_map[l]):
                     axs[il, n].set_title(
-                        f"c: {n}, {str(round(relevances[il][n],1))}%",
-                        fontsize=10,  # {str(round(relevances[il][n],1))}%
+                        f"{str(round(relevances[il][n],1))} \%",
+                        fontsize=20,  # {str(round(relevances[il][n],1))}%
                     )  # ,
+                    axs[il, n].text(
+                        1,
+                        1,
+                        f"concept {n}",
+                        size=14,
+                    )
                     maxv = max(float(images[il, n].abs().max()), 0.0001)
                     # minv = min(float(images[il, n].min()), -0.0001)
                     center = 0.0
@@ -744,6 +750,17 @@ class CRPAttribution:
             record_layer=self.layer_names,
         )
         return attr.heatmap, pred
+    
+    def heatmap_given_img(self, img, pred):
+        sample = img.view(1, 1, 64, 64)
+        conditions = [{"y": [pred]}]  # pred label
+        attr = self.attribution(
+            sample,
+            conditions,
+            self.composite,
+            record_layer=self.layer_names,
+        )
+        return attr.heatmap
 
     def old_cav_heatmap(self, index, layer, cav):
         img, label = self.dataset[index]

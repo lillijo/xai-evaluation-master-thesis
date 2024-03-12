@@ -18,6 +18,7 @@ experiments/outputs/*
 experiments/model_*.*
 experiments/testdata
 experiments/test_background
+experiments/latent_factors
 
 
 latex/thesis_latex_template/pics/
