@@ -8,7 +8,9 @@
 \pagestyle{empty}
 
 \subsection*{Zusammenfassung}
+Methoden der erklärbaren künstlichen Intelligenz (Explainable Artificial Intelligence, XAI), insbesondere lokale Wichtigkeitszuordnung, sind ein beliebtes Instrument zur Visualisierung der Bedeutung von Eingangsmerkmalen wie Pixeln für ein neuronales Netz.
+Folglich gibt es eine wachsende Zahl von Arbeiten, die diese Wichtigkeitszuordnung und ihre Visualisierung sowie im speziellen konzeptbasierte Methoden rigoroser evaluieren und ihre Grenzen und Nachteile aufzeigen. In diesem Bereich hat die Anwendung des Kausalitätsrahmens basierend auf Pearls Arbeit an Zugkraft gewonnen, da Erklärungen ein inhärent kausales Konstrukt sind. Die kausale Auswertung von XAI wird häufig von künstlich generierten Benchmark-Datensätzen mit bekannten Generierungsvariablen begleitet, um die tatsächliche Funktionsweise eines neuronalen Netzes ermitteln zu können. 
+Die neuere Erklärungsmethode Konzeptbedingte Relevanzpropagation (Concept Relevance Propagation, CRP) scheint den Menschen besser als reine Saliency-Visualisierungen in die Lage zu versetzen, zu erkennen, ob ein Modell verzerrt ist, basierend auf einer kleinen Nutzerstudie und qualitativen Untersuchungen. Bisher wurde dieses Potenzial aber nicht quantitativ evaluiert, vermutlich weil die relative Bedeutung von unerwünschten Merkmalen schwerer formal zu testen ist als die grundsätzliche Kohärenz zu einem trainierten Modell. 
+Mit Hilfe eines kausalen Benchmark-Datensatzes untersuchen wir daher die Reaktion von Concept Relevance Propagation (CRP) auf eine Intervention in einem kausalen Modell. 
+Unser kausaler Prozess führt eine Scheinkorrelation ein, mit einem Merkmal das keine direkte Beziehung zum wirklich wichtigen Merkmal hat, sondern durch einen Störfaktor mit ihm gekoppelt ist. Indem wir die Stärke dieser Kopplung kontinuierlich erhöhen, können wir analysieren, ob die Reaktion der Erklärung auf ein solches falsch korreliertes Merkmal der tatsächlichen Reaktion des Modells folgt. Zu diesem Zweck konstruieren wir eine Reihe von Metriken, die den Einfluss einer solchen Verzerrung sowohl auf die Erklärung als auch auf das Modell quantifizieren. Wir stellen fest, dass der gemessene kausale Effekt auf die Entscheidung des Modells und die Erklärung zum großen Teil übereinstimmen. Je abstrakter und menschlich interpretierbarer wir jedoch die Erklärung messen, desto weniger genau folgt sie der echten Wichtigkeit. Dieses Ergebnis ist besorgniserregend, da neuere Studien an Probanden gezeigt haben, dass die Salienz m
 
-
-
-\cleardoublepage

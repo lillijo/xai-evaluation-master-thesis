@@ -1,0 +1,117 @@
+\subsection{Importance in Ground-Truth Region}\label{section:region_specific}
+Arras et al. \cite{Arras2022}, apply two metrics for the analysis of importance in pixel maps. Relevance Mass Accuracy (RMA) measures the ratio of relevance within the boundary of a feature to the total relevance. Relevance Rank Accuracy (RRA) rates the percentage of pixels in such a bounding box that fall within the $k$ most important pixels in the heatmap. If those metrics are successful in describing the relative importance of a feature for the explanation too, which \cite{Yang2019} have already investigated, they should be applicable in our experiment. 
+
+\subsubsection{Relevance Mass Accuracy (RMA)}
+When trying to establish whether a feature is important, one would intuitively look at the feature itself first. Consequently, approaches like Relevance Mass Accuracy take into account the known boundary of a feature for benchmarks that have available information about the location and shape of features.
+Bau et al. \cite{Bau2017, Bau2020} define a related measure to compare explanation importance to a ground truth using IoU (\textit{Intersection over Union}). These works assume the perfect attribution of importance to one feature to be a binary mask, which is one inside and zero outside the feature's region.
+As noted in \cite{Arras2022} it is not known whether this perfect score is attainable or even desirable for an explanation. Yet the overall tendency should become clear. It is still more unclear, how this score should play out in a setting where the feature in question is only spuriously correlated to the target feature. Yang et al. \cite{Yang2019} formulate a model contrast score, comparing models that have learned differing importance for such a feature, to yield a relative feature importance. While our analysis goes in a similar direction, the ultimate goal would be to relate the feature importance of a spurious feature directly with the core feature without training multiple models.
+
+First, we however apply strategies resembling the evaluation scores RMA, RRA and Pointing Game. 
+Fortunately, the authors of CRP have already formulated \textit{local concept importance} $R_B$, evaluating the conditional attribution to a concept in a predefined region by masking the rest of the attribution out. Relating each neuron's local importance to its total importance cancels out the magnitude between the neurons. Therefore we scale the relative feature importance of one neuron by the total absolute relevance of all neurons $A_{tot}^{\ell}$ (see \cref{eq:total_absolute_relevance}).
+
+In our case, the region of interest are pixels in the bounding box area $B$ around the watermark (see \cref{fig:bounding_box}). Note that in contrast to some works using the exact boundary of the object in question, we mask a generous margin around the watermark itself. The reason being, that the model has a max-pooling layer through which importance gets smoothed out around the actual pixel. 
+
+\begin{figure}[t!]
+\begin{minipage}[t]{0.45\textwidth}
+    \vspace{-\topskip}
+        \includegraphics[width=\textwidth]{thesis_latex_template/pics/bounding_box.png}
+\end{minipage}
+\begin{minipage}[t]{0.45\textwidth}
+\begin{align}\displaystyle
+& R_B = \mathrm{ see \ \cref{eq:local_importance}} \\
+& A_{tot}^{\ell} = \mathrm{ see \ \cref{eq:total_absolute_relevance}} \\
+& RMA(\mathrm{x}) = \sum_{c \in \ell}  \frac{
+R_{B,c}(\mathrm{x})}{A_{tot}^{\ell}(\mathrm{x})|}
+\end{align}
+\end{minipage}
+\caption{Boundary $B$ around watermark}
+\label{fig:bounding_box}
+\end{figure}
+
+In our first experiment the shape and watermark feature are spatially separated, so local concept importance is a feasible instrument. This region-specific relative importance measure is not sensible if the spurious and core feature are overlapping, as in the second scenario. In this case, the shape's boundary is the ground-truth both for the spurious \textit{pattern} feature and the core \textit{shape} feature. Nevertheless, we compute this measure also for the second scenario.
+
+To enable better comparison we again embed the metric within the effect estimation setting as in \cref{eq:ace_metric}, even though we do not expect an image without a watermark to apply any relevance within the bounding box. However, if it does, this might be a noteworthy finding.
+
+\begin{align}\label{eq:ace_rma}
+& ACE_{RMA} = \frac{1}{|M_\rho|\cdot |\mathcal{X}| }\sum_{m}^{M_{\rho}} \sum_{\mathrm{x,x'}}^{\mathcal{X}} RMA(\mathrm{x}) - RMA(\mathrm{x'})
+\end{align}
+
+Albeit this local approach reduces complexity, it has been noted that importance is hard to gauge when features have varying spatial extends \cite{Achtibat2022}. 
+While it might give us a good estimate of the relevance of the watermark, the heatmap could still produce a wrong understanding of relative relevance for humans. 
+In scenarios where the spurious feature is not spatially separated from the target feature, using region-specific metrics is harder. Here, one can only hope to estimate explained relative feature importance through proxies like prototypical samples as described in \cref{section:relmax_measure}.
+
+\subsubsection{Relevance Rank Accuracy (RRA)}
+The second metric adapted from \cite{Arras2022} is \textit{Relevance Rank Accuracy}.  
+Relevance Rank Accuracy orders the input features (or pixels) by relevance and finds the $k$ most relevant pixels. The rank $k$ is equal to the size of the region of the feature, in question, here the boundary around the watermark. Computing the ratio of the top-k relevant pixels inside of the boundary $B$ to $k$ yields \textit{Relevance Rank Accuracy}:
+
+\begin{align}
+& P_{top-k}^{c}(\mathrm{x}) = (p_1, p_2,...,p_k | \ \  |R_{p_1,c}(\mathrm{x})| > |R_{p_2,c}(\mathrm{x})| > ... > |R_{p_k,c}(\mathrm{x})| ) \notag \\
+& RRA(\mathrm{x}) = \sum_{c \in \ell} \frac{|P_{top-k}^{c}(\mathrm{x}) \cap B|}{|B|} * |R_c^{\ell}(\mathrm{x})|
+\end{align}
+
+Arguably, this metric loses more information on whether at least some importance is assigned to the spurious feature (watermark) than RMA and previous measures. It is possible that there is still some attribution to the watermark which is not accounted for, especially since in our benchmark $k$ is quite small. The difference in interpretation to RMA is that only slightly attributed pixels are ignored which is likely more in line to how humans interpret attribution maps. 
+However, this metric ignores the relevance of the neurons in relation to each other, which therefore has to be reintroduced by separately weighing each concepts RRA value by the concepts magnitude of relevance $R_c^{\ell}$ again. 
+
+\subsubsection{Pointing Game}
+A step towards even more reduced complexity is the \textit{Pointing Game} metric, first introduced in \cite{Zhang2016}. The only difference between RRA and the Pointing Game metric is, that the latter \textit{binarizes} the question whether a feature is important by setting $k = 1$. If the most important pixel is inside the watermark bounding box $B$, the watermark is important for that filter, otherwise not.
+It has been noted by others that the pointing game metric is sub-optimal for evaluating attribution maps, as pointing to the central pixel in an image already produces ''good'' results \cite{Gu2019}. Nevertheless, as in the watermark scenario the feature changes position on the sides of the image and is quite small, we think that this measure can still function as an approximation. 
+
+\subsection{Relevance Maximization Measure}\label{section:relmax_measure}
+The last measure we propose aims to specifically address the potentially \textit{glocal} explanation CRP provides. For the experiment we introduced in \cref{section:dataset_wdsprites}, the spurious feature, i.e. the watermark, is spatially separated from the core feature of the shape. Therefore it is reasonable to assume that by looking at a heatmap one can at least identify whether the spurious feature is important \textit{at all}, if not \textit{how} important. 
+In real scenarios it is however often the case that spuriously correlated features are overlapping with the core feature or are not in one specific area. An example is the overall brightness of an image or the color or pattern on the object. Therefore, we introduced the second scenario where the spurious feature of a blurry or noisy pattern is overlapping with the target feature.
+
+\begin{figure}[t!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{thesis_latex_template/pics/compare_heatmap_pattern.png}
+    \caption[Distinguish heatmaps for different patterns]{When a spurious feature overlaps with the core feature, local attribution maps do not help in identifying the truly important feature.}
+    \label{fig:compare_heatmap_pattern}
+\end{figure}
+
+While the region-specific metrics should be able to identify relative feature importance for a spurious feature which is spatially separated from the core feature, this is not necessarily the case when they overlap. The mean attribution change measure could also show effects of intervention on a feature that is not easily localizable, but this effect might be difficult to interpret or even visually perceive (see \cref{fig:compare_heatmap_pattern}). The authors of CRP have shown prototype sets for individual concepts to help humans in identifying spurious features, because they potentially uncover not only the \textit{where} but also the \textit{what} of a concept's importance \cite{Achtibat2023}. So if we can find a way to measure which potentially overlapping feature is encoded by a reference set, it should be possible to quantify the humanly-readable relative feature importance even for these cases. 
+We propose two different ways of gauging which feature a reference set encodes. 
+
+The first measure, \textit{spurious feature share}, relates the number of images having the spurious feature to the number of images sharing the core feature. In an example of reference sets (\cref{fig:entangled_ref_set}) we give an intuition for this decision. Although there is relevance assigned to the spurious feature by the respective concept, it also seems to encode the shape. Differentiation is still somewhat possible for the first scenario, as we can clearly see attribution towards the watermark. For the second scenario (row 3 and 4) a human would not be able to recognize this concept as a pattern concept, because it could just as much be a shape concept. 
+Achtibat et al. underline that relevance maximization is better than activation maximization at showing the concept within the context of its usage by the model. Therefore, if a watermark is mostly used when the ellipse shape is present, the reference set will mostly include images with watermark \textit{and} ellipse. This objective might be misguided in the case of spatially overlapping spurious features unless one at the same time has access to counterfactual examples where the same shape but different pattern is attributed less or negatively by that neuron. 
+
+Our measure marks the concept shown in the first rows of \cref{fig:entangled_ref_set} positively as a \textit{watermark} concept. Yet, it would assign a much higher relative feature importance if there were also images showing watermarks and rectangles, i.e., if the shape feature was equally distributed. Adding to that, other latent factors might be just as distracting when they are encoded within the seen concepts, for example, the second set seems to mostly include ellipses in the bottom half of the image.
+
+\begin{figure}[t!]
+    \centering
+    \includegraphics[width=
+\textwidth]{thesis_latex_template/pics/rel_max_with_diversity_uncropped.png}
+    \includegraphics[width=
+\textwidth]{thesis_latex_template/pics/reference_set_overlap_example.png}
+    \caption[Entangled Reference Sets]{Entangled Reference Sets of a concept of a model trained for the first scenario and for the second scenario.
+    row 1: raw images selected in watermark case (with $W=1, S=1$), row 2: attribution maps of these, 
+    row 3: raw images selected in pattern case (with $W=1, S=1$), row 4: attribution maps of these}
+    \label{fig:entangled_ref_set}
+\end{figure}
+
+When one looks at the activation vs. relevance maximization sets in \cref{fig:act_rel_max}, an artifact pointing in that direction is apparent: 
+The activation reference sets for a feature which seems to encode the watermark strongly, have mostly diagonally rotated rectangles on them. Our theory is that this is due to the lower edge of this shape resembling the lopes of the watermarks $W$. 
+In contrast, the relevance maximization sets mostly show ellipses, possibly showing that the watermark is most relevant when the ellipse shape is present. 
+This means that while in this specific trained model the watermark is the only decisive feature of the prediction (as of true model importance), the spurious feature is still connected to the shape or a concept for the shape was still learned. 
+It is not clear whether CRP or even the underlying trained model are able to disentangle the latent factors enough to facilitate such distinctions.
+To see whether activation maximization or relevance maximization with a maximum relevance instead of summed relevance target perform differently, we therefore include them into our analysis.
+The approach principally works for any type of spuriously correlated feature, be it a watermark, color, pattern or background value. 
+
+To combat the context issue we just described, another measure, \textit{class-specific spurious feature share} is introduced here. 
+Relevance Maximization reference sets can be computed for any concept-conditioning set. 
+By looking at each concept's class-specific reference sets, we essentially intervene on the class so the spurious feature can be studied more independently. If the watermark is indeed most strongly encoded by a concept, we expect reference images from either class to have it, while differing in shape.
+In principal, the conditioning of reference sets could even be extended to the other latent factors rotation, scale and position. However, this would require manually selecting images which share the value for a latent factor and is not as automatic as CRP's extraction of class-specific relevances. 
+
+\begin{align}\displaystyle
+& \text{Spurious Feature Share: } \notag &  \\
+& \mathcal{X}_{\star}^{c} = arg \sort_{\mathrm{x} \in \mathcal{X}} \mathcal{T}_{sum}^{c,rel}(\mathrm{x}) & \\
+& \mathcal{X}_{k}^{c} = \{ \mathrm{x}_{1}^{\star},\mathrm{x}_{2}^{\star},..., \mathrm{x}_{k}^{\star} \} \subseteq \mathcal{X}_{\star}^{c} & \\
+& Rel_c(w) = \sum_{\mathrm{x} \in \mathcal{X}_{k}^{c}:  W_{\mathrm{x}} = w } \frac{ R_c(\mathrm{x})   }
+{max(|\{S_{\mathrm{x}} = s \}|}    & \\
+& \text{SPF} = \sum_{c \in \ell} | Rel_c(1) - Rel_c(0) |  & \\
+& \text{Class-Specific Spurious Feature Share } \notag & \\
+& \mathcal{Y}(w)^{c,s} = | \{ \mathrm{x} \in \mathcal{X}_{k}^{c, S=s}: W_{\mathrm{x}} = w  \} | & \\
+& \text{Y-SPF} = \sum_{c \in \ell} | \mathcal{Y}(1)^{c,1} - \mathcal{Y}(0)^{c,1} | +| \mathcal{Y}(1)^{c,0} - \mathcal{Y}(0)^{c,0} | * \tfrac{1}{2} & \\
+\end{align}
+
+TODO:
+
+- show that average over models might be misleading i.e. some models have high feature importance yet do not encode the spurious feature within the reference sets at all!

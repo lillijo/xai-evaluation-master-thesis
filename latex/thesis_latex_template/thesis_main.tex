@@ -6,7 +6,7 @@
 %  Last upadte: C. Müller-Birn 2015-11-27
 %  Freie Universität Berlin, Institute of Computer Science, Human Centered Computing. 
 
-\documentclass[pdftex,a4paper,12pt,DIV=calc,BCOR=5mm,twoside,smallheadings,titlepage]{scrbook}   
+\documentclass[pdftex,a4paper,12pt,DIV=calc,BCOR=5mm,twoside,smallheadings,titlepage, halfparskip-]{scrbook}   
 % ----- weitere Optionen 
 %draft,			% Entwurfsmodus zum Anzeigen zu leerer/voller Boxen 
 %DIV=calc
@@ -31,6 +31,7 @@
 \usepackage{fancyhdr} % Define simple headings 
 \usepackage{xcolor}
 \usepackage{color}
+\usepackage{mdframed}
 \usepackage{url}
 \usepackage{listings}
 %\usepackage{vmargin} % Adjust margins in a simple way
@@ -43,7 +44,7 @@
 
 \usepackage{graphicx}  
 \usepackage{hyperref} 
-\usepackage[noabbrev]{cleveref}
+\usepackage[noabbrev, nameinlink]{cleveref}
 % turn all your internal references into hyperlinks
 %\usepackage[pdfstartview=FitH,pdftitle={<<Titel der Arbeit>>}, pdfauthor={<<Autor>>}, pdfkeywords={<<Schlüsselwörter>>}, pdfsubject={<<Titel der Arbeit>>}, colorlinks=true, linkcolor=black, citecolor=black, urlcolor=black, hypertexnames=false, bookmarksnumbered=true, bookmarksopen=true, pdfborder = {0 0 0}]{hyperref}
 %
@@ -80,6 +81,9 @@
     filecolor=magenta,      % color of file links
     urlcolor=cyan           % color of external links
 }
+\renewcommand*{\chapterheadstartvskip}{\vspace*{0cm}}
+\renewcommand*{\chapterheadendvskip}{\vspace{0.5cm}}
+
 % 
 %---------------------------------------------------
 %----- Customize page size
@@ -93,13 +97,13 @@
 
 \fancyhf{}  % delete all existing header formating
 
-\fancyhead[LE]{\leftmark}  % represent the current chapter heading in uppercase
+
+
+\fancyhead[RE]{\nouppercase{\leftmark}}  % Chapter in the right on evens
+
+\fancyhead[LO]{\nouppercase{\rightmark}}
 \renewcommand{\chaptermark}[1]{ % adapt the shown chapter name: show it in lower case and with chapter number 
 \markboth{\thechapter.\ #1}{}}   
-
-\fancyhead[RO]{\rightmark}   % % represent the current section heading in uppercase 
-\renewcommand{\sectionmark}[1]{% adapt the shown section name: show it in lower case and with section number 
-\markboth{\thesection.\ #1}{}}
 
 \renewcommand{\headrulewidth}{0pt} % remove lines from header
 \renewcommand{\footrulewidth}{0pt} % remove lines from header
@@ -118,6 +122,7 @@
 \DeclareMathOperator*{\RMA}{RMA}
 \DeclareMathOperator*{\RRA}{RRA}
 \DeclareMathOperator*{\PG}{PG}
+\DeclareMathOperator*{\sort}{sort}
 
 \fancyfoot{} % delete all existing footer formating
 \fancyfoot[LE,RO]{\thepage} % put page number on the left on even page and right on odd page
@@ -157,7 +162,12 @@ abstract_de,
 introduction,
 background,
 problem_setting,
-method,
+method0_scm,
+method1_crp,
+method2_m0_m1,
+method3_m2_mac,
+method4_m2_rest,
+method5_comparison,
 results,
 conclusion,
 appendix
@@ -183,6 +193,7 @@ appendix
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{graybg}{rgb}{0.85,0.85,0.82}
 
 \lstdefinestyle{mystyle}{
     backgroundcolor=\color{backcolour},   
@@ -210,9 +221,8 @@ appendix
 %---------------------------------------------------
 %----- Title and declaration   
 %---------------------------------------------------
-\pagenumbering{alph}
+\pagenumbering{gobble}
 \include{title}
-
 
 %---------------------------------------------------
 %----- Change word wrapping if it is too annoying 
@@ -221,7 +231,7 @@ appendix
 %\raggedright
 %\sloppy
 \hyphenpenalty=4000
-\tolerance=1000
+\tolerance=2000
 
 %---------------------------------------------------
 %----- Abstracts in English and German   
@@ -238,10 +248,10 @@ appendix
 \pagenumbering{roman}
 
 \tableofcontents
-\setcounter{tocdepth}{2}   % reduce the included sections in the table of content
+%\setcounter{tocdepth}{3}   % reduce the included sections in the table of content
 
 \listoffigures
-\listoftables
+%\listoftables
 
 %---------------------------------------------------
 %----- Main part
@@ -252,13 +262,20 @@ appendix
 
 %\include{preface} 
 
-\include{introduction}
-\include{background}
-\include{problem_setting}
-\include{method}
-\include{results}
-\include{conclusion}
+\input{introduction}
+\input{background}
+\input{problem_setting}
+\input{method0_scm}
+\input{method1_crp}
+\input{method2_m0_m1}
+\input{method3_m2_mac}
+\input{method4_m2_rest}
+\input{method5_comparison}
 
+\input{results}
+\input{conclusion}
+
+\textit{This work used resources of the Deutsches Klimarechenzentrum (DKRZ) granted by its Scientific Steering Committee (WLA) under project ID 1083}
 %---------------------------------------------------
 %----- Bibliography
 %---------------------------------------------------

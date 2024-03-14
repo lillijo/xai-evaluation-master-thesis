@@ -1,142 +1,137 @@
 \chapter{Experimental Results}\label{chapter:results}
 
-{ \color{red}
-10-20 pages 
-
-    \begin{itemize}
-        \item (1/3 of thesis)
-        \item whatever you have done, you must comment it, compare it to other systems, evaluate it
-        \item usually, adequate graphs help to show the benefits of your approach
-        \item caution: each result/graph must be discussed! what's the reason for this peak or why have you observed this effect
-    \end{itemize}
-}
+\begin{figure}[t!]
+    \centering
+    \begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/basic_accuracy.png}
+    \end{minipage}
+    \begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/accuracy_intervened.png}
+    \end{minipage}
+    
+    \begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/basic_accuracy_overlap.png}
+    \end{minipage}
+    \begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/accuracy_intervened_overlap.png}
+    \end{minipage}
+    \caption[Accuracies]{Average accuracy for the 16 models per coupling ratio $\rho$ in watermark scenario (top) and pattern scenario (bottom). left: on biased training data, right: on selection going against bias. As expected, for ellipses without watermark and rectangles with watermark, the accuracy drops as $\rho$ raises.}
+    \label{fig:accuracy}
+\end{figure}
+In the following we summarize our findings for the experimental framework we constructed. We will firstly look at the models reaction and ground-truth importance, then visualize and describe the results for all explanation importance measures $m_2$.
+Mostly the data for the first experiment, where the coupling ratio $\rho$ controls which images have an additional watermark is shown. In cases where the outcome differs strongly to the scenario, where $\rho$ controls an overlapping pattern feature, we will also show and compare the results for this second benchmark. Further plots for the pattern scenario can be found in the appendix \cref{appendix:pattern_scenario}.
 
 \section{Trained Models}
-Here we report the general results of training 816 models with 16 different random initializations and 51 different values of $\rho$ (in 0.02 steps from 0 to 1).
-The details on the model architecture and training process can be found in the \cref{appendix:model}. 
-As already noted in the method section, the model architecture is fairly minimal but still has high performance for the simple benchmark problems we test it on. 
-For the shape vs. watermark scenario the average performance is above 95\% and seems to not be dependent on the coupling ration $\rho$ as is visible in \cref{fig:basic_accuracy}.
-% Almost identical results are achieved for the non-localized and suppressor variable benchmark problems.
+Here we report the training accuracies for the watermark and pattern scenario. 
+As already noted in the method section, the model architecture is minimal but still has fairly high performance for the simple benchmark problems we test it on. 
+For the watermark scenario the average performance is above 95\% and seems to not be strongly dependent on the coupling ratio $\rho$ as is visible in \cref{fig:accuracy} (left).
+However, with closer inspection of the accuracies in the second scenario   \cref{fig:accuracy} (bottom), there is a cut-off where the models start to rely solely on the spurious feature at $\rho \sim 0.8$, from which point the accuracy seems completely correlated with the presence of the spurious feature, i.e., with $\rho$.
+
+A first impression on how much the coupling ratio $\rho$ affects the performance for instances that go against its bias, i.e., $W=0$ when $S=1$ and vice versa, can be seen in \cref{fig:accuracy} (right). We will in the following examine this reaction of the model in more detail with the measures for ground-truth relative feature importance $m_1$ discussed in the method \cref{section:gt_measure}. 
+
+In \cref{fig:m0_m1} the relationship between the causal variable $\rho$ and the distribution within our dataset is visualized. Because the causal variables $S$ and $W$ are binary, their correlation is not exactly following the linear increase of $\rho$. The models reaction to the training data on the other hand is visibly non-linear to $\rho$.
+It is interesting to see that the models seem to only rely on the spurious feature quite late from when $\rho$ is about 0.9. As a complementary view, one can observe the dependency between the target feature shape ($S$) and the prediction ($Y$) deteriorate when the spurious feature is coupled strongly. From this comparison, it is also visible that on average the correlation between $W$ and $Y$ never becomes higher than the to-be-learned correlation between $S$ and $Y$ for the watermark scenario. In the appendix we additionally report the dependencies for the other latent factors of the image generation process (scale, rotation, x- and y-position).
+Results for the other benchmark are generally following a similar trend, but the spurious feature seems to be harder to ignore for the pattern scenario. Consequently, for low values of $\rho$ the model importance is already significantly larger than zero. Adding to that, the model seems to ignore the true feature shape when the correlation between shape and pattern becomes circa 0.8 and mostly linearly follows $\rho$ after that. We hypothesize that this is due to the higher entanglement of pattern and shape. 
+
 \begin{figure}[t!]
     \centering
-    \includegraphics[width=0.5\textwidth]{thesis_latex_template/pics/basic_accuracy.png}
-    \caption[Accuracy]{Average accuracy for models with the same coupling ratio $\rho$ (16 per bucket)}
-    \label{fig:basic_accuracy}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/m1_main_comparison.png}
+    \caption[$m_0$ vs. $m_1$]{Comparing $\phi$-coefficient between training data distribution biased by $\rho$ and the biased models reaction to an unbiased subset of 6400 images. }
+    \label{fig:m0_m1}
 \end{figure}
 
-
-A first impression on how much the coupling ratio (i.e. the biasedness of the model) affects the performance for instances that go against this bias can be seen in \cref{fig:accuracy_intervened}. We will in the following examine this \textit{ground truth importance} of the model in more detail with the measures $m_1$ discussed in the method \cref{section:gt_measure}.
-
 \begin{figure}[t!]
     \centering
-    \includegraphics[width=0.5\textwidth]{thesis_latex_template/pics/accuracy_intervened.png}
-    \caption[Accuracy for intervened Subsets]{Average accuracy for the 16 models per coupling ratio $\rho$. As expected, for ellipses without and rectangles with the watermark, the accuracy drops as $\rho$ raises.}
-    \label{fig:accuracy_intervened}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/m1_main_comparison_overlap.png}
+    \caption[$m_0$ vs. $m_1$ for Pattern Scenario]{Comparing $\phi$-coefficient between training data distribution biased by $\rho$ and the biased models reaction to an unbiased subset of 6400 images for second \textit{pattern} scenario.}
+    \label{fig:m0_m1_overlap}
 \end{figure}
 
-Like expected, the spurious feature becomes more important to the model as its coupling with the target feature gets stronger. Both the mean logit change and the prediction flip (i.e. $\phi$-coefficient) reflect this (\cref{fig:m1_results}). It is interesting to note the variance of importance increasing the stronger the coupling gets. While all models seem to learn to ignore the spurious feature up until a correlation in the data distribution of about 0.7, some continue to mostly dismiss it as the correlation gets even stronger, while others start using the watermark for prediction. Therefore we found it important to also show each set of models trained with the same random initialization separately (\cref{fig:gt_over_seeds}). We speculate this robustness to spurious features some instances of initial weights and biases seem to display to be, because the local minimum concentrating around the spurious feature is far from the initial point in the gradient function. It certainly is a phenomenon worth studying and multiple authors have set to explicitly de-biasing networks using e.g. adapted cost functions, adversarial methods or human-in-the-loop correction \cite{Anders2022,Pahde2023,Reimers2021, Reimers2021b, Dreyer2023a}.
+It is interesting to note the variance of importance increasing the stronger the coupling gets. While all models seem to learn to ignore the spurious feature up until a correlation in the data distribution of about 0.7, some continue to mostly dismiss it as the correlation gets even stronger, while others start using mainly the spurious feature for prediction. Therefore we found it important to also show each set of models trained with the same random initialization (i.e. same set of initial weights and biases) separately (\cref{fig:gt_over_seeds}). We speculate this robustness to spurious features to be, because the local minimum around using the spurious feature in the gradient function is further (or harder to reach) from their initial point. It certainly is a phenomenon worth studying and multiple authors have set to explicitly de-biasing networks using e.g. adapted cost functions, adversarial methods or human-in-the-loop correction \cite{Anders2022,Pahde2023,Reimers2021, Reimers2021b, Dreyer2023a}.
+Conversely, in the pattern scenario (\cref{fig:compare_seeds_overlap}) all models seem to react to the spurious feature strongly. This is in line with the earlier hypothesis that this kind of spurious feature creates a harder-to-evade bias.  
 
-A second noteworthy observation one can make from this individual view is that some seeds seem to be more unstable in performance than others (i.e. 1, 3, 6, 14). Nevertheless no relationship between this instability and the models reaction to the spurious feature is apparent so we do not remove these seeds from our analysis.
+A second noteworthy observation one can make from the individual model view is that some seeds seem to be less stable in performance than others (i.e. 1, 3, 6, 14). Nevertheless no relationship between this instability and the models reaction to the spurious feature is apparent so we propose that those are not polluting the analysis.
+
+\subsection{Ground Truth Model Importance Measures $m_1$}
+In the method section we described multiple distance metrics for measuring the effect of the spurious feature. It becomes apparent in \cref{fig:m1_results} that the choice of distance metric is not majorly changing the overall trend.
+The prediction flip measure seems to almost coincide with its non-binarized analogue, the mean logit change, for the watermark case.
+On very close inspection it is visible that the mean logit change starts rising slightly earlier than the prediction flip, yet not significantly.
+In the pattern scenario on the other hand, the prediction flip has a higher value than the mean logit change as soon as the spurious feature (the pattern) takes over. An explanation is that although the model starts to only use the pattern feature from that point on, its confidence on this decision is not as high as in the other case.
+
+We also show the squared difference and the cosine distance of the logit vector in the plot. This is in order to identify how strongly they deviate from the absolute change and to potentially enable better comparison with the analogous $m_2$ measures.
+Yet, for the rest of the analysis we use the absolute mean logit change as the ground truth for model importance as other works have done \cite{Sixt2022a, Achtibat2022}, because the effect does not change considerably.
 
 \begin{figure}[t!]
     \centering
-    \includegraphics[width=\textwidth]{thesis_latex_template/pics/m1_phi_mlc.png}
-    \caption[Ground Truth Importance $m_1$]{Ground Truth Importance of watermark feature $W$, plotted against coupling ratio $\rho$.}
+    \includegraphics[width=0.7\textwidth]{thesis_latex_template/pics/m1_all_measures.png}
+    \caption[Ground Truth Importance $m_1$]{Ground truth model importance $m_1$ as mean logit change with different distance metrics and $\phi$-coefficient}
     \label{fig:m1_results}
 \end{figure}
 
+
 \begin{figure}[t!]
     \centering
-    \includegraphics[width=\textwidth]{thesis_latex_template/pics/compare_seeds_w_accuracy.png}
-    \caption[Comparing Seeds]{Mean Logit Change when intervening on watermark over 16 random seeds (red)
-    compared to $\rho$ (green dashed), correlation in data distribution (blue dash-dotted) and training accuracy (gray dotted).
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/compare_seeds.png}
+    \caption[Comparing Seeds]{Mean logit change, $\phi$-coefficient, accuracy over 16 random seeds.
     }
     \label{fig:gt_over_seeds}
 \end{figure}
 
+\section{Explanation Importance}
+Now it is time to compare the effect of the coupling variable $\rho$ on the ground truth model importance $m_1$ to the explanation importance $m_2$. 
+A concerning result would be, if the explanation had a weaker relationship with $\rho$ than the prediction. That would mean that the explanation is not able to recover and explain spurious features sufficiently. Though as hinted at in the description of the measures, it is not always obvious how to scale each measure. We attempted to define the measures outputs such that if an explanation solely depends on the spurious feature, each metric should have the value 1. 
+Another way to make the measures comparable would be to just scale each of them to the [0,1] interval. We believe that this would not be in line with how they are defined though. 
+We show the curves in relation to $\rho$ to gain insight into this relationship. However, as we will see later, the models reaction to the spurious feature is not always dependent on $\rho$. Hence it is also interesting to look at the direct relationship between $m_1$ and $m_2$ measures through scatter plots.
+
+\subsection{Relevance Vectors and Attribution Maps}
+Firstly we show the causal effect of intervention on $W$ in relation to $\rho$ on the relevance vectors and their respective attribution images. 
+The relevance vectors should be roughly analogous to the absolute sum of attribution maps up to scale. Therefore it is not surprising that the two types produce similar results.
+The distance metrics mostly follow the same general trend of the true model importance. 
+Both for relevance vectors and attribution maps the \textit{absolute} value is more sensitive to (arguably noise-like) small differences when $\rho$ is still low. This sensitivity seems to be increasing when $\rho$ gets larger, although none of the metrics is able to fully recover the importance of the watermark when $\rho = 1$. 
+The cosine distance metric is only significantly departing from the true model importance for high values of $\rho$. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/m2_rel_comparison.png}
+    \caption[Relevance Vector, Comparison of Metrics]{Comparison of distance metrics between relevance vectors (of 8 relevances each).}
+    \label{fig:m2_rel_comparison}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/m2_mac_comparison.png}
+    \caption[Attribution Maps, Comparison of Metrics]{Comparison of distance metrics for 8 attribution maps with dimension 64x64.}
+    \label{fig:m2_mac_comparison}
+\end{figure}
+
+\subsection{Region-Specific Importance}
+
+The measures using the boundary around the watermark feature to establish its relative importance are following the true model importance less closely. 
+This in turn shows that some of the \textit{causal effect} of intervening on the spurious feature, i.e. adding or removing the watermark, changes the attribution maps in places other than the watermark region. 
+We suspect that the high values of the pointing game method are due to its impreciseness. If a neuron has not learned a meaningful concept and is entirely random but by chance its highest attributed pixel lies within the boundary of the watermark, this is counted as a ''pro watermark'' concept. So if even just a little relevance is given to this ''concept'' it will increase the measured importance considerably. 
+However, this also implies that the attribution maps cannot be trusted fully. Uninformative or random neurons seem to have enough relevance assigned to them to overinterpret the importance of the watermark. RMA and RRA succeed better at assigning no importance to the spurious feature region when $\rho$ is low. But the watermark never gets as much importance as the model truly applies to it when $\rho$ is high. Instead, as can be seen from closer inspection of example attribution maps the difference is also expressed through changing the relevance of the shape. Authors of \cite{Arras2022} have been questioning whether the score of 1 for RMA is attainable or even desirable. Especially in our setting where two features are present this is a valid question to pose. We believe that the relevance within the bounding box should at least follow the 
+
+This is one of the core insights of this experiment. 
+
 
 \begin{figure}[t!]
     \centering
-    \includegraphics[width=\textwidth]{thesis_latex_template/pics/unnormalized_some_measures.png}
-    \caption{Comparison of Measures Unnormalized}
-    \label{fig:unnormalized}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/m2_region_comparison.png}
+    \caption[Region Specific, Comparison of Metrics]{Comparison of distance metrics using bounding box of spurious feature}
+    \label{fig:m2_region_comparison}
 \end{figure}
 
 
 \begin{figure}[t!]
     \centering
-    \includegraphics[width=\textwidth]{thesis_latex_template/pics/normalized_some_measures.png}
-    \caption{Comparison of Measures Normalized to [0,1]}
-    \label{fig:normalized}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/m2_region_comparison_normalized.png}
+    \caption[Region Specific, Comparison of Metrics Normalized]{Comparison of distance metrics using bounding box of spurious feature each metric normalized to [0,1]}
+    \label{fig:m2_region_comparison_normalized}
 \end{figure}
 
-
-Interesting things i wanna say
-\begin{itemize}
-    \item Firstly: The reaction to the "bias" is way less strong than one might expect. Only at super high rates it actually becomes worth it to learn the spurious feature.
-    \item However, that might be expected as that is what deep neural networks are specifically designed for
-    \item in general, it is relieving to see that the importance of the biased feature for the model and the explanation is not completely departing from each other
-    \item as the models feature importance rises with $\rho$, so does the explanation importance
-    \item but it becomes clear that depending on the way the explanation is read / measured it can over- or under-emphasize the wm effect. 
-    \item the seed makes a huge difference (maybe this is just because my model is not stable and it has to be recomputed???) 
-    \item 
-\end{itemize}
-
-\section{Experiments}
-\begin{itemize}
-    \item what have I tried out with the different methods?
-    \item list in concise order the possible measures
-    \item ground-truth feature importance: mean logit change for output, phi correlation (= prediction flip)
-    \item baseline explanation feature importance - thats what we compare to e.g. watermark bounding-box importance for summary heatmap
-    \item special concept explanations feature importance
-    \item how are the experiments set up, how do i make sure they are all well comparable
-    \item to which other baseline could my measures be compared to?
-\end{itemize}
-
-\section{Results}
-lots of plots!
-\begin{itemize}
-    \item what have I tried out with the different methods?
-    \item what works and what doesn't
-    \item plot for each experiment/possible method?
-          \begin{itemize}
-              \item watermark bounding box average relevance for different subgroups, somehow get difference
-              \item variance of latent factors in relevance maximization image set - low variance means it encodes the concept
-              \item naive: total relevance for watermark image region
-              \item total activation + relevance of neuron given just watermark image
-              \item one idea: take masked/bounding box approach again for neurons individual heatmaps
-              \item nmf idea: somehow try to reduce the latent space to Watermark/Shape axis and measure variance in either direction
-              \item centroids idea: use random DR algorithm and calculate ratio of centroid distances (needs latent factors again)
-              \item causal idea??? somehow measure causal effect? - the other things are kind of causal or?
-          \end{itemize}
-\end{itemize}
+\section{Prototypical Explanation Measure}
+The measures listed before have have shown that the explanation produced with concept-conditional attribution maps at least to some degree discovers the true relative importance of a spurious feature.
+In the watermark case most $m_2$ values are quite close to the true model importance's curve.
+We now show that the same is not true for the pattern, i.e., overlapping feature scenario.
 
 
-
-\section{Evaluation}
-\begin{itemize}
-    \item evaluation of evaluation criteria:
-    \begin{itemize}
-        \item takes into consideration the whole latent space spanned by the concepts
-        \item orients itself on known human cognition, user studies in this field would suggest this??? 
-        \item performs similar to baseline watermark bounding box importance? 
-        \item ...? \todo{define success criteria of finding a good measure}
-    \end{itemize}
-    \item which measure is the best according to those criteria
-    \item which measure is the closest to ground truth
-    \item which is the furthest from ground truth
-    \item does measure find \textit{more information} than CRP itself and could possibly be used as a method on top of CRP for disentanglement/ spurious-core relation explanation?
-    \item 
-\end{itemize}
-
-
-\section{Evaluating Method on Other Problems}\label{section:further_problems}
-
-\section{Discussion}
-\begin{itemize}
-    \item do measures work
-    \item what does causality help us with
-    \item is CRP better for constant vector shift stuff or does it still suffer from it?
-    \item can the application of those measures further explain/inform the explanation?
-    \item what failed miserably
-\end{itemize}

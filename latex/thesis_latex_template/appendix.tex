@@ -1,69 +1,49 @@
 \chapter{Appendix}\label{chapter:Appendix}
 
-
 \section{Additional Details to LRP Rules and CRP Implementation}
 \label{appendix:lrprules}
-\begin{figure}[ht]
-	\centering
-	\label{fig:tesfigure}
-	\includegraphics[width=\textwidth]{pics/test.png}
-	\caption[Test Figure]{This is a test figure}
-\end{figure}
 \begin{itemize}
     \item explain used LRP rule \textit{epsilon plus flat} in sufficient detail
     \item explain what canonizers are and why they are not necessary for my example (model is simple and does not have batch norm layers) 
+    \item additional information on implementation and theoretical background of CRP?
+    
 \end{itemize}
+\subsection{Interpretation Techniques from CRP Work}
+The authors of CRP embed the approach into a handful of concept-based interpretation techniques. Their motivation is to gain more abstract, reduced explanations, while still potentially using multiple concepts. The underlying assumption is that the neurons in layers of deep neural networks encode human-understandable concepts hierarchically from low-level to abstract \cite{Zeiler2013,Bau2017,Olah2017}. Although this assumption seems to be made mostly for large and deep CNN and complex image datasets, the general idea can be applied in our experiment too. 
 
+\subsubsection{Relevance Maximization}
+Prominently, they introduce \textit{Relevance Maximization}, creating reference sets of images for all neurons encoding potentially human-understandable concepts. It is the \textit{relevance} analogue to \textit{activation maximization} \cite{Nguyen2016}. This technique arguably reduces the complexity of the explanation as \textit{learning-by-example} is proven to be a prevailing human strategy.
+Therefore it seems fair to evaluate feature importance based on those reference sets. If a set overlaps strongly with regard to the spurious feature's value, one can assume this feature to be the concept encoded by that concept/neuron. 
+Unfortunately the overlap of our feature of interest might be disguised by other features. As an example: while each image in a set might have the watermark, they might all show the same shape in a similar rotation too. This indeed happens with our benchmark dataset (see \cref{fig:suppressor_ref}), probably also because of its generally low complexity. 
 
-\section{Details on Adapted dSprites Dataset}\label{appendix:dsprites}
-Has 737280 64x64 pixel binary images, only take rectangles and ellipses (Heart is to easy to distinguish?). so 419.. images.
-
-The generating factors \verb|shape|, \verb|scale|, \verb|rotation|, \verb|x position| and \verb|y position| are known for each sample.
-
-To adapt the benchmark for our purpose, only the first two shape classes (rectangle and ellipse) are used. A watermark in the form of a small \textit{w} was initially added to the lower-left corner of some images. During initial testing with only these adaptations it became clear that even the small convolutional neural network employed here is too powerful for this task as effectively dividing the image into two parts solves the problem and most neurons became irrelevant.
-To make the spurious feature, which is the watermark \textit{w} more difficult to learn, its position is therefore varied across the edges of the image. Further a small uniform noise term is added to make the problem more realistic and the saliency maps more convincing and informative.
-The aim of this new dataset is, to create the simplest possible scenario with known generating factors, while keeping it as realistic or close to real world application cases of attribution methods as possible. In \autoref{fig:dsprites_examples} the resulting images are visualized.
-
-
-\todo{why the heck new dataset???}
-\begin{itemize}
-    \item why do we need another dataset for benchmarking watermark bias??
-    \item some other benchmarks that deal with similar questions are...
-    \item why am i not just using 3d shapes dataset? \url{https://github.com/deepmind/3dshapes-dataset/} (C. Burgess and H. Kim)
-\end{itemize}
-
-
-\section{Proof $\phi$-Coefficient is equal to Prediction Flip}
-\label{appendix:phi_equals_pf}
-\begin{table}[t]
+\begin{figure}
     \centering
-\newlength{\width}
-\width15mm
-\begin{tabular}{|c|c|c|c|c|c|}
-    \hline
-     \multirow{2}{\width}{}& \multicolumn{2}{|c|}{w=1} &\multicolumn{2}{|c|}{w=0} & \multirow{2}{\width}{total}  \\  \cline{2-5}
-     & x=1 & x= 0 & x= 1& x= 0 &\\ \hline
-    \multirow{2}{\width}{y= 1} & A $n_{111}$ & B $n_{110}$& C $n_{101}$& D $n_{100}$&\multirow{2}{\width}{$n_{1**}$}    \\ \cline{2-5}
-    & \multicolumn{2}{|c|}{$n_{11*}$ }& \multicolumn{2}{|c|}{$n_{10*}$} &  \\ \hline 
-    \multirow{2}{\width}{y= 0} & E $n_{011}$& F $n_{010}$& G $n_{001}$& H $n_{000}$& \multirow{2}{\width}{ $n_{0**}$} \\ \cline{2-5}
-    & \multicolumn{2}{|c|}{$n_{01*}$} & \multicolumn{2}{|c|}{$n_{00*}$} & \\ \hline 
-    \multirow{2}{\width}{total} & $n_{*11}$&  $n_{*10}$&  $n_{*01}$&$n_{*00}$& \multirow{2}{\width}{ $n$ } \\ \cline{2-5}
-    & \multicolumn{2}{|c|}{$n_{*1*}$} & \multicolumn{2}{|c|}{$n_{*0*}$} & \\ \hline
-\end{tabular}
-    \caption{Caption}
-    \label{tab:tBLE}
-\end{table}
+    \includegraphics[width=0.3\textwidth]{thesis_latex_template/pics/suppressed_reference_set.png}
+    \caption[Reference Set Interpretation]{Example of a reference set, with unclear interpretation}
+    \label{fig:suppressor_ref}
+\end{figure}
 
-\begin{align*}
-\phi = \frac{n_{11*} * n_{00*} - n_{10*}*n_{01*}}{\sqrt{n_{1**}*n_{0**}*n_{*0*}*n_{*1*}}} 
-& PF = \frac{X}{n_{*0*}+n_{*1*}}
-\end{align*}
+\section{Details on Adapted dSprites Datasets}\label{appendix:dsprites}
+
+The generating factors \verb|shape|, \verb|scale|, \verb|rotation|, \verb|x-position| and \verb|y-position| are known for each of the 437'280 samples. 
+To adapt the benchmark for our purpose, only the first two shape classes (rectangle and ellipse) are used. 
+Initially we added watermark in the form of a small \textit{w} to the lower-left corner of the images. During first experiments with only this adaptation it became clear that even the small convolutional neural network employed here is too powerful for this kind of task, as effectively dividing the image into two parts solves the problem and most neurons became irrelevant.
+To make the spurious feature, which is the watermark \textit{w}, more difficult to learn, its position is varied across the edges of the image. Further, a small Gaussian noise term is added to make the samples closer to realistic images and harder to learn. The other latent factors are not a part of our analysis although the dataset was initially created to test disentanglement of such factors. Nonetheless, a comparison of the importance of other factors with the used factor shape might give an impression of the overall ability of a model to disentangle them. It could also serve as a baseline of importance in further experiments. The other latent factors have no causal relationship with the target shape, they are however also parents of the image, which is therefore a collider. If one is to discover a strong relationship between one of these completely uncoupled features and the explanation this is in line with recent work on \textit{suppressor variables} of Wilming et al. and Clark et al. \cite{Wilming2023, Clark2023}. As an additional result, \cref{fig:other_factors} hence reports some of the measures for the other latent factors scale, rotation, x-position and y-position. \\
+
+\begin{figure}[t!]
+	\centering
+	\includegraphics[width=\textwidth]{pics/test.png}
+	\caption[Other Factors Importance]{This is a test figure}
+	\label{fig:other_factors}
+\end{figure}
+
+For the second \textit{pattern} dataset, the pixels within the shape are perturbed with Gaussian noise and for the case $W=1$ this pattern is blurred using a 3x3 Gaussian kernel with unit variance. All the other factors like the added noise term stay the same to the first scenario. We also note that we fix the random seed which initializes the noise term for each image and keep the order of images fed to the model during training fixed. 
 
 
 \section{Model, Hyperparameters and Training}\label{appendix:model}
 \subsection{Model Architecture}
-For our analysis we decided on a model architecture that is small enough to train a few hundred times but big enough to still have high performance and be comparable to the deep neural networks that local attribution methods are typically applied to.
-We deemed 3 convolutional layer and one fully connected layer before the final output layer enough for our task. Notably, the layers have comparably few channels (8 or 6). The objective of creating such a narrow network was to be able to visually compare \textit{all} filters within a layer in order to identify the human-understandable concepts they potentially learned. 
+For our analysis we decided on a model architecture that is small enough to train a few hundred times within a reasonable time frame but big enough to still have high performance for the scenarios and be comparable to the deep neural networks that local attribution methods are typically applied to.
+We deemed 3 convolutional layers and one fully connected layer before the final output layer enough for our task. Notably, the layers have comparably few channels (8 or 6). The objective of creating such a narrow network was to be able to visually compare \textit{all} filters within a layer in order to identify the human-understandable concepts they (potentially redundantly) learned. 
 
 \begin{lstlisting}[language=bash, label=lst:cnnmodel]
 
@@ -85,128 +65,124 @@ linear_layers:
 \end{lstlisting}
 
 \subsection{Hyperparameter Choice}
-The values for hyperparameters of the training process are optimized for accuracy with a rather short search. Finally, we train all models using the \verb|Adam| optimizer with a learning rate of \verb|0.001| using \verb|cross-entropy| loss as the objective to minimize. 
-It is interesting to note that the learning rate has significantly different optimal values for highly biased models than completely unbiased ones and we therefore chose a compromise. We assume this to be due to the cost function becoming less complex, the more (\textit{information-theoretically}) useful the trivial watermark feature becomes to learn.
-But importantly, those hyperparameters including the learning rate can not be changed over the course of training our set of models because it has been shown that explanation can causally depend on hyperparameters quite strongly \cite{Karimi2023}. The observation about the learning rate might stand in relation to the findings of Karimi et al., that the better a model performs, the more strongly the explanations seem to be affected by hyperparameters.
+The values for hyperparameters of the training process are optimized for accuracy with a rather short binary search. Finally, we train all models using the \verb|Adam| optimizer with a learning rate of \verb|0.001| using \verb|cross-entropy| loss as the objective to minimize. 
+It is interesting to note that the learning rate has significantly different optimal values for highly biased models than completely unbiased ones and we therefore chose a compromise. We assume this to be due to the cost function becoming significantly different, arguably less complex, the more (\textit{information-theoretically}) useful the trivial watermark feature becomes to learn.
+But importantly, those hyperparameters including the learning rate can not be changed over the course of training our set of models because it has been shown that explanation can depend on hyperparameters quite strongly \cite{Karimi2023}.
 In our experiment we keep hyperparameters fixed and only intervene on the spurious-to-core feature ratio $\rho$. The only hyperparameter we choose to control for, is the random initialization of weights and biases. Usually, this is not identified as a hyperparameter. However, when using a seed to ensure that multiple models are initialized identically, while receiving differently generated data, it becomes possible to control for its effect like a causal variable. It can then be interpreted as the $\mathcal{U}$, or noise term, of the model.
-As mentioned in the method section (\ref{section:training}), this seemed necessary because we observed the random initializations to have high variance in how they react to the spurious feature. 
+As mentioned in the method section (\ref{section:training}), this seemed necessary because we observed the random initializations to have high variance in how they react to the spurious feature. This observation, and the apparent dependency ot $\rho$ and the learning rate might also stand in relation to the findings of Karimi et al. \cite{Karimi2023}, that the better a model performs, the more strongly the explanations seem to be affected by hyperparameters.
 
 \subsection{Training and Accuracy}
-We generate datasets by sampling the spurious-to-core feature ratio $\rho$ in 0.05 steps and training on the same dataset while initializing the model with 10 different seeds.
-Previously, the experiment did not control the influence of the random seed, but after observing strong variations of importance depending on the seed, we decided to always use the same 10 seeds for every dataset. This way it is theoretically possible to marginalize out the effect of the seed on the importance of the spurious feature, however this was done only through averaging of the 10 models results.
-In total, 210 models are trained. The training dataset contains 30\% of all samples. Experimentally, much fewer samples seemed to be enough to achieve high accuracies, however there is no need to fear overfitting as it should if anything increase importance of the most important features even more.
+We generate datasets by sampling the spurious-to-core feature ratio $\rho$ in 0.05 steps and training on the same dataset for instances of the model initialized with 16 different seeds. The training dataset contains 30 percent of all samples. Experimentally, much fewer samples seemed to be enough to achieve high accuracies. However, over-fitting is not a concern in our experiment and would, if anything, increase importance of the most important features. Taking even more samples would be too computationally expensive and harder to compare to real world problems where data is usually very limited. 
+Due to the low complexity of this benchmark dataset, very high accuracies of over 95 percent are to be expected and also occur after comparably short training times for most models. \\
+Because we include results of the pattern scenario only as an additional insight and because a general trend was visible also for less models, we conduct the experiment for this case only using 10 different random seeds. 
 
-Due to the low complexity of this benchmark dataset, very high accuracies of over 90\% are to be expected and also occurred after short training for most models.
-
-As this experiment is not concerned with the models accuracy, in principle the whole dataset (\~ 700'000 images) could be used for training. We suppose that this could make the measured importance even more accurate and stable, but believe that the general tendency should still be the same for a smaller subset. Therefore we take $30\%$ of the images for training and also because it woulf be too computationally expensive and harder to compare to real world problems where data is more limited. 
-
-\subsection{Computational Setup}\label{section:setup}
-The 816 models were trained on 4x NVIDIA A100 GPUs kindly provided by the Deutsches Klimarechenzentrum (DKRZ), which took about 40 hours in total, so on average 3 minutes per model. 
+\subsection{Computational Setup}\label{appendix:setup}
+The 1326 (816 watermark, 510 pattern case) models were trained on 4x NVIDIA A100 GPUs kindly provided by the Deutsches Klimarechenzentrum (DKRZ), which took about 40 hours in total, so on average 3 minutes per model. 
 For the generation of 128x2x816 explanations about 30 minutes on a personal Dell XPS 13 laptop without dedicated graphics card was sufficient. All metrics were subsequently computed within minutes too. 
 
-\textit{This work used resources of the Deutsches Klimarechenzentrum (DKRZ) granted by its Scientific Steering Committee (WLA) under project ID 1083}
 
-
-\section{Further Plots Ground Truth}
-
-\section{Similarities with Karimi???}
-\begin{itemize}
-    \item for high performing models, direct effect of hyperparameters stronger than effect of Y on E
-    \item influence of Y on E decreases for higher performing models
-    \item others argue that E should not just strongly correlate with Y but also reflect other features like data distribution
-    \item important also for my thesis: \textit{'Despite some methodological similarities, our work is fundamentally different from using causal inference to generate counterfactual explanations'}
-    \item while we do not keep the dataset constant, by keeping all other parameters in dataset constant (any hyperparameters) we create a similar experiment
-    \item $Y_h^*(x)$ and $E_h^*(x)$ are outcomes generated when hyperparameters set to $H= h$ on data point $X=x$
-    \item training procedure: $T: \mathcal{H} \times \mathcal{D} \rightarrow \mathcal{F}$ (training hyperparameters and dataset $\mathcal{D}:= (\mathcal{X,Y})$
-    \item prediction procedure: $P: \mathcal{F} \times \mathcal{X} \rightarrow \mathcal{Y}$
-    \item explanation procedure: $E: \mathcal{F} \times \mathcal{X} \times \mathcal{Y} \rightarrow \mathcal{E}$ 
-    \item potential outcomes framework Rubin 2005 \cite{Rubin2005}
-    \item they perform "observational study", we are able to measure everything
-    \item we have two "effects" we want to measure: locally: effect of having/removing watermark, globally effect of coupling ratio on this effect or something
-    \item reiterate over causal assumptions: \textit{exchangeability}
-    \item \textbf{Kernelized Treatment Effect (KTE)}: replace 'subtracting' with different dissimilarity measure: $
-    ||\psi(Y_h^*(x)) - \psi(Y_{h'}^*(x))||_{\mathcal{G}}^2 =   k(Y_h^*(x), Y_h^*(x)) - 2k(Y_h^*(x),Y_{h'}^*(x)) + k(Y_{h'}^*(x),Y_{h'}^*(x))  
-    $
-    \item \begin{quote}Applying kernel is especially important when we compare Eh (x), as comparing each spatially-related pixel value across different images is likely to not lead to a meaningful result
-    \end{quote}
-    \item They compare the explanations (/predictions) of two different models directly with each other by using this kernelized method. I think this is not a good idea. The cost function is likely quite highly non-linear and has many local minima. Therefore it is very bold to assume that "similar" models must fall in similar local minima. We know that cost functions can be in a sense "chaotic" meaning that close starting points don't necessarily end up in similar end points. (do we?)
-    \item taking averages therefore seems to be the better option? If we can find good measure of importance
-    \item do I need to rethink my whole idea? But I cannot compare explanations of models with different bias or? 
-    \item only use some samples, therefore just \textit{observed} = empirical estimates (does not work if exchangeability does not hold)
-    \item direct vs. indirect influence: correlation on prediction and explanation, vs. when predictions are randomized, but just approximation because relationship can be non-linear.
-    \item hyper-parameter values are drawn independently at random from pre-specified ranges
-    \item random seed and base model architecture fixed
-    \item negative attribution is zeroed out
-    \item they need \textit{identity} (E = Y) to measure \textit{goodness}, we can use the \textit{ground truth importance}, or?
-    \item kernel choice seems to have no effect on distributions of ITEs (individual treatment effect)
-    \item they look at performance buckets, we look at $\rho$  buckets ? \textit{How does the relationship between E and Y change as a function of the performance of the model}
-    \item justify why I only use "high-performing" models? Although they show that there is unfavorable relationship between model performance and explanation \textit{goodness}, we believe that the selection bias for the highest performing models is inevitable for AI research practice. Therefore we implicitly select for performance by using well-performing hyper-parameters and by sorting out one seed that seemed to not converge (meaning our model is not stable?)
-    \item only compare to within-accuracy-bucket control group
-    \item use \textit{Spearman Rank Correlation} or \textit{Pearson Correlation} to compare effect on Y and E
-    \item $corr(ITE_Y, ITE_E)$ increases as performance increases
-    \item when randomizing Y, direct effect of H on E seems to increase when model performance does: I have good explanation: looking only at Y (binary) does not convey whole prediction, i.e. the more sophisticated the model, the more it reacts slightly to slight changes in image, without necessarily affecting overall decision.
-    \item criticism: only use pretty low performing models (57\% seems to be highest?)
-    \item mention in own limitations: their metric does not touch with other metrics for XAI: \textit{intelligibility, transparency, complexity, user-friendliness}
-\end{itemize}
-
-
-{\color{gray} \subsubsection{Relevance Maximization}
-To arrive at reference sets of the neurons in our selected layer, relevance maximization finds images that maximize concept-conditional relevance. As mentioned by \cite{Achtibat2022} using the whole dataset might make the selected images too similar to each other. Hence we compute the maximization for a subset of 1000 images to enforce more variance. Importantly, the sample we select from does not have the association between $S$ and $W$, meaning that watermarks are equally likely to occur on rectangle as on ellipse images. 
-The implementation provided by CRPs authors produces sets of 40 images for each neuron in each layer. 
-
-\subsubsection{Perceptive Field}
-Information on the concentration of the relevance within the images selected for each concept can be gained by applying concept localization. Following the approach of \cite{Yeh2020} and using tools from the existing LRP toolset \cite{Anders2023} Achtibat et al. visualize only the part of the selected images that contributed to the neurons activation. 
-The implementation of this and all previously described methods is made accessible by CRPs authors at \url{https://github.com/rachtibat/zennit-crp}.
-}
-
-\section{Human Interpretable Importance}
-\subsection{Interpretation Techniques from CRP Work}
-The authors of CRP embed the approach into a handful of concept-based interpretation techniques. Their motivation is to gain more abstract, reduced explanations, while still potentially using multiple concepts. The underlying assumption is that the neurons in layers of deep neural networks encode human-understandable concepts hierarchically from low-level to abstract \cite{Zeiler2013,Bau2017,Olah2017}. Although this assumption seems to be made mostly for large and deep CNN and complex image datasets, the general idea can be applied in our experiment too. 
-
-\subsubsection{Relevance Maximization}
-Prominently, they introduce \textit{Relevance Maximization}, creating reference sets of images for all neurons encoding potentially human-understandable concepts. It is the \textit{relevance} analogue to \textit{activation maximization} \cite{Nguyen2016}. This technique arguably reduces the complexity of the explanation as \textit{learning-by-example} is proven to be a prevailing human strategy.
-Therefore it seems fair to evaluate feature importance based on those reference sets. If a set overlaps strongly with regard to the spurious feature's value, one can assume this feature to be the concept encoded by that concept/neuron. 
-Unfortunately the overlap of our feature of interest might be disguised by other features. As an example: while each image in a set might have the watermark, they might all show the same shape in a similar rotation too. This indeed happens with our benchmark dataset (see \cref{fig:suppressor_ref}), probably also because of its generally low complexity. 
-
-\begin{figure}
+{\color{gray}
+\section{Proof $\phi$-Coefficient is equal to Prediction Flip}
+\label{appendix:phi_equals_pf}
+\begin{table}[t]
     \centering
-    \includegraphics[width=0.3\textwidth]{thesis_latex_template/pics/suppressed_reference_set.png}
-    \caption[Reference Set Interpretation]{Example of a reference set, with unclear interpretation}
-    \label{fig:suppressor_ref}
+\newlength{\width}
+\width15mm
+\begin{tabular}{|c|c|c|c|c|c|}
+    \hline
+     \multirow{2}{\width}{}& \multicolumn{2}{|c|}{w=1} &\multicolumn{2}{|c|}{w=0} & \multirow{2}{\width}{total}  \\  \cline{2-5}
+     & x=1 & x= 0 & x= 1& x= 0 &\\ \hline
+    \multirow{2}{\width}{y= 1} & A $n_{111}$ & B $n_{110}$& C $n_{101}$& D $n_{100}$&\multirow{2}{\width}{$n_{1**}$}    \\ \cline{2-5}
+    & \multicolumn{2}{|c|}{$n_{11*}$ }& \multicolumn{2}{|c|}{$n_{10*}$} &  \\ \hline 
+    \multirow{2}{\width}{y= 0} & E $n_{011}$& F $n_{010}$& G $n_{001}$& H $n_{000}$& \multirow{2}{\width}{ $n_{0**}$} \\ \cline{2-5}
+    & \multicolumn{2}{|c|}{$n_{01*}$} & \multicolumn{2}{|c|}{$n_{00*}$} & \\ \hline 
+    \multirow{2}{\width}{total} & $n_{*11}$&  $n_{*10}$&  $n_{*01}$&$n_{*00}$& \multirow{2}{\width}{ $n$ } \\ \cline{2-5}
+    & \multicolumn{2}{|c|}{$n_{*1*}$} & \multicolumn{2}{|c|}{$n_{*0*}$} & \\ \hline
+\end{tabular}
+    \caption{Caption}
+    \label{tab:tBLE}
+\end{table}
+\begin{align*}
+\phi = \frac{n_{11*} * n_{00*} - n_{10*}*n_{01*}}{\sqrt{n_{1**}*n_{0**}*n_{*0*}*n_{*1*}}} 
+& PF = \frac{X}{n_{*0*}+n_{*1*}}
+\end{align*}}
+
+\section{Additional Benchmark Results: Pattern Scenario}\label{appendix:overlap_scenario}
+Here we report the results for the second dataset analogously to the first.
+The second problem is constructed almost equivalently to the watermark problem but addresses the issue of spuriously correlated features that are not spatially separated from the target feature.
+Instead of a watermark, the pattern within the shape is spuriously correlated with the shape itself. 
+
+The relatively high accuracy on the training data (i.e. the biased data) of on average 95 percent and on anti-biased subsets can be seen in the figures \cref{fig:basic_accuracy_overlap}.
+
+\begin{figure}[!htb]
+    \centering
+    \begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/basic_accuracy_overlap.png}
+    \end{minipage}
+    \begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\textwidth]{thesis_latex_template/pics/accuracy_intervened_overlap.png}
+    \end{minipage}
+    \caption[Accuracy for Pattern Scenario]{Average accuracy for the 10 models per coupling ratio $\rho$. left: on biased training data, right: on selection going against bias. As expected, for noisy ellipses and blurred rectangles, the accuracy drops as $\rho$ raises.}
+    \label{fig:accuracy_overlap}
 \end{figure}
 
-The information content about one features importance is therefore offset by the other features overlaps. This problem is in line with recent work finding that many explanation methods overstate the importance of so-called \textit{suppressor variables} \cite{Wilming2023,Clark2023}. In our W-dSprites dataset the other generating factors like rotation, scale, x-, and y-position are independent of the shape. However, it can be expected that learning them helps the model in its prediction, because the generated image is a collider of shape and the other factors. Since CRP and LRP do not inherently use the underlying data distribution for their explanation like \textit{PatternAttribution} and \textit{PatternNet} do, they are expected to attribute some importance to suppressor variables. \\
+Comparing the 10 different seeds ground truth importance in \cref{fig:compare_seeds_overlap}.
 
-The \textit{receptive field} information might act against this problem because it restricts attention to the encoded concept. It's overlap with the feature in question can be evaluated through approaches similar to the mentioned RMA. 
-In comparison to the previous methods, finding one value that measures the feature importance in this kind of explanation is more elaborate. In the steps below we seek to capture as much feature importance as possible while only using the human-interpretable essence of the technique:
-
-\paragraph{Steps:}
-\begin{enumerate}
-    \item For a coupling ratio $\rho$ and a random initialization $m$, take model $\mathcal{M}_{\rho, m}$
-    \item for each neuron $i$ in layer $\ell$ compute a set of $k$ image instances that maximizes the relevance of this neuron: $\mathcal{T}_{max_i}^rel = max_i R_i(\mathrm{x} | \theta)$ 
-    \item count the images containing the watermark $\mathcal{T}_{W=1}$
-    \item for each image in $\mathcal{T}_{W=1}$ compute the intersection between the bounding box of the watermark and the thresholded receptive field of the neuron in that image
-    \item create a weighted sum of the images with the receptive field information
-    \item weigh each neuron by its average importance for images with watermark
-    \item average the resulting measure over all models with the same $\rho$ value 
-\end{enumerate}
-
-
-
-{ \color{gray}
-% causal graph stuff that didn't work because of to high linear correlation of neurons
-% could serve as a motivation for my actual experiment? also shows where others like Chattopadhyay and Narendra might be misguided
-\section{Preliminary (Causal) Experiments}
-The initial idea for this master thesis was, to interpret the conditional relevances of all neurons as causal variables and the neural network itself as a structural causal model. Together with the variables of the generating model this would have been a complete detail causal process of explanation with ground truth. Then the goal was to use causal discovery algorithms to establish human-interpretable concepts and their importances. While the \textit{NN-model-as-SCM} view has been applied by some \cite{Narendra2018,Chattopadhyay2019}, it seems to not be functional for naive causal discovery at least for CRP relevances. The main reason for this is, that the relevances of neurons have deterministic relationships with each other. 
-
-
-\section{Preliminary Experiments}
-\subsection{Plots}
-\begin{figure}[ht]
+\begin{figure}[!htb]
 	\centering
-	\label{fig:blafigure}
-	\includegraphics[width=\textwidth]{pics/test.png}
-	\caption[Test Figure 2]{This is a test figure}
+	\label{fig:compare_seeds_overlap}
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/compare_seeds_overlap.png}
+	\caption[Pattern Scenario Compare Seeds]{Comparing ground truth importance over 10 random initializations}
 \end{figure}
-\subsection{Causal Discovery on Neural Network Models Idea and Implementation?}
-} 
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=1\linewidth]{thesis_latex_template/pics/mac_measures_overlap.png}
+    \caption{Mean Attribution Change measures (with different distance metrics)  }
+    \label{fig:mac_measures_overlap}
+\end{figure}
+
+\section{Additional Figures}
+
+\begin{figure}[!htb]
+	\centering
+	\label{fig:some_more}
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/scatter_plot_matrix.png}
+	\caption[Test]{Scatter plots for the 4 different ground truth measures $m_1$ and all different explanation importance measures $m_2$ for Watermark Scenario}
+\end{figure}
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=1\linewidth]{thesis_latex_template/pics/r2_m1_vs_m2.png}
+    \caption{R2 score between ground truth $m_1$ (mean absolute distance) and measure $m_2$ for Watermark Scenario}
+\label{fig:enter-label}
+\end{figure}
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=1\linewidth]{thesis_latex_template/pics/mse_attribution_per_m2.png}
+    \caption{Mean Square Error between explanation importance measure and true importance $m_1$ for Watermark Scenario}
+    \label{fig:enter-label}
+\end{figure}
+
+
+\begin{figure}[!htb]
+	\centering
+	\label{fig:some_more}
+	\includegraphics[width=\textwidth]{thesis_latex_template/pics/scatter_plot_matrix_overlap.png}
+	\caption[Test]{Scatter plots for the 4 different ground truth measures $m_1$ and all different explanation importance measures $m_2$ for pattern Scenario}
+\end{figure}
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=1\linewidth]{thesis_latex_template/pics/r2_m1_vs_m2_overlap.png}
+    \caption{R2 score between ground truth $m_1$ (mean absolute distance) and measure $m_2$ for pattern Scenario}
+\label{fig:enter-label}
+\end{figure}
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=1\linewidth]{thesis_latex_template/pics/mse_attribution_per_m2_overlap.png}
+    \caption{Mean Square Error between explanation importance measure and true importance $m_1$ for pattern Scenario}
+    \label{fig:enter-label}
+\end{figure}
