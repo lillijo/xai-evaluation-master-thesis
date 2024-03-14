@@ -90,7 +90,7 @@ def compute_with_param(bias, start_it, end_it):
     for num_it in range(start_it, end_it):
         name = to_name(bias, num_it)
         if not (name in accuracies and accuracies[name]["train_accuracy"][2] > 90):
-            load_model = True  # False if (name in accuracies) else
+            load_model = True if ( name in accuracies) else False
             (name, result) = train_model_evaluate(
                 bias,
                 allwm,

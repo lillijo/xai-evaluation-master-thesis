@@ -241,7 +241,23 @@ class AllMeasures:
                             rels = maximiz["statsrel1"][nwm_statsindices1]
                             overlap[neuron, 8] = torch.mean(rels[:, neuron], dim=0)
 
-                    relmax_vals[f"{k}_diff"] = torch.sum(
+                    inds1 = torch.topk(rels1.mean(dim=0), 1).indices
+                    inds0 = torch.topk(rels0.mean(dim=0), 1).indices
+                    # inds = torch.cat((inds1, inds0))
+                    relmax_vals[f"{k}_diff"] = torch.abs(
+                        overlap[inds1, 0] - overlap[inds0, 0]
+                    )
+                    relmax_vals[f"{k}_m_rels"] = overlap[inds1, 0]
+                    relmax_vals[f"{k}_stats"] = (
+                        overlap[inds1, 2] + overlap[inds1, 3]
+                    ) / 2
+                    relmax_vals[f"{k}_stats_diff"] = (
+                        torch.abs(
+                            (overlap[inds0, 2] + overlap[inds1, 3])
+                            - (overlap[inds1, 2] + overlap[inds0, 3])
+                        )
+                    ) / 2
+                    """ relmax_vals[f"{k}_diff"] = torch.sum(
                         torch.abs(
                             rels1.mean(dim=0) * overlap[:, 0]
                             - rels0.mean(dim=0) * (1 - overlap[:, 0])
@@ -293,7 +309,7 @@ class AllMeasures:
                             )
                         )
                         / 2
-                    )
+                    ) """
                 for vi, val in enumerate(relmax_vals.values()):
                     rel_max_measures[rho_ind, m, vi] = val
 
@@ -307,11 +323,11 @@ class AllMeasures:
 
 if __name__ == "__main__":
     # Experiment 1:
-    """model_path = "../clustermodels/final"
+    """ model_path = "../clustermodels/final"
     experiment_name = "attribution_output"
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
-    is_random = False"""
+    is_random = False """
     # model_type = "watermark"
     # iterations = 16
     # datasettype = BiasedNoisyDataset
