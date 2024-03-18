@@ -438,7 +438,7 @@ def plot_accuracies(path, treshold=90, num_it=6, intervened=False):
         label="training accuracy all",
     )
     bads = [
-        [a["num_it"], a["bias"], a["train_accuracy"][2]]
+        [a["num_it"], a["bias"], a["train_accuracy"]]
         for a in list(filter(lambda x: x["train_accuracy"][2] < treshold, alldata))
     ]
     # plt.title("Accuracy of models when intervening on watermark")

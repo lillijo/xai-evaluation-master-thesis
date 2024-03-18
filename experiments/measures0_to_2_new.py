@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 import copy
+import json
 from os import makedirs
 from os.path import isdir, isfile
 import gzip
@@ -84,14 +85,13 @@ class AllMeasures:
         self.tdev = torch.device(self.device)
         self.max_index = MAX_INDEX
         self.len_x = sample_set_size
+        self.iterations = list(range(16))
         if model_path.endswith("final"):
             self.ds = BiasedNoisyDataset(0, 0.5, False, img_path=img_path)
-            self.iterations = list(range(16))
             self.model_type = "watermark"
             self.test_data = TestDataset(length=300, im_dir="watermark_test_data")
         else:
             self.ds = BackgroundDataset(0, 0.5, False, img_path=img_path)
-            self.iterations = list(range(10))
             self.model_type = "overlap"
             self.test_data = TestDatasetBackground(
                 length=300, im_dir="overlap_test_data"
@@ -311,6 +311,12 @@ class AllMeasures:
                 loaded = pickle.load(f)
             per_sample_values = loaded
             per_sample_values.requires_grad = False """
+        nvals = {
+            "per_image": [],
+            "per_neuron_max": [],
+            "per_model_max": [],
+            "per_model": [],
+        }
         if isfile(savepath):
             with gzip.open(savepath, "rb") as f:
                 loaded = pickle.load(f)
@@ -383,24 +389,21 @@ class AllMeasures:
                     # cosine distance relevances
                     per_sample_values[rho_ind, m, :, m_i("m2_rel_cosine")] = (
                         self.cosine_distance(rels1, rels0) / 2
-                    ) """
+                    )
 
                     # HEATMAPS
                     # cosine distance heatmaps
                     per_sample_values[rho_ind, m, :, m_i("m2_mac_cosine")] = (
                         self.cosine_distance(hm1s, hm0s) / 2
-                    )
-                    maxval = max(
+                    ) """
+                    """ maxval = max(
                         hm0s.abs().sum(dim=(1, 2, 3)).max(),
                         hm1s.abs().sum(dim=(1, 2, 3)).max(),
                     )
-                    # maxval = 1 if maxval == 0 else maxval
-                    if maxval > 0:
-                        hm0sabs = hm0s / maxval
-                        hm1sabs = hm1s / maxval
-                    else:
-                        hm0sabs = hm0s
-                        hm1sabs = hm1s
+                    nvals["per_model_max"] += [float(maxval)]
+                    maxval = 1 if maxval == 0 else maxval
+                    hm0sabs = hm0s / maxval
+                    hm1sabs = hm1s / maxval
                     # maximum_heatmaps = max(maximum_heatmaps,maxval0,maxval1)
                     # absolute difference heatmaps
                     # normalized by max total absolute relevance
@@ -409,17 +412,53 @@ class AllMeasures:
                     )
                     per_sample_values[rho_ind, m, :, m_i("m2_mac_l2square")] = (
                         torch.sum(torch.square((hm1sabs - hm0sabs)), dim=(1, 2, 3))
-                    )
+                    ) """
                     # euclidean distance heatmaps
                     """ per_sample_values[rho_ind, m, :, m_i("m2_mac_euclid")] = torch.sqrt(
                         (torch.sum(torch.square((hm1sabs - hm0sabs)), dim=(1, 2, 3)))
                     ) """
 
-                    """ if torch.any(hm1s.abs() > 0.0001) or torch.any(hm0s.abs() > 0.0001):
+                    if torch.any(hm1s.abs() > 0.0001) or torch.any(hm0s.abs() > 0.0001):
                         for n, i in enumerate(indices):
                             if torch.any(hm1s[n].abs() > 0.0001) or torch.any(
                                 hm0s[n].abs() > 0.0001
                             ):
+                                """per_sample_values[
+                                    rho_ind, m, n, m_i("m2_mac_cosine")
+                                ] = (self.cosine_distance(hm1s[n], hm0s[n]) / 2)
+                                maxval = max(
+                                    hm0s[n].abs().sum(),  # dim=(1,2)).max(
+                                    hm1s[n].abs().sum(),  # dim=(1,2)).max(
+                                )
+                                nvals["per_image"] += [float(maxval)]
+                                nvals["per_neuron_max"] += [
+                                    float(
+                                        max(
+                                            hm0s[n].abs().sum(dim=(1, 2)).max(),
+                                            hm1s[n].abs().sum(dim=(1, 2)).max(),
+                                        )
+                                    )
+                                ]
+
+                                if maxval > 0:
+                                    hm0sabs = hm0s[n] / maxval
+                                    hm1sabs = hm1s[n] / maxval
+                                else:
+                                    hm0sabs = hm0s[n]
+                                    hm1sabs = hm1s[n]
+                                # absolute difference heatmaps
+                                # normalized by max total absolute relevance
+                                per_sample_values[rho_ind, m, n, m_i("m2_mac_abs")] = (
+                                    torch.sum(torch.abs(hm1sabs - hm0sabs))
+                                )
+                                per_sample_values[
+                                    rho_ind, m, n, m_i("m2_mac_l2square")
+                                ] = (
+                                    torch.sum(torch.square((hm1sabs - hm0sabs)))
+                                    * maxval
+                                )"""
+
+                                # prepare for region specific measures
                                 mask = self.ds.load_watermark_mask(i)
                                 mask = mask.view(64, 64).to(self.tdev)
                                 inds1 = torch.topk(rels1[n], 1).indices
@@ -442,6 +481,13 @@ class AllMeasures:
                                     hms_values0["rel_total"],
                                     1,
                                 )
+                                max_rel_tot = torch.cat(
+                                    (
+                                        hms_values0["rel_total"].abs().sum(),
+                                        hms_values1["rel_total"].abs().sum(),
+                                        torch.tensor([1]),
+                                    )
+                                ).max()
 
                                 # rma weighted
                                 per_sample_values[rho_ind, m, n, m_i("m2_rma")] = (
@@ -451,20 +497,22 @@ class AllMeasures:
                                                 (
                                                     (
                                                         hms_values1["rel_within"]
-                                                        / rel_tot_1
+                                                        # / rel_tot_1
                                                     )
                                                     - (
                                                         hms_values0["rel_within"]
-                                                        / rel_tot_0
+                                                        # / rel_tot_0
                                                     )
                                                 )
+                                                / (max_rel_tot)
                                             )
-                                            * weight
+                                            # * weight
                                         )
                                     )
                                 )
+
                                 # rma unweighted
-                                per_sample_values[
+                                """ per_sample_values[
                                     rho_ind, m, n, m_i("m2_rma_unweighted")
                                 ] = torch.sum(
                                     torch.abs(
@@ -521,15 +569,17 @@ class AllMeasures:
                                         )
                                     )
                                 ) """
-                if rho_ind == 25:
+                """ if rho_ind == 25:
                     print("save temp")
                     with gzip.open(f"temp{rho_ind}_{savepath}", "wb") as f:
                         pickle.dump(
                             per_sample_values, f, protocol=pickle.HIGHEST_PROTOCOL
-                        )
+                        ) """
 
         with gzip.open(savepath, "wb") as f:
             pickle.dump(per_sample_values, f, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(f"nvals_{self.experiment_name}.json", "w") as fj:
+            json.dump(nvals, fj)
 
     def prediction_flip(self):
         per_sample_values = torch.zeros((len(BIASES), len(self.iterations), 1))
@@ -648,7 +698,7 @@ class AllMeasures:
 if __name__ == "__main__":
 
     # Experiment 1:
-    """ model_path = "../clustermodels/final"
+    model_path = "../clustermodels/final"
     experiment_name = "attribution_output"
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
@@ -666,20 +716,20 @@ if __name__ == "__main__":
         experiment_name=experiment_name,
     )
     # allm.compute_per_sample(is_random=is_random)
-    allm.easy_compute_measures() """
+    allm.easy_compute_measures()
     # allm.prediction_flip()
     # allm.data_ground_truth(6400)
     # allm.recompute_gt(6400)
     # allm.gt_shape(128)
 
     # Experiment 2:
-    model_path = "../clustermodels/background"
+    """ model_path = "../clustermodels/background"
     experiment_name = "overlap_attribution"
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
     is_random = False
     # model_type = "overlap"
-    # iterations = 10
+    # iterations = 16
     # datasettype = BackgroundDataset
     # mask = "shape"
     # accuracypath = "outputs/overlap1.json"
@@ -691,4 +741,4 @@ if __name__ == "__main__":
         experiment_name=experiment_name,
     )
     # allm.compute_per_sample(is_random=is_random)
-    allm.easy_compute_measures()
+    allm.easy_compute_measures() """

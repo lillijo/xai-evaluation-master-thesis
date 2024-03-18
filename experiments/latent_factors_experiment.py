@@ -94,7 +94,7 @@ class AllMeasures:
             self.test_data = TestDataset(length=300, im_dir="watermark_test_data")
         else:
             self.ds = BackgroundDataset(0, 0.5, False, img_path=img_path)
-            self.iterations = list(range(10))
+            self.iterations = list(range(16))
             self.model_type = "overlap"
             self.test_data = TestDatasetBackground(
                 length=300, im_dir="overlap_test_data"
@@ -116,7 +116,7 @@ class AllMeasures:
         return rel_c[0]
 
     def compute_for_other_latent_factors(self, recompute_values=True):
-        latent_factors = torch.zeros(len(BIASES), len(self.iterations), 3)
+        latent_factors = torch.zeros(len(BIASES), len(self.iterations), 15)
         indices = np.round(np.linspace(0, MAX_INDEX, self.len_x)).astype(int)
         softmax = torch.nn.Softmax(dim=1)
         for rho_ind, rho in enumerate((pbar := tqdm(BIASES))):
@@ -148,7 +148,7 @@ class AllMeasures:
                                 predindex_original,
                                 pred_original,
                                 rel_original,
-                                index,
+                                True,
                             ]
                         )
                         for lat in range(1, 6):
@@ -180,7 +180,7 @@ class AllMeasures:
                                     predindex_flipped,
                                     pred_flipped,
                                     rel_flipped,
-                                    index,
+                                    False,
                                 ]
                             )
                 else:
@@ -188,16 +188,16 @@ class AllMeasures:
                         r_m_info = pickle.load(f)
                         everything = r_m_info["everything"]
                         latent_factors[rho_ind, m] = r_m_info["latent_factors"]
-        
-                original_pred = np.array([a[3] for a in everything if a[0] == 1])
+
+                original_pred = np.array([a[3] for a in everything if a[6]])
                 original_output = np.array(
-                    [softmax(a[4]).detach().numpy() for a in everything if a[0] == 1]
+                    [softmax(a[4]).detach().numpy() for a in everything if a[6]]
                 )
                 original_relevance = np.array(
-                    [a[5].detach().numpy() for a in everything if a[0] == 1]
+                    [a[5].detach().numpy() for a in everything if a[6]]
                 )
                 for lat in range(1, 6):
-                    cond = lambda a: a[1] == 0 if lat == 1 else lambda a: a[0] == lat
+                    cond = lambda a: a[0] == lat and not a[6]
                     other_pred = np.array([a[3] for a in everything if cond(a)])
                     other_output = np.array(
                         [softmax(a[4]).detach().numpy() for a in everything if cond(a)]
@@ -266,4 +266,4 @@ if __name__ == "__main__":
         experiment_name=experiment_name,
     )
     # allm.compute_relevance_maximization()
-    allm.compute_for_other_latent_factors(recompute_values=False)
+    allm.compute_for_other_latent_factors(recompute_values=True)

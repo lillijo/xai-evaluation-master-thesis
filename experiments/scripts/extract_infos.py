@@ -41,7 +41,7 @@ for f in onlyfiles:
                 accuracies[rname] = new_value
                 accuracies[rname]["file"] = f
 
-with open("../outputs/overlap1.json", "w") as fd:
+with open("../outputs/overlap_more_seeds3.json", "w") as fd:
     json.dump(accuracies, fd, indent=2)
 
 # unlocalized

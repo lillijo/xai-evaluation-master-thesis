@@ -86,14 +86,13 @@ class AllMeasures:
         self.tdev = torch.device(self.device)
         self.max_index = MAX_INDEX
         self.len_x = sample_set_size
+        self.iterations = list(range(16))
         if model_path.endswith("final"):
             self.ds = BiasedNoisyDataset(0, 0.5, False, img_path=img_path)
-            self.iterations = list(range(16))
             self.model_type = "watermark"
             self.test_data = TestDataset(length=300, im_dir="watermark_test_data")
         else:
             self.ds = BackgroundDataset(0, 0.5, False, img_path=img_path)
-            self.iterations = list(range(10))
             self.model_type = "overlap"
             self.test_data = TestDatasetBackground(
                 length=300, im_dir="overlap_test_data"
@@ -146,7 +145,7 @@ class AllMeasures:
 
     def compute_relevance_maximization(self):
         for rho_ind, rho in enumerate(BIASES):
-            for m in self.iterations:
+            for m in range(10,16):
                 model_name = f"{self.experiment_name}_{to_name(rho, m)}"
                 model = load_model(self.model_path, rho, m, self.model_type)
                 print(model_name, "sum")
@@ -342,7 +341,7 @@ if __name__ == "__main__":
     layer_name = "convolutional_layers.6"
     is_random = False
     # model_type = "overlap"
-    # iterations = 10
+    # iterations = 16
     # datasettype = BackgroundDataset
     # mask = "shape"
     # accuracypath = "outputs/overlap1.json"
@@ -353,5 +352,5 @@ if __name__ == "__main__":
         model_path=model_path,
         experiment_name=experiment_name,
     )
-    # allm.compute_relevance_maximization()
+    allm.compute_relevance_maximization()
     allm.compute_relmax_measures()
