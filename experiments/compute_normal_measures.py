@@ -302,7 +302,9 @@ class AllMeasures:
             (len(BIASES), len(self.iterations), self.len_x, len(measures))
         )
         softmax = torch.nn.Softmax(dim=1)
-        savepath = f"outputs/measures/all_measures_{self.len_x}_{self.experiment_name}.pickle"
+        savepath = (
+            f"outputs/measures/all_measures_{self.len_x}_{self.experiment_name}.pickle"
+        )
         print(savepath)
         saved_until = -1
         """ saved_until_path = f"temp{saved_until}_{savepath}"
@@ -346,9 +348,9 @@ class AllMeasures:
                     """ per_sample_values[rho_ind, m, :, m_i("m1_phi")] = (
                         torch.count_nonzero(r_m_info[3][:, 1] != r_m_info[3][:, 0])
                         / self.len_x
-                    )
+                    ) """
 
-                    # PREDICTION
+                    """ # PREDICTION
                     pred0sabs = softmax(pred0s)
                     pred1sabs = softmax(pred1s)
                     # absolute difference predictions
@@ -366,32 +368,32 @@ class AllMeasures:
                     )
                     # euclid distance prediction logits
                     per_sample_values[rho_ind, m, :, m_i("m1_mlc_euclid")] = (
-                        torch.sqrt(self.kernel1d(pred1sabs, pred0sabs, dim=1)) / 2
+                        torch.sqrt(torch.sum(torch.square(rels1 - rels0), dim=1)) / 2
                     )
                     # kernel distance prediction logits
                     per_sample_values[rho_ind, m, :, m_i("m1_mlc_l2square")] = (
-                        self.kernel1d(pred1sabs, pred0sabs, dim=1) / 2
-                    )
+                        torch.sum(torch.square(rels1 - rels0), dim=1) / 2
+                    ) """
 
-                    # RELEVANCES
+                    """ # RELEVANCES
                     # absolute difference relevances (/len samples)
                     per_sample_values[rho_ind, m, :, m_i("m2_rel_abs")] = (
                         torch.sum(torch.abs(rels1 - rels0), dim=1) / 2
                     )
                     # euclid distance relevances
                     per_sample_values[rho_ind, m, :, m_i("m2_rel_euclid")] = torch.sqrt(
-                        self.kernel1d(rels1, rels0, dim=1)
-                    )
-                    # kernel distance relevances
+                        torch.sum(torch.square(rels1 - rels0), dim=1)
+                    ) /2
+                    # squared distance relevances
                     per_sample_values[rho_ind, m, :, m_i("m2_rel_l2square")] = (
-                        self.kernel1d(rels1, rels0, dim=1)
-                    )
+                        torch.sum(torch.square((rels1 - rels0)/2), dim=1)
+                    ) 
                     # cosine distance relevances
                     per_sample_values[rho_ind, m, :, m_i("m2_rel_cosine")] = (
                         self.cosine_distance(rels1, rels0) / 2
-                    )
+                    ) """
 
-                    # HEATMAPS
+                    """ # HEATMAPS
                     # cosine distance heatmaps
                     per_sample_values[rho_ind, m, :, m_i("m2_mac_cosine")] = (
                         self.cosine_distance(hm1s, hm0s) / 2
@@ -471,7 +473,7 @@ class AllMeasures:
                                 hms_values0 = self.heatmap_values(
                                     hm0s[n], mask
                                 )  # hm0sabs
-                                rel_tot_1 = torch.where(
+                                """ rel_tot_1 = torch.where(
                                     hms_values1["rel_total"] > 0,
                                     hms_values1["rel_total"],
                                     1,
@@ -480,14 +482,9 @@ class AllMeasures:
                                     hms_values0["rel_total"] > 0,
                                     hms_values0["rel_total"],
                                     1,
-                                )
-                                max_rel_tot = torch.cat(
-                                    (
-                                        hms_values0["rel_total"].abs().sum(),
-                                        hms_values1["rel_total"].abs().sum(),
-                                        torch.tensor([1]),
-                                    )
-                                ).max()
+                                ) """
+                                m1 = max(float(hms_values1["rel_total"].sum()), float(hms_values0["rel_total"].sum()))
+                                max_rel_tot = 1 if m1 == 0 else m1
 
                                 # rma weighted
                                 per_sample_values[rho_ind, m, n, m_i("m2_rma")] = (
@@ -497,22 +494,21 @@ class AllMeasures:
                                                 (
                                                     (
                                                         hms_values1["rel_within"]
-                                                        # / rel_tot_1
+                                                        / (max_rel_tot)  # rel_tot_1
                                                     )
                                                     - (
                                                         hms_values0["rel_within"]
-                                                        # / rel_tot_0
+                                                        / (max_rel_tot)  # rel_tot_0
                                                     )
                                                 )
-                                                / (max_rel_tot)
                                             )
                                             # * weight
                                         )
                                     )
                                 )
 
-                                # rma unweighted
-                                """ per_sample_values[
+                                """ # rma unweighted
+                                per_sample_values[
                                     rho_ind, m, n, m_i("m2_rma_unweighted")
                                 ] = torch.sum(
                                     torch.abs(
@@ -594,7 +590,9 @@ class AllMeasures:
                     torch.count_nonzero(r_m_info[3][:, 1] != r_m_info[3][:, 0])
                     / self.len_x
                 )
-        with open(f"outputs/measures/pf_{self.len_x}_{self.experiment_name}.pickle", "wb") as f:
+        with open(
+            f"outputs/measures/pf_{self.len_x}_{self.experiment_name}.pickle", "wb"
+        ) as f:
             pickle.dump(per_sample_values, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def recompute_gt(self, length):
@@ -626,7 +624,9 @@ class AllMeasures:
                         torch.count_nonzero(labels_pred != labels_true) / length
                     )
 
-        with open(f"outputs/measures/m1_mi_{length}_{self.experiment_name}.pickle", "wb") as f:
+        with open(
+            f"outputs/measures/m1_mi_{length}_{self.experiment_name}.pickle", "wb"
+        ) as f:
             pickle.dump(m1_mi, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def data_ground_truth(self, length):
@@ -653,7 +653,9 @@ class AllMeasures:
                 torch.count_nonzero(labels_pred != labels_true) / length
             )
 
-        with open(f"outputs/measures/m0_gt_{length}_{self.experiment_name}.pickle", "wb") as f:
+        with open(
+            f"outputs/measures/m0_gt_{length}_{self.experiment_name}.pickle", "wb"
+        ) as f:
             pickle.dump(m0_gt, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def gt_shape(self, length):
@@ -691,14 +693,16 @@ class AllMeasures:
                         labels_true, labels_pred
                     )
                     shape_gt[rho_ind, m, 2] = is_flipped / length
-        with open(f"outputs/measures/shape_gt_{length}_{self.experiment_name}.pickle", "wb") as f:
+        with open(
+            f"outputs/measures/shape_gt_{length}_{self.experiment_name}.pickle", "wb"
+        ) as f:
             pickle.dump(shape_gt, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
 
     # Experiment 1:
-    model_path = "../clustermodels/final"
+    """ model_path = "../clustermodels/final"
     experiment_name = "attribution_output"
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
@@ -716,14 +720,14 @@ if __name__ == "__main__":
         experiment_name=experiment_name,
     )
     # allm.compute_per_sample(is_random=is_random)
-    allm.easy_compute_measures()
+    allm.easy_compute_measures() """
     # allm.prediction_flip()
     # allm.data_ground_truth(6400)
     # allm.recompute_gt(6400)
     # allm.gt_shape(128)
 
     # Experiment 2:
-    """ model_path = "../clustermodels/background"
+    model_path = "../clustermodels/background"
     experiment_name = "overlap_attribution"
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
@@ -741,4 +745,4 @@ if __name__ == "__main__":
         experiment_name=experiment_name,
     )
     # allm.compute_per_sample(is_random=is_random)
-    allm.easy_compute_measures() """
+    allm.easy_compute_measures()

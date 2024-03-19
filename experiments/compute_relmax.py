@@ -145,7 +145,7 @@ class AllMeasures:
 
     def compute_relevance_maximization(self):
         for rho_ind, rho in enumerate(BIASES):
-            for m in range(10,16):
+            for m in range(10, 16):
                 model_name = f"{self.experiment_name}_{to_name(rho, m)}"
                 model = load_model(self.model_path, rho, m, self.model_type)
                 print(model_name, "sum")
@@ -174,7 +174,7 @@ class AllMeasures:
                 crpa = CRPAttribution(
                     model, self.test_data, self.model_path, model_name
                 )
-                len_set = 10
+                len_set = 15
                 filename = f"outputs/{self.experiment_name}/{rho_ind}_{m}.gz"
                 with gzip.open(filename, mode="rb") as f:
                     r_m_info = pickle.load(f)
@@ -242,73 +242,30 @@ class AllMeasures:
 
                     inds1 = torch.topk(rels1.mean(dim=0), 1).indices
                     inds0 = torch.topk(rels0.mean(dim=0), 1).indices
-                    # inds = torch.cat((inds1, inds0))
-                    relmax_vals[f"{k}_diff"] = torch.abs(
-                        overlap[inds1, 0] - overlap[inds0, 0]
+
+                    # general reference sets
+                    relmax_vals[f"{k}_diff"] = (
+                        torch.abs(overlap[inds1, 0] - overlap[inds0, 0]) / 2
                     )
-                    relmax_vals[f"{k}_m_rels"] = overlap[inds1, 0]
+
+                    relmax_vals[f"{k}_m_rels"] = torch.abs(
+                        (overlap[inds1, 0] * overlap[inds1, 1])
+                        - ((1 - overlap[inds0, 0]) * overlap[inds0, 9])
+                    )
+
+                    # class specific reference sets
+                    # for both classes averaged
+                    # 3 = (s=1), 2=(s=0)
                     relmax_vals[f"{k}_stats"] = (
-                        overlap[inds1, 2] + overlap[inds1, 3]
+                        torch.abs((overlap[inds1, 3] - (overlap[inds0, 3])))
+                        + torch.abs((overlap[inds1, 2] - (overlap[inds0, 2])))
                     ) / 2
-                    relmax_vals[f"{k}_stats_diff"] = (
-                        torch.abs(
-                            (overlap[inds0, 2] + overlap[inds1, 3])
-                            - (overlap[inds1, 2] + overlap[inds0, 3])
-                        )
-                    ) / 2
-                    """ relmax_vals[f"{k}_diff"] = torch.sum(
-                        torch.abs(
-                            rels1.mean(dim=0) * overlap[:, 0]
-                            - rels0.mean(dim=0) * (1 - overlap[:, 0])
-                        )
-                    )
-                    total_max_rel = overlap[:, 9].abs().sum()
-                    if total_max_rel != 0:
-                        relmax_vals[f"{k}_m_rels"] = torch.sum(
-                            torch.abs(
-                                overlap[:, 0] * (overlap[:, 1])
-                                - (1 - overlap[:, 0]) * (overlap[:, 6])
-                            )
-                            / (total_max_rel * 2)
-                        )
-                    else:
-                        relmax_vals[f"{k}_m_rels"] = 0
 
-                    relmax_vals[f"{k}_stats"] = torch.sum(
-                        torch.abs(
-                            (
-                                overlap[:, 2]  # * overlap[:, 4]
-                                - (1 - overlap[:, 2]) #* overlap[:, 7]
-                            )
-                            + (
-                                overlap[:, 3]  # * overlap[:, 5]
-                                - (1 - overlap[:, 3]) #* overlap[:, 8]
-                            )
-                        )
-                        / 16
+                    # only for ellipse (=watermarked) class
+                    relmax_vals[f"{k}_stats_diff"] = torch.abs(
+                        (overlap[inds1, 3] - (overlap[inds0, 3]))
                     )
 
-                    relmax_vals[f"{k}_stats_diff"] = torch.sum(
-                        torch.abs(
-                            (
-                                (rels1.mean(dim=0) * overlap[:, 2] * overlap[:, 4])
-                                - (
-                                    rels0.mean(dim=0)
-                                    * (1 - overlap[:, 2])
-                                    * overlap[:, 7]
-                                )
-                            )
-                            + (
-                                (rels1.mean(dim=0) * overlap[:, 3] * overlap[:, 5])
-                                - (
-                                    rels0.mean(dim=0)
-                                    * (1 - overlap[:, 3])
-                                    * overlap[:, 8]
-                                )
-                            )
-                        )
-                        / 2
-                    ) """
                 for vi, val in enumerate(relmax_vals.values()):
                     rel_max_measures[rho_ind, m, vi] = val
 
@@ -318,17 +275,17 @@ class AllMeasures:
 
 if __name__ == "__main__":
     # Experiment 1:
-    """ model_path = "../clustermodels/final"
+    model_path = "../clustermodels/final"
     experiment_name = "attribution_output"
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
-    is_random = False """
-    # model_type = "watermark"
-    # iterations = 16
-    # datasettype = BiasedNoisyDataset
-    # mask = "bounding_box"
-    # accuracypath = "outputs/retrain.json"
-    # relsetds = TestDataset(length=300, im_dir="watermark_test_data")
+    allm = AllMeasures(
+        sample_set_size=sample_set_size,
+        layer_name=layer_name,
+        model_path=model_path,
+        experiment_name=experiment_name,
+    )
+    allm.compute_relmax_measures()
 
     # Experiment 2:
     model_path = "../clustermodels/background"
@@ -336,17 +293,12 @@ if __name__ == "__main__":
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
     is_random = False
-    # model_type = "overlap"
-    # iterations = 16
-    # datasettype = BackgroundDataset
-    # mask = "shape"
-    # accuracypath = "outputs/overlap1.json"
-    # relsetds = TestDatasetBackground(length=300, im_dir="overlap_test_data")
     allm = AllMeasures(
         sample_set_size=sample_set_size,
         layer_name=layer_name,
         model_path=model_path,
         experiment_name=experiment_name,
     )
-    allm.compute_relevance_maximization()
     allm.compute_relmax_measures()
+
+    # allm.compute_relevance_maximization()
