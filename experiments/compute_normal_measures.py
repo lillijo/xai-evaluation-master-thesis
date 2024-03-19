@@ -302,7 +302,7 @@ class AllMeasures:
             (len(BIASES), len(self.iterations), self.len_x, len(measures))
         )
         softmax = torch.nn.Softmax(dim=1)
-        savepath = f"all_measures_{self.len_x}_{self.experiment_name}.pickle"
+        savepath = f"outputs/measures/all_measures_{self.len_x}_{self.experiment_name}.pickle"
         print(savepath)
         saved_until = -1
         """ saved_until_path = f"temp{saved_until}_{savepath}"
@@ -578,7 +578,7 @@ class AllMeasures:
 
         with gzip.open(savepath, "wb") as f:
             pickle.dump(per_sample_values, f, protocol=pickle.HIGHEST_PROTOCOL)
-        with open(f"nvals_{self.experiment_name}.json", "w") as fj:
+        with open(f"outputs/measures/nvals_{self.experiment_name}.json", "w") as fj:
             json.dump(nvals, fj)
 
     def prediction_flip(self):
@@ -594,7 +594,7 @@ class AllMeasures:
                     torch.count_nonzero(r_m_info[3][:, 1] != r_m_info[3][:, 0])
                     / self.len_x
                 )
-        with open(f"pf_{self.len_x}_{self.experiment_name}.pickle", "wb") as f:
+        with open(f"outputs/measures/pf_{self.len_x}_{self.experiment_name}.pickle", "wb") as f:
             pickle.dump(per_sample_values, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def recompute_gt(self, length):
@@ -626,7 +626,7 @@ class AllMeasures:
                         torch.count_nonzero(labels_pred != labels_true) / length
                     )
 
-        with open(f"m1_mi_{length}_{self.experiment_name}.pickle", "wb") as f:
+        with open(f"outputs/measures/m1_mi_{length}_{self.experiment_name}.pickle", "wb") as f:
             pickle.dump(m1_mi, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def data_ground_truth(self, length):
@@ -653,7 +653,7 @@ class AllMeasures:
                 torch.count_nonzero(labels_pred != labels_true) / length
             )
 
-        with open(f"m0_gt_{length}_{self.experiment_name}.pickle", "wb") as f:
+        with open(f"outputs/measures/m0_gt_{length}_{self.experiment_name}.pickle", "wb") as f:
             pickle.dump(m0_gt, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def gt_shape(self, length):
@@ -691,7 +691,7 @@ class AllMeasures:
                         labels_true, labels_pred
                     )
                     shape_gt[rho_ind, m, 2] = is_flipped / length
-        with open(f"shape_gt_{length}_{self.experiment_name}.pickle", "wb") as f:
+        with open(f"outputs/measures/shape_gt_{length}_{self.experiment_name}.pickle", "wb") as f:
             pickle.dump(shape_gt, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 

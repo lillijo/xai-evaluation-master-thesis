@@ -161,7 +161,7 @@ class AllMeasures:
 
     def compute_relmax_measures(self):
         rel_max_measures = torch.zeros(len(BIASES), len(self.iterations), 20)
-        savepath = f"relmax_measures_{self.len_x}_{self.experiment_name}.pickle"
+        savepath = f"outputs/measures/relmax_measures_{self.len_x}_{self.experiment_name}.pickle"
         targets = torch.tensor([self.test_data.labels[a]["target"] for a in range(300)])
         watermarks = torch.tensor(
             [int(self.test_data.labels[a]["has_watermark"]) for a in range(300)]
@@ -312,12 +312,8 @@ class AllMeasures:
                 for vi, val in enumerate(relmax_vals.values()):
                     rel_max_measures[rho_ind, m, vi] = val
 
-        measures = list([f"m2_{a}" for a in relmax_vals.keys()])
-
         with gzip.open(savepath, "wb") as f:
             pickle.dump(rel_max_measures, f, protocol=pickle.HIGHEST_PROTOCOL)
-        with open("relmax_measures.json", "w") as f:
-            json.dump(measures, f)
 
 
 if __name__ == "__main__":

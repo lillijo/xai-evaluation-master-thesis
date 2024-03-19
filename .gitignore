@@ -20,6 +20,8 @@ experiments/testdata
 experiments/test_background
 experiments/latent_factors
 experiments/*.json
+experiments/watermark_test_data
+experiments/overlap_test_data
 
 
 latex/thesis_latex_template/pics/

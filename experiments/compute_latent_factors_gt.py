@@ -227,7 +227,7 @@ class AllMeasures:
                 with gzip.open(savepath, "wb") as f:
                     pickle.dump(to_save_vals, f, protocol=pickle.HIGHEST_PROTOCOL)
             allmeasures_path = (
-                f"latent_factors_shape_{self.len_x}_{self.experiment_name}.pickle"
+                f"outputs/measures/latent_factors_shape_{self.len_x}_{self.experiment_name}.pickle"
             )
             with gzip.open(allmeasures_path, "wb") as f:
                 pickle.dump(latent_factors, f, protocol=pickle.HIGHEST_PROTOCOL)
