@@ -23,7 +23,9 @@ from .network import ShapeConvolutionalNeuralNetwork
 from .cmiknnmixed import CMIknnMixed
 
 
-def remove_empty(data, all_var_names, types, with_type=True, delete_constant=True):
+def remove_empty(
+    data, all_var_names, types, with_type=True, delete_constant=True, verbose=False
+):
     empty_vars = []
     var_names = all_var_names
     if delete_constant:
@@ -38,13 +40,14 @@ def remove_empty(data, all_var_names, types, with_type=True, delete_constant=Tru
         data = np.delete(data, empty_vars, axis=1)
         types = np.delete(types, empty_vars)
     # sanity test that variable names are correct
-    print(
-        f"all variables: {all_var_names.shape},\n non-constant variables: {var_names.shape},\
-            \n shape of dataset: {data.shape} \n var names = {var_names}"
-    )
+    if verbose:
+        print(
+            f"all variables: {all_var_names.shape},\n non-constant variables: {var_names.shape},\
+                \n shape of dataset: {data.shape} \n var names = {var_names}"
+        )
     if with_type:
         data_type = np.zeros(data.shape, dtype="int")
-        data_type[:, 0:types.shape[0]] = types
+        data_type[:, 0 : types.shape[0]] = types
         dataframe = pp.DataFrame(data, var_names=var_names, data_type=data_type)
     else:
         dataframe = pp.DataFrame(data, var_names=var_names)
@@ -63,14 +66,17 @@ def causal_discovery(dataframe, test="RobustParCorr", link_assumptions=None):
         ci_test = CMIsymb(significance="fixed_thres", fixed_thres=0.4)
     elif test == "CMIknnMixed":  # With Data Type
         ci_test = CMIknnMixed(
-            significance="fixed_thres", fixed_thres=0.05
+            significance="fixed_thres",
+            knn=0.1,
+            estimator="MS", # MS MSinf
+            fixed_thres=0.03,
         )  # significance='fixed_thres', fixed_thres=0.1
     pcmci = PCMCI(dataframe=dataframe, cond_ind_test=ci_test, verbosity=0)
 
     if link_assumptions:
         results = pcmci.run_pcmciplus(
-                tau_max=0, pc_alpha=0.001, link_assumptions=link_assumptions
-            )
+            tau_max=0, pc_alpha=0.001, link_assumptions=link_assumptions
+        )
     else:
         results = pcmci.run_pcmciplus(tau_max=0, pc_alpha=0.001)
     # results = pcmci.run_pcalg_non_timeseries_data()

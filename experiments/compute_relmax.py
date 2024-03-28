@@ -188,7 +188,15 @@ class AllMeasures:
                     for neuron in range(self.len_neurons):
                         # measure with_wm / max(shape)
                         indices = maximiz["data"][:, neuron]
-                        overlap[neuron, 0] = torch.count_nonzero(
+                        overlap[neuron, 0] = (
+                            torch.count_nonzero(watermarks[indices]) / len_set
+                        )
+                        """ max(
+                            float(torch.count_nonzero(targets[indices] == 1)),
+                            float(torch.count_nonzero(targets[indices] == 0)),
+                        ) """
+
+                        overlap[neuron, 1] = torch.count_nonzero(
                             watermarks[indices]
                         ) / max(
                             float(torch.count_nonzero(targets[indices] == 1)),
@@ -196,10 +204,10 @@ class AllMeasures:
                         )
 
                         # mean relevance of images with watermark
-                        wm_indices = torch.where(watermarks[indices] == 1)
+                        """ wm_indices = torch.where(watermarks[indices] == 1)
                         if len(wm_indices[0]) > 0:
                             rels = maximiz["rels"][wm_indices]
-                            overlap[neuron, 1] = torch.mean(rels[:, neuron], dim=0)
+                            overlap[neuron, 1] = torch.mean(rels[:, neuron], dim=0) """
 
                         # mean relevance of images no watermark
                         nwm_indices = torch.where(watermarks[indices] == 0)
@@ -218,40 +226,41 @@ class AllMeasures:
                             torch.count_nonzero(watermarks[statsindices1] == 1)
                         ) / (len_set)
 
-                        # stats: shape = 0, wm = 1
-                        wm_statsindices0 = torch.where(watermarks[statsindices0] == 1)
-                        if len(wm_statsindices0[0]) > 0:
-                            rels = maximiz["statsrel0"][wm_statsindices0]
-                            overlap[neuron, 4] = torch.mean(rels[:, neuron], dim=0)
                         # stats: shape = 0, wm = 0
-                        nwm_statsindices0 = torch.where(watermarks[statsindices0] == 0)
-                        if len(nwm_statsindices0[0]) > 0:
-                            rels = maximiz["statsrel0"][nwm_statsindices0]
-                            overlap[neuron, 7] = torch.mean(rels[:, neuron], dim=0)
+                        # number with watermark
+                        overlap[neuron, 4] = (
+                            torch.count_nonzero(watermarks[statsindices0] == 1)
+                            / len_set
+                        )
+                        # number without watermark
+                        overlap[neuron, 7] = (
+                            torch.count_nonzero(watermarks[statsindices0] == 0)
+                            / len_set
+                        )
 
                         # stats: shape = 1, wm = 1
-                        wm_statsindices1 = torch.where(watermarks[statsindices1] == 1)
-                        if len(wm_statsindices1[0]) > 0:
-                            rels = maximiz["statsrel1"][wm_statsindices1]
-                            overlap[neuron, 5] = torch.mean(rels[:, neuron], dim=0)
-                        # stats: shape = 1, wm = 0
-                        nwm_statsindices1 = torch.where(watermarks[statsindices1] == 0)
-                        if len(nwm_statsindices1[0]) > 0:
-                            rels = maximiz["statsrel1"][nwm_statsindices1]
-                            overlap[neuron, 8] = torch.mean(rels[:, neuron], dim=0)
+                        # number with watermark
+                        overlap[neuron, 5] = (
+                            torch.count_nonzero(watermarks[statsindices1] == 1)
+                            / len_set
+                        )
+                        # number without watermark
+                        overlap[neuron, 8] = (
+                            torch.count_nonzero(watermarks[statsindices1] == 0)
+                            / len_set
+                        )
 
                     inds1 = torch.topk(rels1.mean(dim=0), 1).indices
                     inds0 = torch.topk(rels0.mean(dim=0), 1).indices
 
                     # general reference sets
-                    relmax_vals[f"{k}_diff"] = (
-                        torch.abs(overlap[inds1, 0] - overlap[inds0, 0]) / 2
+                    relmax_vals[f"{k}_diff"] = torch.abs(
+                        overlap[inds1, 0] - overlap[inds0, 0]
                     )
 
                     relmax_vals[f"{k}_m_rels"] = torch.abs(
-                        (overlap[inds1, 0] * overlap[inds1, 1])
-                        - ((1 - overlap[inds0, 0]) * overlap[inds0, 9])
-                    )
+                        overlap[inds1, 1] - overlap[inds0, 1]
+                    ) / 2
 
                     # class specific reference sets
                     # for both classes averaged
@@ -261,10 +270,11 @@ class AllMeasures:
                         + torch.abs((overlap[inds1, 2] - (overlap[inds0, 2])))
                     ) / 2
 
-                    # only for ellipse (=watermarked) class
+                    # difference for stats images
                     relmax_vals[f"{k}_stats_diff"] = torch.abs(
-                        (overlap[inds1, 3] - (overlap[inds0, 3]))
-                    )
+                        (overlap[inds1, 5] + overlap[inds0, 7])
+                        - (overlap[inds0, 8] + overlap[inds1, 4]) 
+                    ) / 2
 
                 for vi, val in enumerate(relmax_vals.values()):
                     rel_max_measures[rho_ind, m, vi] = val

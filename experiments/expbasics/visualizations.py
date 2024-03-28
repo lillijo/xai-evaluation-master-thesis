@@ -751,8 +751,8 @@ def plot_fancy_distribution(dataset=None, s=[], w=[]):
     )
     plt.xlabel("shape")
 
-    #ax.tick_params(axis="y", direction="in", pad=-24)
-    #ax.tick_params(axis="x", direction="in", pad=-17)
+    # ax.tick_params(axis="y", direction="in", pad=-24)
+    # ax.tick_params(axis="x", direction="in", pad=-17)
     # ax.yaxis.set_ticks(list(np.round(np.linspace(lim_y[0], lim_y[1], 5), decimals=2)))
     # ax.xaxis.set_ticks(list(np.arange(lim_x[0], lim_x[1], 0.2)))
     plt.text(
@@ -864,7 +864,7 @@ def fancy_attributions(unbiased_ds, crp_attribution):
         c += 1
 
 
-def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles= None):
+def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles=None):
     fig, axs = plt.subplots(
         rows,
         cols,
@@ -891,14 +891,13 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles=
                     divnorm = matplotlib.colors.TwoSlopeNorm(
                         vmin=-maxv, vcenter=center, vmax=maxv
                     )
-                axs[n].imshow(
-                    images[n],
-                    cmap=cmap,norm=divnorm
-                )  
-                if titles is not None:
-                    axs[n].set_title(titles[n])
+                axs[n].imshow(images[n], cmap=cmap, norm=divnorm)
+                
             else:
-                axs[n].imshow(torch.zeros(64, 64), cmap="Greys", norm=divnorm)
+                axs[n].imshow(torch.zeros(64, 64), cmap="bwr", norm=divnorm)
+                axs[n].text(0.4, 0.5, "is zero")
+            if titles is not None:
+                    axs[n].set_title(titles[n])
     else:
         for il in range(max(rows, 2)):
             if norm == "rows":
@@ -919,17 +918,16 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles=
                         divnorm = matplotlib.colors.TwoSlopeNorm(
                             vmin=-maxv, vcenter=center, vmax=maxv
                         )
-                    axs[il, n].imshow(
-                        images[il, n],
-                        cmap=cmap,norm=divnorm
-                    )  
-                    if titles is not None:
-                        axs[il,n].set_title(titles[il][n])
+                    axs[il, n].imshow(images[il, n], cmap=cmap, norm=divnorm)
                 else:
-                    axs[il, n].imshow(torch.zeros(64, 64), cmap="Greys", norm=divnorm)
+                    axs[il, n].imshow(torch.zeros(64, 64), cmap="bwr", norm=divnorm)
+                    axs[il, n].text(0.4, 0.5, "is zero")
+                if titles is not None:
+                    axs[il, n].set_title(titles[il][n])
                     # axs[il, n].axis("off")
     # return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     # Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
+
 
 def plot_nmfs(cav_images, num_neighbors, n_basis):
     fig = plt.figure(figsize=(16, 4))

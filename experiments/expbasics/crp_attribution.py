@@ -26,11 +26,33 @@ from crp.helper import max_norm
 
 
 def vis_simple(
-    data_batch, heatmaps, rf=False, alpha=1.0, vis_th=0.2, crop_th=0.2, kernel_size=9
+    data_batch, heatmaps, rf=False, alpha=1.0, vis_th=0.05, crop_th=0.005, kernel_size=21,
+    cmap="bwr",
+    vmin=None,
+    vmax=None,
+    symmetric=True,
 ):
-    return vis_opaque_img(
-        data_batch, heatmaps, rf=rf, alpha=0.0, vis_th=0.001, crop_th=0.1
-    )
+    img_list = []
+    for i in range(len(data_batch)):
+        img = data_batch[i]
+        heat = heatmaps[i]
+        if rf:
+            filtered_heat = max_norm(
+                gaussian_blur(heat.unsqueeze(0), kernel_size=kernel_size)[0]
+            )
+            row1, row2, col1, col2 = get_crop_range(filtered_heat, crop_th)
+            img_t = img[..., row1:row2, col1:col2]
+
+            if img_t.sum() != 0:
+                # check whether img or vis_mask is not empty
+                img = img_t
+
+        maxv = max(float(img.abs().max()), 0.001)
+        img = imgify(img, cmap=cmap, vmin=-maxv, vmax=maxv, symmetric=True)
+
+        img_list.append(img)
+
+    return img_list
 
 
 def vis_relevances(
@@ -198,14 +220,14 @@ class CRPAttribution:
         ) """
         return saved_files
 
-    def make_stats_references(self, cond_layer, neurons, relact="relevance"):
+    def make_stats_references(self, cond_layer, neurons, relact="relevance", relevances= []):
         no_ref_samples = 6
         all_refs = {}
         for i in neurons:
             targets, rel = self.fv.compute_stats(
                 i, cond_layer, relact, top_N=2, norm=True
             )
-            for t in targets:
+            for t in [1,0]:
                 ref_c = self.fv.get_stats_reference(
                     i,
                     cond_layer,
@@ -213,13 +235,16 @@ class CRPAttribution:
                     relact,
                     (0, no_ref_samples),
                     composite=self.composite,
-                    rf=False,
-                    plot_fn=vis_img_heat,
+                    rf=True,
+                    plot_fn=vis_simple#vis_img_heat,
                 )
-                all_refs[f"{i}:{t}"] = ref_c[f"{i}:{t}"]
+                if t == 0:
+                    all_refs[f"$c_{i},s_{t}$ {torch.round(relevances[t,i]*100)}\%"] = ref_c[f"{i}:{t}"]
+                else:
+                    all_refs[f" $s_{t}$ {torch.round(relevances[t,i]*100)}\%"] = ref_c[f"{i}:{t}"]
         plot_grid(
             all_refs,
-            figsize=(no_ref_samples, 4*len(neurons)),
+            figsize=(no_ref_samples, 2*len(neurons)),
             padding=True,
             symmetric=True,
         )
@@ -268,13 +293,13 @@ class CRPAttribution:
         lenl = len(self.layer_id_map.keys())
         images = torch.zeros((lenl, 8, 64, 64))
         for li, l in enumerate(self.layer_id_map.keys()):
-            conditions = [{l: [i]} for i in self.layer_id_map[l]]  # "y": [label],
+            conditions = [{l: [i], "y": [pred],} for i in self.layer_id_map[l]]  # "y": [label],
             attr = self.attribution(
                 image,
                 conditions,
                 self.composite,
                 record_layer=self.layer_names,
-                start_layer=l,
+                #start_layer=l,
                 # init_rel = lambda act:  act.clamp(min=0),
             )
             for h in range(attr.heatmap.shape[0]):
@@ -328,13 +353,14 @@ class CRPAttribution:
         if index is None:
             index = np.random.randint(0, len(self.dataset))
         datum = self.dataset[index]
-        if onlywm:
-            datum = self.dataset.load_image_empty(index)
         label = datum[1]
         img = datum[0]
         latents, watermark, offset = self.dataset.get_item_info(index)
-        sample = img.view(1, 1, 64, 64)
-        sample.requires_grad = True
+        if onlywm:
+            sample = self.dataset.load_image_wm(index, not watermark)
+        else:
+            sample = img.view(1, 1, 64, 64)
+            sample.requires_grad = True
         result_string = ""
         output = self.model(sample)
         pred = output.data.max(1, keepdim=True)[1]
@@ -750,6 +776,24 @@ class CRPAttribution:
             record_layer=self.layer_names,
         )
         return attr.heatmap, pred
+    
+    def heatmap_neuron(self, index, neuron, layer):
+        if isinstance(index, int):
+            img, label = self.dataset[index]
+            sample = img.view(1, 1, 64, 64)
+            sample.requires_grad = True
+        else:
+            sample = index
+        output = self.model(sample)
+        pred = int(output.data.max(1)[1][0])
+        conditions = [{"y": [pred], layer: [neuron]}]  # pred label
+        attr = self.attribution(
+            sample,
+            conditions,
+            self.composite,
+            record_layer=self.layer_names,
+        )
+        return attr.heatmap, sample, pred
     
     def heatmap_given_img(self, img, pred):
         sample = img.view(1, 1, 64, 64)

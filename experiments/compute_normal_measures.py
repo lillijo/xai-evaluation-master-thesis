@@ -301,6 +301,10 @@ class AllMeasures:
         per_sample_values = torch.zeros(
             (len(BIASES), len(self.iterations), self.len_x, len(measures))
         )
+
+        mostimportantneuron = torch.zeros(
+            (len(BIASES), len(self.iterations), self.len_x, 3)
+        )
         softmax = torch.nn.Softmax(dim=1)
         savepath = (
             f"outputs/measures/all_measures_{self.len_x}_{self.experiment_name}.pickle"
@@ -350,24 +354,25 @@ class AllMeasures:
                         / self.len_x
                     ) """
 
-                    """ # PREDICTION
-                    pred0sabs = softmax(pred0s)
-                    pred1sabs = softmax(pred1s)
+                    # PREDICTION
+                    # pred0sabs = softmax(pred0s)
+                    # pred1sabs = softmax(pred1s)
                     # absolute difference predictions
-                    per_sample_values[rho_ind, m, :, m_i("m1_mlc_abs")] = (
+                    """ per_sample_values[rho_ind, m, :, m_i("m1_mlc_abs")] = (
                         torch.sum(torch.abs(pred1sabs - pred0sabs), dim=1) / 2
-                    )
+                    ) """
                     # cosine distance predictions
-                    per_sample_values[rho_ind, m, :, m_i("m1_mlc_cosine")] = (
+                    # same as others, not softmaxed
+                    """ per_sample_values[rho_ind, m, :, m_i("m1_mlc_cosine")] = (
                         1
                         - torch.nn.functional.cosine_similarity(
-                            pred1sabs,
-                            pred0sabs,
+                            pred1s,
+                            pred0s,
                             dim=1,
                         )
-                    )
+                    ) / 2 """
                     # euclid distance prediction logits
-                    per_sample_values[rho_ind, m, :, m_i("m1_mlc_euclid")] = (
+                    """ per_sample_values[rho_ind, m, :, m_i("m1_mlc_euclid")] = (
                         torch.sqrt(torch.sum(torch.square(rels1 - rels0), dim=1)) / 2
                     )
                     # kernel distance prediction logits
@@ -406,7 +411,6 @@ class AllMeasures:
                     maxval = 1 if maxval == 0 else maxval
                     hm0sabs = hm0s / maxval
                     hm1sabs = hm1s / maxval
-                    # maximum_heatmaps = max(maximum_heatmaps,maxval0,maxval1)
                     # absolute difference heatmaps
                     # normalized by max total absolute relevance
                     per_sample_values[rho_ind, m, :, m_i("m2_mac_abs")] = torch.sum(
@@ -473,59 +477,39 @@ class AllMeasures:
                                 hms_values0 = self.heatmap_values(
                                     hm0s[n], mask
                                 )  # hm0sabs
-                                """ rel_tot_1 = torch.where(
-                                    hms_values1["rel_total"] > 0,
-                                    hms_values1["rel_total"],
-                                    1,
+                                m1 = max(
+                                    float(hms_values1["rel_total"].sum()),
+                                    float(hms_values0["rel_total"].sum()),
                                 )
-                                rel_tot_0 = torch.where(
-                                    hms_values0["rel_total"] > 0,
-                                    hms_values0["rel_total"],
-                                    1,
-                                ) """
-                                m1 = max(float(hms_values1["rel_total"].sum()), float(hms_values0["rel_total"].sum()))
                                 max_rel_tot = 1 if m1 == 0 else m1
+                                nvals["per_image"] += [float(max_rel_tot)]
+
+                                rma_1 = torch.where(
+                                    hms_values1["rel_total"] > 0,
+                                    hms_values1["rel_within"]
+                                    / hms_values1["rel_total"],
+                                    0,
+                                )
+                                rma_0 = torch.where(
+                                    hms_values0["rel_total"] > 0,
+                                    hms_values0["rel_within"]
+                                    / hms_values0["rel_total"],
+                                    0,
+                                )
 
                                 # rma weighted
                                 per_sample_values[rho_ind, m, n, m_i("m2_rma")] = (
-                                    torch.sum(
-                                        torch.abs(
-                                            (
-                                                (
-                                                    (
-                                                        hms_values1["rel_within"]
-                                                        / (max_rel_tot)  # rel_tot_1
-                                                    )
-                                                    - (
-                                                        hms_values0["rel_within"]
-                                                        / (max_rel_tot)  # rel_tot_0
-                                                    )
-                                                )
-                                            )
-                                            # * weight
-                                        )
-                                    )
+                                    torch.sum(torch.abs((rma_1 - rma_0) * weight))
                                 )
-
-                                """ # rma unweighted
+                                # rma unweighted most important neuron
                                 per_sample_values[
                                     rho_ind, m, n, m_i("m2_rma_unweighted")
-                                ] = torch.sum(
-                                    torch.abs(
-                                        (
-                                            (
-                                                (
-                                                    hms_values1["rel_within"][inds1]
-                                                    / rel_tot_1[inds1]
-                                                )
-                                                - (
-                                                    hms_values0["rel_within"][inds0]
-                                                    / rel_tot_0[inds0]
-                                                )
-                                            )
-                                        )
-                                    )
+                                ] = torch.sum(torch.abs(rma_1[inds1] - rma_0[inds0]))
+
+                                """ mostimportantneuron[rho_ind, m, n, 0] = torch.sum(
+                                    torch.abs(rma_1[inds1] - rma_0[inds1])
                                 )
+
                                 # pg weighted sum
                                 per_sample_values[
                                     rho_ind, m, n, m_i("m2_pg_weighted")
@@ -534,7 +518,7 @@ class AllMeasures:
                                         (hms_values1["pg"] - hms_values0["pg"]) * weight
                                     )
                                 )
-                                # pg weighted sum
+                                # pg unweighted most important neuron
                                 per_sample_values[
                                     rho_ind, m, n, m_i("m2_pg_unweighted")
                                 ] = torch.sum(
@@ -542,6 +526,14 @@ class AllMeasures:
                                         (
                                             hms_values1["pg"][inds1]
                                             - hms_values0["pg"][inds0]
+                                        )
+                                    )
+                                )
+                                mostimportantneuron[rho_ind, m, n, 1] = torch.sum(
+                                    torch.abs(
+                                        (
+                                            hms_values1["pg"][inds1]
+                                            - hms_values0["pg"][inds1]
                                         )
                                     )
                                 )
@@ -554,7 +546,7 @@ class AllMeasures:
                                         * weight
                                     )
                                 )
-                                # rra unweighted sum
+                                # rra unweighted most important neuron
                                 per_sample_values[
                                     rho_ind, m, n, m_i("m2_rra_unweighted")
                                 ] = torch.sum(
@@ -562,6 +554,14 @@ class AllMeasures:
                                         (
                                             hms_values1["rra"][inds1]
                                             - hms_values0["rra"][inds0]
+                                        )
+                                    )
+                                )
+                                mostimportantneuron[rho_ind, m, n, 2] = torch.sum(
+                                    torch.abs(
+                                        (
+                                            hms_values1["rra"][inds1]
+                                            - hms_values0["rra"][inds1]
                                         )
                                     )
                                 ) """
@@ -574,6 +574,10 @@ class AllMeasures:
 
         with gzip.open(savepath, "wb") as f:
             pickle.dump(per_sample_values, f, protocol=pickle.HIGHEST_PROTOCOL)
+        """ with gzip.open(
+            f"outputs/measures/mostimportantneuron_{self.experiment_name}.pickle", "w"
+        ) as f:
+            pickle.dump(mostimportantneuron, f, protocol=pickle.HIGHEST_PROTOCOL) """
         with open(f"outputs/measures/nvals_{self.experiment_name}.json", "w") as fj:
             json.dump(nvals, fj)
 
@@ -702,7 +706,7 @@ class AllMeasures:
 if __name__ == "__main__":
 
     # Experiment 1:
-    """ model_path = "../clustermodels/final"
+    model_path = "../clustermodels/final"
     experiment_name = "attribution_output"
     sample_set_size = 128
     layer_name = "convolutional_layers.6"
@@ -720,7 +724,7 @@ if __name__ == "__main__":
         experiment_name=experiment_name,
     )
     # allm.compute_per_sample(is_random=is_random)
-    allm.easy_compute_measures() """
+    allm.easy_compute_measures()
     # allm.prediction_flip()
     # allm.data_ground_truth(6400)
     # allm.recompute_gt(6400)
