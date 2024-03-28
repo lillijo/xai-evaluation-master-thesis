@@ -1,8 +1,5 @@
 \chapter{Discussion}\label{chapter:discussion}
-This thesis analyzed the fidelity of explained relative feature importance for a spurious feature. 
-Our goal was to establish ways to measure the relative feature importance conveyed by the concept-based explanation method CRP.
-Towards this aim we devised a causal framework of how a spurious feature can be coupled with a core feature in a data distribution. This enabled us to assess the true reaction of neural networks to such a coupling. Having yielded this ground-truth, we were able to compare it to the measured relative feature importance within the explanation. 
-In the following we discuss the explanations' fidelity to the models. This discussion includes both quantifying how close the measures are to the explanation as well as qualitatively evaluating how informative the given explanation is. 
+In the following we discuss how our measures evaluate an explanation's fidelity to trained neural networks. This discussion includes both evaluating how well the measures embody the actual explanation as well as how close their values are to the true model importance. 
 
 \section{Fidelity of Relative Feature Importance}
 We recall the question central to our experiments:
@@ -10,142 +7,87 @@ We recall the question central to our experiments:
     \textit{Is the relative feature importance of a spurious feature explained by CRP in correspondence with the true importance assigned to it by the model or is it more closely aligned to the associations within the data distribution or otherwise disturbed?}
 \end{quote}
 
-In summary our results show that the relative feature importance explained by CRP indeed follows the models true importance more closely than the linear coupling of the data distribution. 
-It is however interesting to see that depending on the complexity of the measurement and the kind of spurious feature (watermark or pattern) results vary. 
-Adding to that, the lack of comparability when only one model is explained means that the relative feature importance conveyed by the explanation might in practice be difficult to interpret.   
+In summary our results show that the relative feature importance explained by CRP follows the model's true importance more closely than the linear coupling of the data distribution. As the models feature importance rises non-linearly to $\rho$, so does the explanation importance for most measures. From the experiments we have conducted, we can conclude that, \textit{we are explaining the model and not the data}. This result might not be surprising for the concept-based method CRP which deterministically depends on the prediction of the model. But it relates to the criticism of \cite{Nauta2023} towards recent XAI evaluation work, which often conflates plausibility of an explanation with its correctness. If the explained importance was more akin to the data distribution, i.e., estimated the spurious feature just as strongly as it is present in the data, this might be plausible, but not a correct explanation of the inner workings of the model. 
+We want to stress again that in this thesis we did not claim to find one, unified method for evaluating how explanation methods react to spurious features. Instead, we adapted existing and constructed new ways to measure relative feature importance for the high-dimensional concept-based explanation given by CRP. This approach emphasizes the multitude of quantifiable criteria for an explanation's correctness. There is not \textit{one way} of measuring relative feature importance in an explanation, because there is not only one criterion for a good explanation. 
+Not surprisingly, fidelity varies depending on the complexity of the measurement and the kind of spurious feature (watermark or pattern) to be evaluated. Overall, our experiments show that depending on how the relative spurious feature importance is defined, one can come to different conclusions about the explanation's fidelity. 
 
-\begin{itemize}
-    \item in general, it is relieving to see that the importance of the biased feature for the model and the explanation is not completely departing from each other
-    \item as the models feature importance rises with $\rho$, so does the explanation importance
-    \item due to the direct relationship between output (vector) and relevance vectors from the computation of LRP / CRP this is to be expected at least for rel and mac
-    \item the coupling of importance however reduces, the more one looks at \textit{human understandable} or less complex measures of feature importance. 
-    \item for multiple measures that ''lose information'' about the relevance of individual concepts, re-weighing them makes them way more accurate
-    \item this is because an ''unimportant'' neuron might encode the spurious feature strongly, but overall the spurious feature has no strong importance
-    \item here, the relative feature importance comes into play again. It is difficult for humans to decide whether the model is actually influenced by the spurious feature or not, if there are neurons encoding it, but their importance is maybe at like 10 percent
-    \item therefore we need to look at heatmaps, rma etc. again in an ''unweighted'' way, by taking the importance change only of the 2 most important neurons for example
-    \item but it becomes clear that depending on the way the explanation is read / measured it can over- or under-emphasize the wm effect. 
-    \item 
-\end{itemize}
+Attempting to measure the fidelity of relative feature importance in this way also highlights the weakness of quantitative evaluation approaches. 
+Although we have defined a rigorous causal framework to 
+measure true feature importance, finally the explained feature importance depends on how we define what is part of the explanation and what humans interpret from it. Such a definition then enables a quantitative evaluation but without user studies we can not confirm the suitability of this definition. Evidently, interpreting how CRP explains the feature importance can even differ from case to case, like the watermark and pattern benchmarks studied here show. 
+We are hence missing information on the causal pathways from the explanation output to the human brain. To measure how well CRP uncovers the true workings of a model, one would need to understand these pathways of how humans perceive concept-based explanations.
 
-\textit{Are We Explaining the Data or the Model?
-Concept-Based Methods and Their Fidelity in Presence of Spurious Features Under a Causal Lense.}
-
-\section{Ground-Truth Relative Feature Importance}
-Although the ground-truth relative feature importance is merely a side-product necessary for our analysis, we have made compelling observations on it. In other work about explaining relative feature importance we have not found thorough descriptions of the non-linear dependency on the coupling of a spurious feature. It seems that the importance goes through a \textit{state change} when learning the spurious feature becomes easier than learning the core feature. From that point on, the model seems to only depend on the spurious features value. 
-Nonetheless, even before this state change a slow raise of importance is visible. Our assumption is that there are two (or even three) strategies the models apply:
-When the watermark is only weakly biased, the model completely ignores its value. The stronger the bias gets, the more the relative feature importance of the spurious feature is mixed with the core feature. In the last step the core feature is completely ignored. 
-For realistic applications as Achtibat et al.'s \cite{Achtibat2022}  case of a real watermark, its explained relevance is often significantly below the relevance of core features. 
-We therefore hypothesize that many real problems are located in the second stage, where both spurious and core features have some importance assigned. 
-While it is not possible to differentiate these strategies even for the ground-truth importance, we consider their demarcation in explanations an important direction for further research.
-
-\section{Complexity and Interpretability of Explanation}
+\section{Fidelity, Complexity and Interpretability of Explanations Seen Through Measures}
 Our analysis suggests that there is a trade-off between how closely the effect on the explanation follows the effect on the models and the complexity of measurement. 
-When we measure the pixel- or neuron-wise differences, the effect of the intervention on our spurious feature is most accurately measured. 
-However, as we have already hinted at during the construction of the measures, this effect is hard to gauge for humans. In the watermark scenario the spatial separation of spurious and core feature still somewhat enables an identification of which feature is more important when looking at attribution maps. For the pattern scenario though, where both features overlap, the attribution maps seem nearly identical or at least it is not obvious which feature is being used more. 
-In our attempt to reduce and focus the complexity of the measured relative feature importance we constructed both region-specific measures as well as measures using the prototypical reference sets yielded through CRP. 
 
-Interestingly, the region specific measures still show an effect of intervention for high values of $\rho$ in the pattern scenario. The most likely reason is that while all encoded concepts relevance lies mostly within the boundary of the shape for this case, the relevance of individual neurons still differs strongly. So a neuron that encodes the blurred pattern will assign high relevance to pixels within a blurred shape and low relevance to the same shape boundary with noisy pattern. 
-Another possible explanation is less desirable: For some examples we found that attribution maps seemed to assign high relevance to pixels outside of the shape, when the pattern feature was not ''matching'' the neurons concept. This is not explaining the true reason for the decision and can be highly misleading. 
+\subsection{Relevance Vectors and Attribution Maps}
+When we measure the pixel- or neuron-wise differences, the effect of the intervention on our spurious feature is most accurately measured in both scenarios. 
+The causal effect on the relevance vectors unsurprisingly follows the causal effect on the output vectors most closely of all measures. Because the attribution onto the neurons within one layer is determined by the output values, they inevitably have a strong relationship. The attribution maps have high dimensionality (here, 8x64x64), which is most likely why noise and rounding errors slightly inflate the causal effect measured on them but overall they also follow the ground truth well.   
+In the watermark scenario the spatial separation of spurious and core feature still somewhat enables an identification of which feature is more important when looking at attribution maps. Adding to that, when the watermark is missing, no relevance can be assigned to it, so the images without watermark act as a clean baseline for measuring the causal effect. 
 
+For the pattern scenario the pixel- or neuron-wise measurements still have relatively high fidelity to the ground truth importance. 
+This is mostly because a concept that encodes, for example, blurryness will have high relevance within the shape when the shape is blurry and low relevance otherwise. Hence, the effect of the intervention is high. Despite that, whether neurons encode blurry or noisy is not visible from the attribution maps which misleadingly emphasize just the shape. Because both features overlap, the attribution maps can not convey whether the pattern or the shape are used by the model at all.
 
-\subsection{Relevance Vectors}
-- follows model importance the closest out of all measures
-- this is not surprising as relevances are deterministically dependent on outputs through the backpropagation process
-- also, because there are only 8 values instead of 8x64x64 like in the attribution maps, there is less chance for rounding errors or other disturbance to have an effect
-- squared distance is closest to mlc (why is this working here but not in 64x64 case?)
-- cosine distance also follows mlc very closely, but deviates more for high values of $\rho$ (is not getting as high, probably because of triangle inequality or something???) 
-- for pattern scenario the values deviate way stronger than for watermark scenario
-- this is to be expected: the pattern is way more entangled with the shape and therefore changing the pattern also more likely changes the explanation for the shape (e.g. if pixels on border of shape get blurred that might make it more \textit{ellipse-like})
-- although the ''state-change'' at around 0.8 is still clearly visible for all measures, they overestimate the spurious feature's importance for lower values of $\rho$ and sometimes underestimate it for high values.
-- most likely reason: same as above, but also that pattern feature seems to be harder to \textit{not learn}. Therefore it already plays a role for lower values? this is all kinda speculative... maybe I have to do some more tests and look at attribution maps to confirm this
-- but in general it makes sense: because change of pattern happens around same area where truly important pixels are, it also has an effect on concepts that only encode shape
+The relevances and their attribution maps do also to a degree overestimate the pattern's importance for low values of $\rho$ and underestimate it for high values. We suppose that this is as a result of the strong entanglement between shape and pattern. Changing the pixels within the shape to a different pattern also has an effect on neurons which only encode the shape and not its pattern. Vice versa, for high $\rho$ the difference between the two values of the pattern $W$ is not maximal, in comparison to the other scenario where the watermark is completely missing when $W=0$. 
 
+We hypothesized that using relevance maximization sets to show which concept is actually encoded by a neuron would help measure the spurious feature importance in a more interpretable way. Yet, our results on these further expose how important proper disentanglement of features is for this task. 
 
-\subsection{Attribution Maps}
-- For attribution maps, cosine distance is the closest to ground truth
-- absolute distance overestimates spurious feature more, especially for pattern scenario
-- but even for watermark scenario
-- this is also to be expected as the absolute distance weighs small changes equally to big ones other than the squared or cosine distance
-- In general, it is also not surprising that MAC works for somewhat for both cases
-- for pattern scenario deviation is way stronger, probably due to earlier mentioned overlapping thingy for low values
-- but also for high values: here, probably because for both values of W relevance still mostly lies within shape, so difference is smaller
+\subsection{Region-Specific Measures}
+As laid out before, the complete measured effect on relevances and attribution maps is not necessarily interpretable by humans. In the watermark case, the intensity of attribution pixels within differently sized features is difficult to compare. For this the region-specific measures were studied as a potential remedy. 
+Although they do follow the general trend of the ground truth for the watermark case, they do so less closely. 
+RMA and RRA underestimate the importance of the watermark, because some relevance (be it positive or negative) is still assigned to the shape.
+\citeauthor{Arras2022} have been questioning whether the score of 1 for RMA is attainable or even desirable. Especially in the setting where two features are present this is a valid question to pose. We suppose that the relevance within the bounding box should still follow the ground truth importance as closely as possible for the watermark, i.e., spatially separated, scenario. 
 
-\subsection{Relevance Mass Accuracy}
-for watermark:
-- deviate much stronger
-- for low values it is ''accurate'' but for higher values it does not get as high
-- this can be related to problem that Arras et al. \cite{Arras2022} mention themselves: it is not clear whether rma should even reach 1 or if it ever will as long as other features are present
-- it actually follows mlc well, but just not at the same magnitude
+The pointing game method on the other hand overestimates the importance of the watermark at all times. This is most likely owing to its reduced complexity, it however represents an important finding with regard to the concept-based explanation: it means that some neurons which have non-zero relevance do indeed early on attribute the watermark highly. Whether these are ``nonsensical'' neurons, i.e., ones that have not learned any recognizable feature, or whether they actually encode the watermark can not be concluded with this low-complexity measurement. 
 
-for pattern:
-- weighted rma is still somewhat close to gt
-- rma of highest relevance neuron (for W=1) is very low and never gets above 0.4 even though pf is at almost 1, it even stagnates / gets worse
-- definitly further away than for other scenario, showing that boundary thing doesn't work as well for this
-- but expected would be that it does not make a difference at all?
-- no actually not, same thing as before: one neuron encoding blurryness will have low relevance within shape for noise instances
-- 
-\subsection{Relevance Rank Accuracy}
-for watermark:
-- underestimates importance considerably
-- this is probably the same as with rma, values of 1 are harder to obtain because that would mean 0 relevance in shape
+When we compare the weighted sum of neurons versus the most relevant neuron for the watermark scenario, this effect becomes more clear: While the other metrics underestimate the spurious feature importance more when all neurons are taken into account, the pointing game method overestimates the importance more. 
+This implies that uninformative or random neurons have enough relevance assigned within the watermark boundary to have an effect on the explained importance of the spurious feature. 
 
-for pattern:
-- same as with rma: weighted version follows gt more closely than highest neuron version
-- highest neuron version even gets less important for high values of $\rho$
-- it is somewhat surprising that the top-k pixels are not always within the boundary region, the heatmaps must be wrong if pixels outside of the boundary region have highest relevance
+Interestingly, the region specific measures still show some effect of intervention for high values of $\rho$ in the \textit{pattern} scenario. 
+Our conclusion is that while all encoded concepts relevance lies mostly within the boundary of the shape for this case, the relevance of individual neurons still differs strongly. So a neuron that encodes the blurred pattern will assign high relevance to pixels within a blurred shape and low relevance to the same shape boundary with noisy pattern. 
+Another possible explanation is less desirable: For some examples we found that attribution maps seemed to assign high relevance to pixels outside of the shape, when the pattern feature was not ''matching'' the neurons concept. Through further inspection we assume the artifact to occur, for example, when \textit{noisy} concepts attribute the noisy background and \textit{blurry} neurons do not fire at all. This highly misleading artifact then ''positively'' influences the measured region-specific importance. Relevance Mass Accuracy is also overestimated when the pattern feature has not actually been learned, presumably again due to the entanglement of shape and pattern.
+In contrast to RMA and RRA the binary measure does not perform well on the pattern benchmark. Here, the most highly relevant pixel usually lies within the shape, even though the effect can be measured for the overall image. 
 
-\subsection{Pointing Game}
-for watermark:
-- both weighted and max pg overestimate importance for low(er) values of $\rho$. 
-- two explanations: 
-- 1. some neurons that have not learned anything useful are assigned relevance and by change have highest pixel in wm region
-- 2. the explanation is misleading and assigns high relevance to watermark even when model is still able to somewhat ignore the watermark
-
-for pattern:
-- pointing game barely works
-- explanation: the highest relevance pixel is always or most of the time inside the bounding box of the shape (as expected)
-- therefore weighted one also underestimates for low values, where pattern still has some importance (is that only because models are badly trained?)
+To further study the applicability of region-specific measures, we not only looked at the weighted aggregation over all concepts within a layer, but also examined the difference between the top neuron for the image where $W=1$ to the one image where $W=0$. This approach shows, why region-specific measure are misleading for scenarios like our pattern benchmark, where the spurious and the target feature are overlapping. In such cases, the majority of the relevance will always lie within the boundary irrespective of which pattern is present in the given instance for the most relevant neuron. The attribution maps of the top neurons for an image therefore do not differ noticeably depending on which pattern is present and it is not possible to gauge the patterns importance from them. 
 
 \subsection{Prototype Reference Sets}
-for watermark:
-- they all work a little, but stagnate around 0.2
-- simple ref sets also works better than stats sets though
-- so probably something is still wrong with stats sets???
-- interestingly activation and relevance don't make such a big difference here
+Because we expected exactly this to happen for the pattern case, we constructed another measure using the relevance maximization reference sets. We furthermore propose that the prototypical explanation they embody is most in line with desiderata like \textit{interpretability} and \textit{compactness}, also due to the confirmation from the small subject study of \cite{Achtibat2023}.
+The general, i.e., not class-specific, measure achieves comparable results to the other measures for both scenarios, although it seems to be more noisy. This is likely due to the small size of the reference sets (15 images). 
+In contrast to that, the class-specific measure is not working as expected for relevance maximization. We suspect that this has to do with the way relevance sets are selected. Because the shape and the pattern feature are so deeply entangled for high values of $\rho$, a concept encoding, e.g., the blurry pattern, will still put rectangles in the context they are most often seen in, which is with a noisy pattern. An example of such an artifact can be seen in \cref{fig:class_reference_sets}. But even more generally the class-specific reference sets seem to not encode the spurious feature well. They are more likely to include images with varying values of $W$, even when the effect on the relevance of that neuron suggests that the spurious feature is most important for the respective neuron.  
 
-for pattern:
-- works okay, i.e. seems to encode pattern to a degree that is human-interpretable
-- by closer inspection: case where W=1 and S=0 or vice versa seems to not occur regardless for relevance sets. this means that it will still be hard to disentangle concepts by looking at reference sets
-- means that especially for overlapping scenario humans will have difficulty assigning the proper feature to a reference set
-- activation works better in this regard: probably because it doesnt do the ''in context of how its mostly used'' thing
-- for stats thing: activation works pretty well
-- relevance max works somewhat but not very well
-- relevance sum doesn't work well at all
-- possible explanation: all relevance sets encode pattern thingy, therefore w1 - w2 = 0 even for other shape
-- it still has a tiny effect, but cant be considered proper
+Another experiment we conducted for the reference sets compares relevance with activation maximization. Instead of using the ratio of images having a certain value for the spurious feature to the total number of prototypes, we include the distribution of the shape feature. As described, relevance maximization aims to put the concept within the context it is most often used in, which creates undesirable results in this scenario. We note that even though this entanglement is preventing interpretability in the given example when importance is measured in this particular way, it might still give insights and be desirable in other applications.
+Activation maximization on the other hand works well for this measure, because the diversity in shape is higher for the reference sets. Thereby it is possible to conclude that a concept encodes a pattern regardless of which shape the pattern is found on.
+We therefore propose that when using prototypical examples one would actually need to look at both the relevance and activation sets, yet again bloating up the complexity of the explanation. 
+Of course, the strong entanglement and lack of diversity in the reference sets studied here might be less pronounced for more complex realistic image datasets. However, we postulate that for more complex datasets the disentanglement of features is harder and even less interpretable as \cite{Traeuble2021} have found.
+
+\section{Ground-Truth Relative Feature Importance}
+Although the ground-truth relative feature importance is merely a side-product necessary for our analysis, we want to comment on some of the observations we have made about it. 
+In other work about explaining relative feature importance we have not found thorough descriptions of the ground-truth dependency of models on the coupling of a spurious feature. Even if the observed robustness to spurious features can be expected for neural networks due to their non-linearities, it is still interesting to see how it differs depending on the kind of spurious feature.
+It is also noteworthy that the importance seems to go through a \textit{state change} at the point where learning the spurious feature becomes easier than learning the core feature. From that point on, the model seems to only depend on the spurious features value. 
+Nonetheless, even before this state change a slow raise of importance is visible. Our assumption is that there are two (or even three) strategies the models apply:
+When the watermark is only weakly biased, the model completely ignores its value. The stronger the bias gets, the more the relative feature importance of the spurious feature is mixed with the core feature. In the last step the core feature is completely ignored. 
+For realistic applications as \citeauthor{Achtibat2022}'s case of a real watermark, its explained relevance is often significantly below the relevance of target features. One might also add that the prevalence of spurious features like watermarks is likely lower and not limited to only one class but the core feature likely orders of magnitude more difficult to learn than the watermark in realistic settings.
+We therefore hypothesize that many real biased problems are located in the second stage, where both spurious and core features are important to some degree.
+While it is not possible to differentiate these strategies even for the ground-truth importance, we consider their demarcation in explanations an important direction for further research.
+If our measures indeed prove to be a reliable way to yield explained feature importance through further experiments, they could possible act as a hint towards which state the model is in with regards to feature importance. For this to work in real applications it would be necessary to extract well disentangled features in an automatic way, which is an unsolved problem. 
 
 
-\begin{itemize}
-    \item evaluation of evaluation criteria:
-    \begin{itemize}
-        \item takes into consideration the whole latent space spanned by the concepts
-        \item orients itself on known human cognition, user studies in this field would suggest this??? 
-        \item performs similar to baseline watermark bounding box importance? 
-        \item ...? \todo{define success criteria of finding a good measure}
-    \end{itemize}
-    \item which measure is the best according to those criteria
-    \item which measure is the closest to ground truth
-    \item which is the furthest from ground truth
-    \item does measure find \textit{more information} than CRP itself and could possibly be used as a method on top of CRP for disentanglement/ spurious-core relation explanation?
-    \item 
-\end{itemize}
+\section{Limitations of the Experiment and Future Work}
+All in all, the causal framework we have constructed is apt for the comparison of ground truth feature importance and explained feature importance. The causal model for the data generation represents one of many causal pathways for how spurious features can get introduced in realistic image datasets. Its simple structure makes the analysis straight-forward, while producing a equivalent data distribution as many other realistic causal models one can think of.
+A possible limitation for the comparability with realistic image data is the simplicity of the shape images. Additionally, only differentiating two classes, where one is positively and the other negatively associated with the spurious feature is a drastic reduction. We are not convinced that it is still in line with realistic datasets where only few of many classes have watermarks.
+In the future, additional experiments with varying, more realistic, datasets are necessary to confirm the applicability of our results to real cases. The difficulty of this undertaking lies in the lack of ground-truth features for such data. While human labelling is expensive, causal experiments using automatically extracted variables (e.g. by Variational Autoencoders) have been conducted by others \citep{Reimers2020, Goyal2019, Tran2022}. Despite that, work on finding and unlearning spurious features has shown that their discovery and disentanglement from core features is an unsolved task especially for less localizable features \citep{Dreyer2023a}.
 
-\begin{itemize}
-    \item do measures work
-    \item what does causality help us with
-    \item is CRP better for constant vector shift stuff or does it still suffer from it?
-    \item can the application of those measures further explain/inform the explanation?
-    \item what failed miserably
-\end{itemize}
+Besides more realistic datasets, variants of the causal model should also be studied more extensively. The suppressor variable model of \cite{Clark2023} and \cite{Wilming2022} would lend itself as a first candidate, as it has already been studied in a similar setting but without comparing the explained feature importance to the ground truth feature importance of the model. Likewise, our hypothesis that neural networks are not able to differentiate selection bias from confounder bias owing to their equivalent data distribution needs to be tested. 
+Furthermore, instead of only analyzing CRP it would be interesting to also compare it to either its general form LRP or to other concept-based methods. 
 
-\section{Limitations and Outlook}
+On another note, we were not fully successful in setting all measures in relation to each other. It is not clear whether it is reasonable to compare outcomes from high-dimensional measures like the mean attribution change, with binary measures like the pointing game. As the explanation method CRP is not explicitly relating the spurious to the core feature and we do not have a ground truth of what 100 percent of attribution ought to look like, interpreting measures as percentages was not always possible. The experiment we have conducted on the spurious feature should therefore be repeated with all other latent factors as well as the core feature in its full extent. A glimpse of what results might be can be found in the preliminary experiment in \cref{appendix:dsprites}.
+
+
+\section{Conclusion}
+This thesis analyzed the fidelity of explained relative feature importance for a spurious feature. 
+Our goal was to establish ways to measure the relative feature importance conveyed by the concept-based explanation method CRP. This goal was inspired by the lack of quantitative evaluation for concept-based methods and in particular CRP. Especially their potential to convey relative feature importance had been so far only studied qualitatively. 
+Towards this aim we devised a causal framework of how a spurious feature can be coupled with a core feature in a data distribution. This enabled us to assess the ground-truth reaction of an array of neural networks to such a coupling. Having yielded this ground-truth, we were able to compare it to the measured relative feature importance within the explanation. 
+Overall, we found the concept-based explanation to react to our intervention on the spurious feature similarly to how the model reacts. This is evidence that the explanation indeed follows what the model has learned and is not merely a reflection of the used data's distribution. 
+How well the model importance and explanation importance coincide, however, strongly depends on how one interprets what is part of the explanation and one measures it.
+On a curve from most complete to most interpretable, the explanations fidelity with regard to the spurious feature's importance suffers the less complex the explanation is defined. While it is possible to construct a formalized causal framework for the computation of spurious feature importance to the model, this stringent approach is limited due to the informal definition of how a \textit{good} explanation should look. Nevertheless, the candidates we have constructed are if not a complete at least a diverse set of possibilities for how relative feature importance can be measured in concept-based explanations.
+
+

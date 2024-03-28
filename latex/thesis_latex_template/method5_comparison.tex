@@ -1,14 +1,12 @@
-\section{Comparison of Measures}\label{section:experiment_setup}
-After having computed a ground truth effect of $\rho$ on the model feature importance $m_1$ and the effect on the explanation $m_2$, we can compare them and the measures under each other.
-We have defined every measure in a way that it should be exactly 1 if all importance is assigned to the spurious feature. The scales of each measure are still technically not the same, but as they are all within the interval [0,1] and should, if correct, all follow the curve of the ground truth, we compare them in one plot for a first impression.
-While a visual comparison of the curves of importance might award us an intuition to the measures overall reaction, tools like the mean squared error (MSE) can be applied to give us more precise insights. As Karimi et al. \cite{Karimi2023} already note,
+\subsection{Comparison of Measures}\label{section:experiment_setup}
+After having computed a ground truth effect of $\rho$ on the model feature importance $m_1$ and the effect on the explanation $m_2$, we can compare them and the measures between each other.
+We have defined every measure in such a way that it should be approximately 1 if all importance is assigned to the spurious feature. The scales of each measure are still technically not comparable, but as they are all within the interval [0,1] and should, if correct, all follow the curve of the ground truth, we compare them in one plot for a first impression.
+While a visual comparison of the curves of importance might award us an intuition to the measures overall reaction, tools like the mean squared error (MSE) can be applied to give us more precise insights. As \citet{Karimi2023} already note,
 it is not clear of which type (e.g. linear or non-linear) the relationship between $m_1$ and $m_2$ truly is. We do however expect the intervention effect to be at least linearly visible. 
-
-Additionally, it is interesting to also look at how $m_1$ and $m_2$ relate independently of $\rho$, i.e., by measuring their correlation and looking at it with scatter plots. 
-This will also hint at how the variance of importance both for $m_1$ and $m_2$ might differ in relation to the changing $\rho$. 
+Additionally, it is interesting to also look at how $m_1$ and $m_2$ relate independently of $\rho$, i.e., by measuring their correlation and looking at it with scatter plots for some particular examples. 
 
 
-\section{CNN Model Zoo}\label{section:model_zoo}
+\subsection{CNN Model Zoo}\label{section:model_zoo}
 To evaluate explanations, the model to test on can neither be to simple and therefore easy to explain, nor too large and therefore an overkill for the simple dataset at hand.
 Through a simple trial-and-error search the architecture detailed in \cref{lst:cnnmodel} with three convolutional layers of eight channels each, one fully connected \textit{concept} layer with six neurons and finally the fully connected output layer with 2 output neurons was deemed most fitting for the task. While less convolutional channels or layers often resulted in the model not converging at all, having more neurons or potentially \textit{concepts} did not seem to add information but just redundancy and would have only increased computation time.
 This model yields test accuracies over 90 percent when using the same feature distribution $\rho$ as used for training. As stated before, we fix all hyperparameters, as they are not part of this analysis, to values produced from a short search.

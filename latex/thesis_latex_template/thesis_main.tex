@@ -6,7 +6,7 @@
 %  Last upadte: C. Müller-Birn 2015-11-27
 %  Freie Universität Berlin, Institute of Computer Science, Human Centered Computing. 
 
-\documentclass[pdftex,a4paper,12pt,DIV=calc,BCOR=5mm,twoside,smallheadings,titlepage, halfparskip-]{scrbook}   
+\documentclass[pdftex,a4paper,12pt,DIV=calc,BCOR=5mm,twoside,openany,smallheadings,titlepage, halfparskip-]{scrbook}   
 % ----- weitere Optionen 
 %draft,			% Entwurfsmodus zum Anzeigen zu leerer/voller Boxen 
 %DIV=calc
@@ -44,7 +44,7 @@
 
 \usepackage{graphicx}  
 \usepackage{hyperref} 
-\usepackage[noabbrev, nameinlink]{cleveref}
+\usepackage[noabbrev, nameinlink, capitalise]{cleveref}
 % turn all your internal references into hyperlinks
 %\usepackage[pdfstartview=FitH,pdftitle={<<Titel der Arbeit>>}, pdfauthor={<<Autor>>}, pdfkeywords={<<Schlüsselwörter>>}, pdfsubject={<<Titel der Arbeit>>}, colorlinks=true, linkcolor=black, citecolor=black, urlcolor=black, hypertexnames=false, bookmarksnumbered=true, bookmarksopen=true, pdfborder = {0 0 0}]{hyperref}
 %
@@ -63,6 +63,9 @@
 \usepackage{float}
 \usepackage{times}
 \usepackage{cite}
+\usepackage{natbib}
+\bibliographystyle{abbrvnat}
+\setcitestyle{authoryear,open={(},close={)}}
 \usepackage[section]{placeins}
 
 %---------------------------------------------------
@@ -159,6 +162,7 @@ title,
 declaration,
 abstract_en,
 abstract_de,
+acknowledgements,
 introduction,
 background,
 problem_setting,
@@ -169,7 +173,7 @@ method3_m2_mac,
 method4_m2_rest,
 method5_comparison,
 results,
-conclusion,
+discussion,
 appendix
 }
 
@@ -239,6 +243,7 @@ appendix
 
 \include{abstract_en}
 \include{abstract_de}  
+\include{acknowledgements}
                                           
 %---------------------------------------------------
 %----- Directories   
@@ -273,16 +278,15 @@ appendix
 \input{method5_comparison}
 
 \input{results}
-\input{conclusion}
+\input{discussion}
 
 \textit{This work used resources of the Deutsches Klimarechenzentrum (DKRZ) granted by its Scientific Steering Committee (WLA) under project ID 1083}
 %---------------------------------------------------
 %----- Bibliography
 %---------------------------------------------------
-\addcontentsline{toc}{chapter}{References}
-\renewcommand\bibname{References}
-\bibliographystyle{acm}
-\bibliography{bibdata.bib}
+%\addcontentsline{toc}{chapter}{References}
+%\renewcommand\bibname{References}
+\bibliography{bibdata}
 
 
 %---------------------------------------------------

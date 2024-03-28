@@ -20,7 +20,7 @@
 }
 
 @InBook{Hooker2019,
-  title         = {A Benchmark for Interpretability Methods in Deep Neural Networks},
+  title         = {A benchmark for interpretability methods in deep neural networks},
   publisher     = {Curran Associates Inc.},
   year          = {2019},
   author        = {Hooker, Sara and Erhan, Dumitru and Kindermans, Pieter-Jan and Kim, Been},
@@ -754,15 +754,22 @@ for Causal Games.},
   url           = {https://proceedings.neurips.cc/paper_files/paper/2020/file/32e54441e6382a7fbacbbbaf3c450059-Paper.pdf},
 }
 
-@TechReport{Schoelkopf2019,
-  author        = {Bernhard Schölkopf and Max Planck Institute for Intelligent Systems and Max-Planck-Ring and 72076 Tübingen and Germany},
+@InBook{Schoelkopf2019,
+  pages         = {765–804},
   title         = {Causality for Machine Learning},
-  year          = {2019},
-  number        = {nature.},
+  publisher     = {Association for Computing Machinery},
+  year          = {2022},
+  author        = {Sch\"{o}lkopf, Bernhard},
+  address       = {New York, NY, USA},
+  edition       = {1},
+  isbn          = {9781450395861},
   __markedentry = {[lilli:3]},
+  booktitle     = {Probabilistic and Causal Inference: The Works of Judea Pearl},
   file          = {:Schoelkopf2019 - Causality for Machine Learning.pdf:PDF},
   groups        = {relevant},
   keywords      = {rank5},
+  numpages      = {40},
+  url           = {https://doi.org/10.1145/3501714.3501755},
 }
 
 @Article{Castro2020,
@@ -1269,13 +1276,16 @@ A novel causal discovery method for estimating nonlinear interdependency network
   url       = {https://arxiv.org/abs/2003.03685},
 }
 
-@Article{Chormai2022,
-  author        = {Chormai, Pattarawat and Herrmann, Jan and Müller, Klaus-Robert and Montavon, Grégoire},
+@Misc{Chormai2022,
+  author        = {Pattarawat Chormai and Jan Herrmann and Klaus-Robert Müller and Grégoire Montavon},
   title         = {Disentangled Explanations of Neural Network Predictions by Finding Relevant Subspaces},
   year          = {2022},
   __markedentry = {[lilli:3]},
+  archiveprefix = {arXiv},
+  eprint        = {2212.14855},
   file          = {:Chormai2022 - Disentangled Explanations of Neural Network Predictions by Finding Relevant Subspaces.pdf:PDF},
   keywords      = {rank5},
+  primaryclass  = {cs.LG},
 }
 
 @Misc{Sixt2022a,
@@ -1337,7 +1347,7 @@ A novel causal discovery method for estimating nonlinear interdependency network
   title     = {Elements of Causal Inference: Foundations and Learning Algorithms},
   publisher = {The MIT Press},
   year      = {2017},
-  author    = {Peters, Jonas and Janzing, Dominik and Schlkopf, Bernhard},
+  author    = {Peters, Jonas and Janzing, Dominik and Schölkopf, Bernhard},
   isbn      = {0262037319},
   abstract  = {A concise and self-contained introduction to causal inference, increasingly important in data science and machine learning. The mathematization of causality is a relatively recent development, and has become increasingly important in data science and machine learning. This book offers a self-contained and concise introduction to causal models and how to learn them from data. After explaining the need for causal models and discussing some of the principles underlying causal inference, the book teaches readers how to use causal models: how to compute intervention distributions, how to infer causal models from observational and interventional data, and how causal ideas could be exploited for classical machine learning problems. All of these topics are discussed first in terms of two variables and then in the more general multivariate case. The bivariate case turns out to be a particularly hard problem for causal learning because there are no conditional independences as used by classical methods for solving multivariate cases. The authors consider analyzing statistical asymmetries between cause and effect to be highly instructive, and they report on their decade of intensive research into this problem. The book is accessible to readers with a background in machine learning or statistics, and can be used in graduate courses or as a reference for researchers. The text includes code snippets that can be copied and pasted, exercises, and an appendix with a summary of the most important technical concepts.},
   file      = {:Peters2017 - Elements of Causal Inference_ Foundations and Learning Algorithms.pdf:PDF},
@@ -1560,16 +1570,14 @@ A novel causal discovery method for estimating nonlinear interdependency network
 }
 
 @Conference{Dombrowski2019,
-  author            = {Dombrowski, Ann-Kathrin and Alber, Maximilian and Anders, Christopher J. and Ackermann, Marcel and Müller, Klaus-Robert and Kessel, Pan},
-  title             = {Explanations can be manipulated and geometry is to blame},
-  year              = {2019},
-  volume            = {32},
-  note              = {Cited by: 110},
-  journal           = {Advances in Neural Information Processing Systems},
-  publication_stage = {Final},
-  source            = {Scopus},
-  type              = {Conference paper},
-  url               = {https://www.scopus.com/inward/record.uri?eid=2-s2.0-85087545097&partnerID=40&md5=abc481444a8c85bda698de5ee04c5b6d},
+  author    = {Dombrowski, Ann-Kathrin and Alber, Maximillian and Anders, Christopher and Ackermann, Marcel and M\"{u}ller, Klaus-Robert and Kessel, Pan},
+  title     = {Explanations can be manipulated and geometry is to blame},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2019},
+  editor    = {H. Wallach and H. Larochelle and A. Beygelzimer and F. d'Alch\'{e}-Buc and E. Fox and R. Garnett},
+  volume    = {32},
+  publisher = {Curran Associates, Inc.},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2019/file/bb836c01cdc9120a9c984c525e4b1a4a-Paper.pdf},
 }
 
 @InProceedings{Anders2020,
@@ -2730,6 +2738,14 @@ at https://github.com/singlasahil14/salient_imagenet.},
   url      = {https://www.sciencedirect.com/science/article/pii/S0921800921003013},
 }
 
+@Article{Anders2021,
+  author  = {Anders, Christopher J. and Neumann, David and Samek, Wojciech and Müller, Klaus-Robert and Lapuschkin, Sebastian},
+  title   = {Software for Dataset-wide XAI: From Local Explanations to Global Insights with {Zennit}, {CoRelAy}, and {ViRelAy}},
+  journal = {CoRR},
+  year    = {2021},
+  volume  = {abs/2106.13200},
+}
+
 @Misc{Anders2023,
   author        = {Christopher J. Anders and David Neumann and Wojciech Samek and Klaus-Robert Müller and Sebastian Lapuschkin},
   title         = {Software for Dataset-wide XAI: From Local Explanations to Global Insights with Zennit, CoRelAy, and ViRelAy},
@@ -2838,20 +2854,20 @@ tive Greedy Equivalence Search (SGES), which is an im-},
   url       = {https://journals.ametsoc.org/view/journals/clim/34/18/JCLI-D-20-0871.1.xml},
 }
 
-@InBook{Kindermans2019,
-  pages         = {267--280},
-  title         = {The (Un)reliability of Saliency Methods},
-  publisher     = {Springer International Publishing},
-  year          = {2019},
+@InProceedings{Kindermans2019,
   author        = {Kindermans, Pieter-Jan and Hooker, Sara and Adebayo, Julius and Alber, Maximilian and Sch{\"u}tt, Kristof T. and D{\"a}hne, Sven and Erhan, Dumitru and Kim, Been},
+  title         = {The (Un)reliability of Saliency Methods},
+  booktitle     = {Explainable AI: Interpreting, Explaining and Visualizing Deep Learning},
+  year          = {2019},
   editor        = {Samek, Wojciech and Montavon, Gr{\'e}goire and Vedaldi, Andrea and Hansen, Lars Kai and M{\"u}ller, Klaus-Robert},
+  pages         = {267--280},
   address       = {Cham},
-  isbn          = {978-3-030-28954-6},
+  publisher     = {Springer International Publishing},
   __markedentry = {[lilli:2]},
   abstract      = {Saliency methods aim to explain the predictions of deep neural networks. These methods lack reliability when the explanation is sensitive to factors that do not contribute to the model prediction. We use a simple and common pre-processing step which can be compensated for easily---adding a constant shift to the input data---to show that a transformation with no effect on how the model makes the decision can cause numerous methods to attribute incorrectly. In order to guarantee reliability, we believe that the explanation should not change when we can guarantee that two networks process the images in identical manners. We show, through several examples, that saliency methods that do not satisfy this requirement result in misleading attribution. The approach can be seen as a type of unit test; we construct a narrow ground truth to measure one stated desirable property. As such, we hope the community will embrace the development of additional tests.},
-  booktitle     = {Explainable AI: Interpreting, Explaining and Visualizing Deep Learning},
   doi           = {10.1007/978-3-030-28954-6_14},
   file          = {:Kindermans2019 - The (Un)reliability of Saliency Methods.pdf:PDF},
+  isbn          = {978-3-030-28954-6},
   url           = {https://doi.org/10.1007/978-3-030-28954-6_14},
 }
 
@@ -3068,7 +3084,7 @@ at the intersection of both communities},
 }
 
 @InBook{Ghorbani2019,
-  title         = {Towards Automatic Concept-Based Explanations},
+  title         = {Towards automatic concept-based explanations},
   publisher     = {Curran Associates Inc.},
   year          = {2019},
   author        = {Ghorbani, Amirata and Wexler, James and Zou, James and Kim, Been},
