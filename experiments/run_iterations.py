@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import json
 from network import train_network, accuracy_per_class
-from background_dataset import BackgroundDataset
-from test_dataset_background import TestDataset
+from wdsprites_dataset import BackgroundDataset, BiasedNoisyDataset
+from test_dataset import TestDataset
 from torch.utils.data import DataLoader, random_split
 import argparse
 
@@ -15,6 +15,7 @@ NAME = "models/background"
 FV_NAME = "fv_model"
 IMAGE_PATH = "images/"
 SEED = 431
+EXPERIMENT = "pattern" # "watermark"
 
 
 def to_name(b, i):
@@ -70,8 +71,8 @@ def compute_with_param(bias, start_it, end_it):
         2000,
         bias=0.0,
         strength=0.0,
-        im_dir="allwm_background",
         img_path=IMAGE_PATH,
+        experiment=EXPERIMENT
     )
     allwm = DataLoader(allwm_dataset, batch_size=128, shuffle=True, generator=rand_gen)
 
@@ -79,11 +80,14 @@ def compute_with_param(bias, start_it, end_it):
         2000,
         bias=0.0,
         strength=1.0,
-        im_dir="nowm_background",
         img_path=IMAGE_PATH,
+        experiment=EXPERIMENT
     )
     nowm = DataLoader(nowm_dataset, batch_size=128, shuffle=True, generator=rand_gen)
-    ds = BackgroundDataset(bias, STRENGTH, img_path=IMAGE_PATH)
+    if EXPERIMENT == "pattern":
+        ds = BackgroundDataset(bias, STRENGTH, img_path=IMAGE_PATH)
+    else:
+        ds = BiasedNoisyDataset(bias, STRENGTH, img_path=IMAGE_PATH)
     trainds, testds, _ = random_split(ds, [0.1, 0.01, 0.89], generator=rand_gen)
     train_loader = DataLoader(trainds, batch_size=128, shuffle=True, generator=rand_gen)
     test_loader = DataLoader(testds, batch_size=128, shuffle=True, generator=rand_gen)
@@ -107,30 +111,33 @@ def compute_with_param(bias, start_it, end_it):
             print(f"(((({name}:{accuracies[name]}))))")
 
 
-""" 
+
 def compute_retrain_seeds(bias):
     with open("parallel_accuracies.json", "r") as f:
         accuracies = json.load(f)
     rand_gen = torch.Generator().manual_seed(SEED)
 
     allwm_dataset = TestDataset(
-        5000,
+        2000,
         bias=0.0,
         strength=0.0,
-        im_dir="allwm",
         img_path=IMAGE_PATH,
+        experiment=EXPERIMENT
     )
     allwm = DataLoader(allwm_dataset, batch_size=128, shuffle=True, generator=rand_gen)
 
     nowm_dataset = TestDataset(
-        5000,
+        2000,
         bias=0.0,
         strength=1.0,
-        im_dir="nowm",
         img_path=IMAGE_PATH,
+        experiment=EXPERIMENT
     )
     nowm = DataLoader(nowm_dataset, batch_size=128, shuffle=True, generator=rand_gen)
-    ds = BiasedNoisyDataset(bias, STRENGTH, img_path=IMAGE_PATH)
+    if EXPERIMENT == "pattern":
+        ds = BackgroundDataset(bias, STRENGTH, img_path=IMAGE_PATH)
+    else:
+        ds = BiasedNoisyDataset(bias, STRENGTH, img_path=IMAGE_PATH)
     trainds, testds, _ = random_split(ds, [0.1, 0.01, 0.89], generator=rand_gen)
     train_loader = DataLoader(trainds, batch_size=128, shuffle=True, generator=rand_gen)
     test_loader = DataLoader(testds, batch_size=128, shuffle=True, generator=rand_gen)
@@ -151,7 +158,7 @@ def compute_retrain_seeds(bias):
             accuracies[name] = result
         else:
             print("model exists:")
-            print(f"(((({name}:{accuracies[name]}))))") """
+            print(f"(((({name}:{accuracies[name]}))))")
 
 
 if __name__ == "__main__":

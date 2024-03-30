@@ -1,17 +1,320 @@
-import numpy as np
-import matplotlib
 from matplotlib import pyplot as plt
+import matplotlib as mpl
+import matplotlib.gridspec as gridspec
+from matplotlib.colors import TwoSlopeNorm
+import networkx as nx
+import numpy as np
+import torch
 import pickle
 import json
-import torch
-from typing import Dict, List, Union, Any, Tuple, Iterable
-from PIL import Image
-import matplotlib.gridspec as gridspec
+from typing import Dict, Any, Tuple, Iterable
 import math
-from crp.image import vis_opaque_img, plot_grid, imgify, get_crop_range
+
+from crp.image import imgify
+from wdsprites_dataset import DSPritesDataset
 
 METHOD = 2
 FACECOL = "#fff"
+
+
+def plot_multipartite(graph_res, layers):
+    link_matrix_upper = np.copy(graph_res["graph"])
+    link_matrix_upper[:, :, 0] = np.triu(link_matrix_upper[:, :, 0])
+    # net = _get_absmax(link_matrix != "")
+    net = np.any(link_matrix_upper != "", axis=2)
+    G = nx.DiGraph(net)
+    node_labels = {}
+    for i in G.nodes:
+        n = 0
+        if i < len(layers[0][1]):
+            subset = 0
+            layer = layers[0][0]
+            n = i
+        elif len(layers) > 1 and i < len(layers[0][1]) + len(layers[1][1]):
+            subset = 1
+            layer = layers[1][0]
+            n = i - len(layers[0][1])
+        elif len(layers) > 2 and i < len(layers[0][1]) + len(layers[1][1]) + len(
+            layers[2][1]
+        ):
+            subset = 2
+            layer = layers[2][0]
+            n = i - (len(layers[0][1]) + len(layers[1][1]))
+        elif len(layers) > 3 and i < len(layers[0][1]) + len(layers[1][1]) + len(
+            layers[2][1]
+        ) + len(layers[3][1]):
+            subset = 3
+            layer = layers[3][0]
+            n = i - (len(layers[0][1]) + len(layers[1][1]) + len(layers[2][1]))
+        elif len(layers) > 4 and i < len(layers[0][1]) + len(layers[1][1]) + len(
+            layers[2][1]
+        ) + len(layers[3][1]) + len(layers[4][1]):
+            subset = 4
+            layer = layers[4][0]
+            n = i - (
+                len(layers[0][1])
+                + len(layers[1][1])
+                + len(layers[2][1])
+                + len(layers[3][1])
+            )
+        elif len(layers) > 5 and i < len(layers[0][1]) + len(layers[1][1]) + len(
+            layers[2][1]
+        ) + len(layers[3][1]) + len(layers[4][1]) + +len(layers[5][1]):
+            subset = 5
+            layer = layers[5][0]
+            n = i - (
+                len(layers[0][1])
+                + len(layers[1][1])
+                + len(layers[2][1])
+                + len(layers[3][1])
+                + len(layers[4][1])
+            )
+        elif len(layers) > 6:
+            subset = 6
+            layer = layers[6][0]
+            n = i - (
+                len(layers[0][1])
+                + len(layers[1][1])
+                + len(layers[2][1])
+                + len(layers[3][1])
+                + len(layers[4][1])
+                + len(layers[5][1])
+            )
+        else:
+            subset = 0
+            layer = "what"
+            n = i
+
+        G.nodes[i]["subset"] = subset
+        G.nodes[i]["layer"] = layer
+        G.nodes[i]["name"] = layers[subset][1][n]
+        node_labels[i] = f"{layer[:3]}{layer[-1]}_{layers[subset][1][n]}"
+    pos = nx.multipartite_layout(G, subset_key="subset")
+    edge_color = [graph_res["val_matrix"][i][j][0] for (i, j) in G.edges]
+    """ node_pos = {"x": [], "y": []}
+    for n in pos.keys():
+        node_pos["x"] += [pos[n][0]]
+        node_pos["y"] += [pos[n][1]]
+    tp.plot_graph(
+        graph=results["graph"],
+        val_matrix=results["val_matrix"],
+        save_name=None,
+        var_names=var_names,
+        figsize=(20, 6),
+        arrow_linewidth=4,
+        arrowhead_size=30,
+        node_size=0.1,
+        node_aspect=1,
+        label_fontsize=16,
+        node_pos=node_pos,
+        show_colorbar=False,
+    )
+    plt.show() """
+
+    fig = plt.figure(figsize=(20, 10))
+    ax = fig.add_subplot(111, frame_on=False)
+    nx.draw_networkx(
+        G,
+        ax=ax,
+        pos=pos,
+        labels=node_labels,
+        node_size=1000,
+        linewidths=10,
+        width=4,
+        node_color="#aaaaaa",
+        # arrowstyle="->",
+        arrowsize=20,
+        edge_cmap=mpl.cm.bwr,  # type: ignore
+        edge_color=edge_color,
+        connectionstyle="arc3,rad=0.1",
+    )
+
+
+def draw_graph(nodes, connections, ax=None):
+    edges = [
+        (
+            i,
+            j,
+            dict(
+                weight=connections[i][j],
+                label=(
+                    str(round(connections[i][j], 3))
+                    if np.abs(connections[i][j]) >= 0.01
+                    else ""
+                ),
+            ),
+        )
+        for i in connections.keys()
+        for j in connections[i].keys()
+        if connections[i][j] != 0
+    ]
+    edges = sorted(edges)
+    nodes = sorted(nodes)
+    subsets = {i: i[0:-2] for i in nodes}
+
+    G = nx.DiGraph()
+    G.add_nodes_from(nodes)
+    G.add_edges_from(edges)
+
+    weights = {(i, j): l for i, j, l in G.edges.data("weight")}  # type: ignore
+    labels = {(i, j): l for i, j, l in G.edges.data("label")}  # type: ignore
+    colors = np.array(list(weights.values()), dtype=np.float64)
+    norm = TwoSlopeNorm(vcenter=-0.0)
+    colors = norm(colors)
+
+    for n in G.nodes:
+        if n[0] not in ["c", "l"]:
+            G.nodes[n]["subset"] = "pred"
+        else:
+            G.nodes[n]["subset"] = subsets[n]
+    pos = nx.multipartite_layout(G, subset_key="subset")
+    if ax is None:
+        fig = plt.figure(figsize=(30, 10))
+        ax = fig.add_subplot(111, frame_on=False)
+    nx.draw_networkx(
+        G,
+        ax=ax,
+        pos=pos,
+        node_size=1000,
+        linewidths=0,
+        width=5,
+        node_color="#bbb",
+        node_shape="s",
+        arrowstyle="->",
+        arrowsize=20,
+        edge_cmap=mpl.cm.coolwarm,  # type: ignore
+        edge_color=colors,
+        connectionstyle="arc,rad=0.1",
+        with_labels=False,
+    )
+    nx.draw_networkx_edge_labels(
+        G,
+        ax=ax,
+        pos=pos,
+        edge_labels=labels,
+        label_pos=0.35,
+        clip_on=False,
+        verticalalignment="baseline",
+        bbox={"fc": "white", "alpha": 0.0, "ec": "white"},
+    )
+    nx.draw_networkx_labels(
+        G, ax=ax, pos=pos, font_size=14, bbox={"ec": "#555", "fc": "#bbb", "alpha": 0.5}
+    )
+
+
+def draw_graph_with_images(nodes, connections, images, ax=None):
+    edges = [
+        (
+            i,
+            j,
+            dict(
+                weight=connections[i][j],
+                label=(
+                    f"{round(connections[i][j] * 100, 2)}%"
+                    if np.abs(connections[i][j]) >= 0.15
+                    else ""
+                ),
+            ),
+        )
+        for i in connections.keys()
+        for j in connections[i].keys()
+        if np.abs(connections[i][j]) >= 0.15
+    ]
+    edges = sorted(edges)
+    nodes = [
+        n_node
+        for n_node in nodes
+        if (n_node in [e[0] for e in edges] or n_node in [e[1] for e in edges])
+    ]
+    nodes = sorted(nodes)
+    subsets = {i: i[0:-2] for i in nodes}
+
+    G = nx.DiGraph()
+    G.add_nodes_from(nodes)
+    G.add_edges_from(edges)
+
+    weights = {(i, j): l for i, j, l in G.edges.data("weight")}  # type: ignore
+    labels = {(i, j): l for i, j, l in G.edges.data("label")}  # type: ignore
+    maxv = max(max(weights.values()), 0.0001)
+    minv = min(min(weights.values()), -0.0001)
+    norm = TwoSlopeNorm(vmin=minv, vcenter=0.0, vmax=maxv)
+    colors = norm(np.array(list(weights.values()), dtype=np.float64))
+
+    for n in G.nodes:
+        if n[0] not in ["c", "l"]:
+            G.nodes[n]["subset"] = "pred"
+        else:
+            G.nodes[n]["subset"] = subsets[n]
+    pos = nx.multipartite_layout(G, subset_key="subset")
+    # if ax is None:
+    fig = plt.figure(figsize=(16, 16))
+    ax = fig.add_subplot(111, frame_on=False)
+    # ax.set_aspect('equal')
+    nx.draw_networkx(
+        G,
+        ax=ax,
+        pos=pos,
+        node_size=8000,
+        linewidths=0,
+        width=5,
+        node_color="#bbb",
+        node_shape="s",
+        arrowstyle="->",
+        arrowsize=20,
+        edge_cmap=mpl.cm.coolwarm,  # type: ignore
+        edge_color=colors,
+        edge_vmin=minv,
+        edge_vmax=maxv,
+        # connectionstyle="arc,rad=0.1",
+        with_labels=False,
+    )
+
+    """ print(pos)
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1) """
+    nx.draw_networkx_edge_labels(
+        G,
+        ax=ax,
+        pos=pos,
+        edge_labels=labels,
+        label_pos=0.59,
+        font_size=18,
+        clip_on=False,
+        verticalalignment="baseline",
+        bbox={"fc": "white", "alpha": 0.0, "ec": "white"},
+    )
+    """ nx.draw_networkx_labels(
+        G, ax=ax, pos=pos, font_size=14, bbox={"ec": "#555", "fc": "#bbb", "alpha": 0.5}
+    ) """
+    trans = ax.transData.transform
+    trans2 = fig.transFigure.inverted().transform  # type: ignore
+
+    piesize = 0.17  # this is the image size
+    p2 = piesize / 2
+    for n in G.nodes:
+        img, norm = images[n]
+        xx, yy = trans(pos[n])  # figure coordinates
+        xa, ya = trans2((xx, yy))  # axes coordinates
+        a = plt.axes(
+            [xa - p2, ya - p2, piesize, piesize],  # type: ignore
+        )
+        a.set_aspect("equal")
+        a.imshow(img, cmap="bwr", norm=norm)
+        if n.endswith("0"):
+            a.set_title(f"{' '.join(n.split('_')[:-1])}\n{n.split('_')[-1]}")
+        else:
+            a.set_title(n.split("_")[-1])
+        a.yaxis.set_ticks([])
+        a.xaxis.set_ticks([])
+
+    a = plt.axes(
+        [0.7, 0.1, 0.2, 0.2],  # type: ignore
+    )
+    a.set_aspect("equal")
+    a.imshow(images["original"][0], cmap="Greys")
+    a.set_title(images["original"][1])
+    a.yaxis.set_ticks([])
+    a.xaxis.set_ticks([])
 
 
 def get_lat_names():
@@ -109,7 +412,7 @@ def ground_truth_plot(
 ):
     datas, bis, biases, alldata = data_iterations(path, biascut=0.0, num_it=num_it)
     feat = f"{r_type}_{m_type}_{layer}"
-    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
+    colors = mpl.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     lrindex = 0
     n_neurons = len(datas[0][0][feat][factor])
@@ -230,7 +533,7 @@ def max_neuron_ground_truth_plot(
 ):
     datas, bis, biases, alldata = data_iterations(path, biascut=bcut, num_it=num_it)
     feat = f"{r_type}_{m_type}_{layer}"
-    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
+    colors = mpl.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     layrn = {"linear": "Linear Layer", "conv": "Convolutional Layer"}
     methn = {
@@ -305,7 +608,7 @@ def avg_max_neuron_ground_truth_plot(
     path, factor, m_type="mlc", layer="linear", bcut=0.0
 ):
     datas, bis, biases, alldata = data_iterations(path, biascut=bcut)
-    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
+    colors = mpl.cm.gist_rainbow(np.linspace(0, 1, 12))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     lrindex = 0
     feat = f"crp_{m_type}_{layer}"
@@ -345,10 +648,12 @@ def avg_max_neuron_ground_truth_plot(
     fig.savefig(f"outputs/imgs/{file_name}.png")
 
 
-def plot_accuracies(path, treshold=90, num_it=6, intervened=False, istop=False, isleft=False):
+def plot_accuracies(
+    path, treshold=90, num_it=6, intervened=False, istop=False, isleft=False
+):
     datas, bis, biases, alldata = data_iterations(path, num_it=num_it)
-    rcol = matplotlib.cm.winter(np.linspace(0, 1, 4))  # type: ignore
-    ecol = matplotlib.cm.spring(np.linspace(0, 1, 4))  # type: ignore
+    rcol = mpl.cm.winter(np.linspace(0, 1, 4))  # type: ignore
+    ecol = mpl.cm.spring(np.linspace(0, 1, 4))  # type: ignore
     fig = plt.figure(figsize=(8, 6))
     fig.set_facecolor(FACECOL)
     plt.ylim([0, 100])
@@ -442,9 +747,6 @@ def plot_accuracies(path, treshold=90, num_it=6, intervened=False, istop=False, 
         for a in list(filter(lambda x: x["train_accuracy"][2] < treshold, alldata))
     ]
     # plt.title("Accuracy of models when intervening on watermark")
-    print(f"accuracy below {treshold}%: {len(bads)}")
-    if len(bads) > 0:
-        print("bad biases: ", bads)
     plt.legend(
         bbox_to_anchor=(0.0, 0.01, 1.0, 0.102),
         loc="lower left",
@@ -454,7 +756,7 @@ def plot_accuracies(path, treshold=90, num_it=6, intervened=False, istop=False, 
         reverse=True,
     )
     if isleft:
-        plt.ylabel("Accuracy in \%")
+        plt.ylabel("Accuracy in \\%")
     else:
         ax = plt.gca()
         ax.get_yaxis().set_visible(False)
@@ -474,7 +776,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
         "ols": ["Correlation Coefficient", "R2 Score"],
     }
     datas, bis, biases, alldata = data_iterations(path, biascut=bcut, num_it=num_it)
-    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
+    colors = mpl.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
     shapes = [
         "8",
         "s",
@@ -536,7 +838,7 @@ def plot_pred_flip(path, m_type="flip", bcut=0.5, num_it=6):
 
 def plot_measures(path):
     datas, bis, biases, alldata = data_iterations(path, biascut=0.0, num_it=10)
-    colors = matplotlib.cm.tab20([i for i in range(20)])  # type: ignore
+    colors = mpl.cm.tab20([i for i in range(20)])  # type: ignore
     ols = np.array(
         [
             np.mean([datas[a][i]["pred_ols"][0] for a in range(10)])
@@ -633,7 +935,7 @@ def plot_measures(path):
 
 def scatter_measures(path):
     datas, bis, biases, alldata = data_iterations(path, biascut=0.0, num_it=10)
-    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
+    colors = mpl.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
     for a in range(10):
         total_effect = np.array(
             [datas[a][i]["total_effect"] for i in range(len(datas[a]))]
@@ -678,7 +980,7 @@ def plot_corr_factors(path, m_type="flip", bcut=0.5, num_it=6):
         "ols": ["Correlation Coefficient * 100", "R2 Watermark and Shape"],
     }
     datas, bis, biases, alldata = data_iterations(path, biascut=bcut, num_it=num_it)
-    colors = matplotlib.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
+    colors = mpl.cm.gist_rainbow(np.linspace(0, 1, 10))  # type: ignore
     latents_names, latents_sizes, latents_bases = get_lat_names()
     fig = plt.figure(figsize=(10, 6))
     fig.set_facecolor(FACECOL)
@@ -729,8 +1031,6 @@ def plot_corr_factors(path, m_type="flip", bcut=0.5, num_it=6):
 
 
 def plot_fancy_distribution(dataset=None, s=[], w=[]):
-    from collections import Counter
-    from expbasics.biased_noisy_dataset import BiasedNoisyDataset
 
     lim_x = [0, 1]  # [np.min(s), np.max(s)]
     lim_y = [0, 1]  # [np.min(w), np.max(w)]
@@ -745,7 +1045,7 @@ def plot_fancy_distribution(dataset=None, s=[], w=[]):
     if dataset is None:
         bias = 0.75
         strength = 0.5
-        dataset = BiasedNoisyDataset(bias, strength, False)
+        dataset = DSPritesDataset(bias, strength, False)
 
         generator = dataset.rng.uniform(0, 1, TOTAL)
         s = dataset.bias * generator + (1 - dataset.bias) * dataset.rng.uniform(
@@ -861,13 +1161,13 @@ def fancy_attributions(unbiased_ds, crp_attribution):
     for i in range(0, 8):
         axs[c % 2, c // 2].xaxis.set_visible(False)
         axs[c % 2, c // 2].yaxis.set_visible(False)
-        cmap = matplotlib.cm.Greys if i % 2 == 0 else matplotlib.cm.bwr  # type: ignore
+        cmap = mpl.cm.Greys if i % 2 == 0 else mpl.cm.bwr  # type: ignore
         maxv = img[i].abs().max()
         # minv = float(img[i].min())
         center = 0.5 if i % 2 == 0 else 0.0
         if i % 2 == 0:
             axs[c % 2, c // 2].set_title(f"pred: {int(preds[i // 2])}")
-        divnorm = matplotlib.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
+        divnorm = mpl.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
         # img[i] = divnorm(img[i])
         axs[c % 2, c // 2].imshow(img[i], cmap=cmap, norm=divnorm)
         c += 1
@@ -887,7 +1187,7 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles=
     fig.set_alpha(0.0)
     maxv = max(float(images.abs().max()), 0.001)
     center = 0.0
-    divnorm = matplotlib.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
+    divnorm = mpl.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
     if min(rows, cols) == 1:
         for n in range(max(cols, rows)):
             axs[n].xaxis.set_visible(False)
@@ -897,23 +1197,23 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles=
                     maxv = max(float(images[n].abs().max()), 0.001)
                     # minv = min(float(images[il, n].min()), -0.001)
                     center = 0.0
-                    divnorm = matplotlib.colors.TwoSlopeNorm(
+                    divnorm = mpl.colors.TwoSlopeNorm(
                         vmin=-maxv, vcenter=center, vmax=maxv
                     )
                 axs[n].imshow(images[n], cmap=cmap, norm=divnorm)
-                
+
             else:
                 axs[n].imshow(torch.zeros(64, 64), cmap="bwr", norm=divnorm)
                 axs[n].text(0.4, 0.5, "is zero")
             if titles is not None:
-                    axs[n].set_title(titles[n])
+                axs[n].set_title(titles[n])
     else:
         for il in range(max(rows, 2)):
             if norm == "rows":
                 maxv = max(float(images[il].abs().max()), 0.001)
                 # minv = min(float(images[il, n].min()), -0.001)
                 center = 0.0
-                divnorm = matplotlib.colors.TwoSlopeNorm(
+                divnorm = mpl.colors.TwoSlopeNorm(
                     vmin=-maxv, vcenter=center, vmax=maxv
                 )
             for n in range(max(cols, 2)):
@@ -924,7 +1224,7 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles=
                         maxv = max(float(images[il, n].abs().max()), 0.001)
                         # minv = min(float(images[il, n].min()), -0.001)
                         center = 0.0
-                        divnorm = matplotlib.colors.TwoSlopeNorm(
+                        divnorm = mpl.colors.TwoSlopeNorm(
                             vmin=-maxv, vcenter=center, vmax=maxv
                         )
                     axs[il, n].imshow(images[il, n], cmap=cmap, norm=divnorm)
@@ -955,7 +1255,7 @@ def plot_nmfs(cav_images, num_neighbors, n_basis):
                 maxv = max(float(cav_images[outerind, innerind].abs().max()), 0.001)
                 # minv = min(float(cav_images[outerind, innerind].min()), -0.001)
                 center = 0.0
-                divnorm = matplotlib.colors.TwoSlopeNorm(
+                divnorm = mpl.colors.TwoSlopeNorm(
                     vmin=-maxv, vcenter=center, vmax=maxv
                 )
                 ax.imshow(cav_images[outerind, innerind], cmap="bwr", norm=divnorm)
@@ -970,7 +1270,7 @@ def plot_dict_grid(
     vmin=None,
     vmax=None,
     symmetric=True,
-    resize=None,
+    resize:int=None, # type: ignore
     padding=True,
     figsize=(6, 6),
 ):
@@ -983,7 +1283,7 @@ def plot_dict_grid(
 
     if isinstance(value, Tuple) and isinstance(value[0], Iterable):
         nsubrows = len(value)
-        ncols = len(value[0])
+        ncols = len(value[0]) # type: ignore
     elif isinstance(value, Iterable):
         nsubrows = 1
         ncols = len(value)
@@ -1008,7 +1308,7 @@ def plot_dict_grid(
                 img_list = ref_c[keys[i]]
 
             for c in range(ncols):
-                ax = plt.Subplot(fig, inner[sr, c])
+                ax = plt.subplot(fig, inner[sr, c])
 
                 if sr == cmap_dim:
                     img = imgify(
@@ -1023,12 +1323,12 @@ def plot_dict_grid(
                 else:
                     img = imgify(img_list[c], resize=resize, padding=padding)
 
-                ax.imshow(img)
+                ax.imshow(img) # type: ignore
                 ax.set_xticks([])
                 ax.set_yticks([])
 
                 if sr == 0 and c == 0:
-                    ax.set_ylabel(keys[i])
+                    ax.set_ylabel(keys[i]) # type: ignore
 
                 fig.add_subplot(ax)
 

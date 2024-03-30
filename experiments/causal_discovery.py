@@ -17,10 +17,10 @@ from tigramite.independence_tests.gsquared import Gsquared
 from tigramite.independence_tests.cmisymb import CMIsymb
 from tigramite.independence_tests.regressionCI import RegressionCI
 
-from .crp_attribution import CRPAttribution
-from .biased_noisy_dataset import BiasedNoisyDataset
-from .network import ShapeConvolutionalNeuralNetwork
-from .cmiknnmixed import CMIknnMixed
+from crp_attribution import CRPAttribution
+from wdsprites_dataset import DSPritesDataset
+from network import ShapeConvolutionalNeuralNetwork
+from cmiknnmixed import CMIknnMixed
 
 
 def remove_empty(
@@ -86,7 +86,7 @@ def causal_discovery(dataframe, test="RobustParCorr", link_assumptions=None):
 class CausalDiscovery:
     def __init__(
         self,
-        dataset: BiasedNoisyDataset,
+        dataset: DSPritesDataset,
         model: ShapeConvolutionalNeuralNetwork,
         crpattribution: CRPAttribution,
     ) -> None:

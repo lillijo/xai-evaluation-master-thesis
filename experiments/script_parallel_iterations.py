@@ -3,9 +3,6 @@ import os
 import json
 
 BIASES = list(np.round(np.linspace(0, 1, 51), 3))
-#BIASES = list(np.round(np.linspace(0, 1, 21), 3))
-#ITERATIONS = range(10)
-
 def to_name(b, i):
     return "b{}-i{}".format(
         str(round(b, 2)).replace(".", "_"),
@@ -16,7 +13,7 @@ def to_name(b, i):
 def compute_all():
     with open("parallel_accuracies.json", "r") as f:
         accuracies = json.load(f)
-    """ for bias in BIASES:
+    for bias in BIASES:
         makes_sense = any(
             [
                 accuracies[to_name(bias, seed)]["train_accuracy"][2] < 80
@@ -37,8 +34,7 @@ def compute_all():
         if makes_sense:
             os.system(
                 f"sbatch -J m_{int(bias*100)}_10 ./batch_script_iterations.sh {bias} 5 10"
-            ) """
-        
+            )
     for bias in BIASES:
         makes_sense = any(
             [
