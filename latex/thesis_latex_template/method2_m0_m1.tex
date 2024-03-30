@@ -1,36 +1,38 @@
 \section{Data Ground Truth Correlation $m_0$}
 The goal of this analysis it to gather information on how a known coupling ratio of two features interacts with their importance to the model and their explained importance. 
-Measure $m_0 = \rho$ is the correlation between the shape and spurious feature in our data generating model. When $\rho$ is zero, the features are not associated at all, when it is one they correlate maximally. Conceived as a \textit{signal-to-noise} ratio between the correlated and uncorrelated parts of $S$ and $W$, it can directly be used as a measure of the coupling of spurious (watermark) and core (shape) feature in the data distribution. However, the data generating SCM introduces a small modification due to the binarization of the variables $W$ and $S$. It might therefore be more accurate to look at the actual correlation of the binary features in the generated data distribution as a ground-truth (see \cref{fig:finding_rho}). Considering that we have two binary variables their correlation can be measured using the $\phi$-coefficient. It is also called \textit{Matthews} or \textit{Yule-phi} coefficient and is essentially the Pearson correlation coefficient for two binary variables. For our symmetric model, where the number of ellipses is always equal to the number of rectangles and always exactly half of the instances share the spurious feature, the formula is further simplified.
+Measure $m_0 = \rho$ is the correlation between the shape and spurious feature in our data generating model. When $\rho$ is zero, the features are not associated at all, when it is one they correlate maximally. Conceived as a \textit{signal-to-noise} ratio between the correlated and uncorrelated parts of $S$ and $W$, it can directly be used as a measure of the coupling of spurious (watermark) and core (shape) feature in the data distribution. However, the data generating SCM introduces a small modification due to the binarization of the variables $W$ and $S$. It might therefore be more accurate to look at the actual correlation of the binary features in the generated data distribution as a ground-truth (see \cref{fig:finding_rho}). Considering that we have two binary variables, their correlation can be measured using the $\phi$-coefficient. It is also called \textit{Matthews} or \textit{Yule-phi} coefficient and can be interpreted as the Pearson correlation coefficient for two binary variables. For our symmetric model, where the number of ellipses is always equal to the number of rectangles and always exactly half of the instances share their value for the spurious feature, the formula is further simplified:
 
 \vspace{1em}
 \begin{minipage}[t]{0.45\textwidth}
 \begin{tabular}{|c|c|c|c|}
     \hline
-     & y= 1 & y = 0 & total  \\  \hline
-    x= 1 & $n_{11}$ & $n_{10}$ & $n_{1*}$ \\ \hline
-    x= 0 & $n_{01}$ & $n_{00}$ & $n_{0*}$ \\ \hline
+     & $W= 1$ & $W = 0$ & total  \\  \hline
+    $S= 1$ & $n_{11}$ & $n_{10}$ & $n_{1*}$ \\ \hline
+    $S= 0$ & $n_{01}$ & $n_{00}$ & $n_{0*}$ \\ \hline
     total& $n_{*1}$ & $n_{*0}$ & $n$ \\ \hline
 \end{tabular}
 \end{minipage}%
-\begin{minipage}[c]{0.45\textwidth}
+\begin{minipage}[c]{0.53\textwidth}
 \begin{align}
-& \phi = \frac{n_{11} * n_{00} - n_{10}*n_{01}}{\sqrt{n_{1*}*n_{0*}*n_{*0}*n_{*1}}} \notag \\
-& \text{here:} |\phi| = 1- \frac{2 \cdot (n_{01} + n_{10})}{n} 
+\phi & = \frac{n_{11} * n_{00} - n_{10}*n_{01}}{\sqrt{n_{1*}*n_{0*}*n_{*0}*n_{*1}}} \notag \\
+n_{11} = n_{00}, &n_{01} = n_{10}, n_{1*} = n_{0*} = n_{*1} = n_{*0}   \notag \\
+\rightarrow |\phi| & = 1- \frac{2 \cdot (n_{10} + n_{01} )}{n} \label{eq:simplified_phi}
 \end{align}
 \end{minipage}
 \vspace{1em}
 
-Generally, we do not expect the model to perfectly reconstruct $\rho$ or the correlation $\phi$. After all, the strength of neural networks presumably lies in recovering the truly important feature even when other, highly correlated features are present. However, some research expects explanations to give insight into the distributions of the training data to better understand how biases might occur, even if a model has apparently learned to ignore spurious features \citep{Kindermans2017}. 
+Generally, we do not expect the model to perfectly reconstruct the coupling ratio $\rho$ or the binarized correlation $\phi$. After all, the strength of neural networks presumably lies in recovering the truly important feature even when other, highly correlated features are present. However, some research expects explanations to give insight into the distributions of the training data to better understand how biases might occur, even if a model has apparently learned to ignore spurious features \citep{Kindermans2017}. 
 
 \begin{figure}[t!]
     \centering
-    \includegraphics[width=\textwidth]{thesis_latex_template/pics/gt_m0_phi_only.png}
+    \includegraphics[width=0.6\textwidth]{thesis_latex_template/pics/gt_m0_phi_only.png}
     \caption[True Data Distribution $m_0$]{$\phi$-coefficient between $W$ and $S$ of sampled training data distributions with growing coupling ratio $\rho$}
     \label{fig:finding_rho}
 \end{figure}
 
 \section{Model Ground-Truth Feature Importance $m_1$}\label{section:gt_measure}
-In contrast to realistic application scenarios our causal framework enables us to establish the ground truth importance of features for a trained model. Similar to recent work on causal attribution \citep{Goyal2019,Parafita2019,Karimi2023} the causal effect of an intervention upstream on the output of a model can be estimated in the following way:
+After having defined a ground truth for the coupling of $S$ and $W$ in the data ($m_0$), we now propose a few metrics yielding $m_1$, which is the feature importance of the spurious feature $W$ according to a model.
+In contrast to realistic application scenarios our causal framework and artificially generated dataset enables us to establish the ground truth importance of features for a trained model. Similar to recent work on causal attribution \citep{Goyal2019,Parafita2019,Karimi2023} the causal effect of an intervention upstream on the output of a model can be estimated in the following way:
 \begin{center}
 Average Causal Effect of latent factor $W$ on output $Y$ \\
 \begin{equation}
@@ -38,18 +40,18 @@ Average Causal Effect of latent factor $W$ on output $Y$ \\
 \end{equation}
 \end{center}
 
-The intervention on a given latent factor is just like this formula here, as our factors of interest are binary variables (watermark and shape). Due to our knowledge of the ground truth we can fix all other independent latent factors and feed one image with the watermark and the same image without it through the neural network, thereby achieving a pure intervention on our $W$.  
+The intervention on a given latent factor is equivalent to this formula here, as our factors of interest are binary variables (watermark and shape). Due to our knowledge of the ground truth we can fix all other independent latent factors and feed one image with the watermark and the same image without it through the neural network, thereby achieving a pure intervention on $W$.  
 However, it is not as clear how to define the output of a neural network. One can either measure the average causal effect on the binary prediction or on the output layers' logits, which change in a continuous fashion.
 To account for the effect of the initialization of model weights and biases on the usage of either feature, we average each measure over multiple random seeds.
 
 \subsection{Prediction Flip}
 Computing the \textit{Prediction Flip}, as \citeauthor{Sixt2022a} call it in their experiments, is straight forward in our example as we can control all variables. 
-This binary causal effect can be estimated as the percentage of images for which the prediction changes, when the factor $W$ is changed, which in turn is equivalent to the magnitude of the $\phi$-coefficient between prediction $Y$ and spurious feature $W$ in our scenario. Therefore, this measure is apt for the comparison with the $W,S$ correlation in the training data distribution.
+This binary causal effect can be estimated as the percentage of images for which the prediction changes, when the factor $W$ is changed, which in turn is equivalent to the magnitude of the $\phi$-coefficient between prediction $Y$ and spurious feature $W$ in our scenario. Therefore, this measure is apt for the comparison with the $(S,W)$-correlation in the training data distribution.
 
-For better readability we will refer to an image with the watermark $\mathrm{x}_{do(W=1)}$ as $\mathrm{x}$ and the same image without the watermark $\mathrm{x}_{do(W=0)}$ as $\mathrm{x'}$ in the rest of the thesis.
+For better readability we will refer to an image with the watermark $\mathrm{x}_{do(W=1)}$ as $\mathrm{x}$ and the same image without the watermark $\mathrm{x}_{do(W=0)}$ as $\mathrm{x'}$ in the rest of the thesis. As we average most metrics over a sample set of 128 images, selected uniformly from the full dataset, we denote this set as $\mathcal{X}$ from here on. The Prediction Flip (PF) for one model is then:
 \begin{align}
 \displaystyle 
-& PF =\tfrac{1}{|\mathcal{X}|} \sum_{\mathrm{x} \in \mathcal{X}} |y(\mathrm{x}) - y(\mathrm{x'}) | 
+& PF =\tfrac{1}{|\mathcal{X}|} \sum_{\mathrm{x} \in \mathcal{X}} |y(\mathrm{x}) - y(\mathrm{x'}) |. 
 \end{align}
 
 \subsection{Mean Logit Change}
@@ -58,14 +60,16 @@ To enable better comparison we apply the soft-max function to the outputs to yie
 We expect this variant of the model importance to be slightly more sensitive to the spurious watermark feature $W$ for lower values of $\rho$ than the prediction flip. The reason being, that while the continuous output vector, i.e., confidence, might already be affected by the spurious feature for weakly biased models, the prediction will only change once the spurious feature becomes more easy to identify than the core feature. Vice versa, the confidence when only the spurious feature is used for prediction could be low and hence the prediction flip higher than the mean logit change.
 
 It is important to choose a reasonable distance measure between the two output vectors, yet there is no agreed upon distance metric for the assessment of similarity of attribution maps and vectors. \citeauthor{Sixt2022a} and \citeauthor{Goyal2019} use the mean absolute difference (or $L1$-norm). 
-Recently, assessing the similarity of activation and relevance vectors has more often been done using the cosine similarity \citep{Sixt2020,Achtibat2023,Dreyer2023a, Pahde2023}. Therefore, we include the cosine distance as a potential distance metric for the model output (as well as the explanation later). \citeauthor{Karimi2023} test different kernels for a kernelized treatment effect on multidimensional outputs including a linear kernel which is equivalent to the squared distance metric we also apply. They finally settle on a radial basis function (RBF) kernel, but also find that the relative effects are not sensitive to the choice of kernels. 
+Recently, assessing the similarity of activation and relevance vectors has often been done using the cosine similarity \citep{Sixt2020,Achtibat2023,Dreyer2023a, Pahde2023}. Therefore, we include the cosine distance as a potential distance metric for the model output to enable comparison to the explanation. \citeauthor{Karimi2023} test different kernels for a kernelized treatment effect on multidimensional outputs and find that the relative effects are not sensitive to the choice of kernels. 
 We therefore assume that the trend of effects will not be majorly affected by the choice of a distance metric but still test this hypothesis.
 
 
 \begin{align}\displaystyle 
-& \text{Mean Absolute Difference:} & \notag \\
-& \MLC_{\rho, m}^{abs} = \tfrac{1}{|\mathcal{X}| * 2} \sum_{\mathrm{x} \in \mathcal{X}} 
+& \text{Mean Absolute Distance:} & \notag \\
+&\MLC_{\rho, m}^{abs} = \tfrac{1}{|\mathcal{X}| * 2} \sum_{\mathrm{x} \in \mathcal{X}} 
 |y_0(\mathrm{x}) -y_0(\mathrm{x'})| + |y_1(\mathrm{x}) -y_1(\mathrm{x'})| \\
+& \text{Mean Squared Distance:} & \notag \\
+& \MLC_{\rho, m}^{sqa} = \MLC_{\rho, m}^{abs}^2\\
 & \text{Cosine Distance:} &  \notag \\
 & \MLC_{\rho, m}^{cosine} = \tfrac{1}{|\mathcal{X}|}\sum_{\mathrm{x} \in \mathcal{X}}  
 1 - \frac{\vec{y}(\mathrm{x}) \cdot \vec{y}(\mathrm{x'})}
