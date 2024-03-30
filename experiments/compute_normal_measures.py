@@ -6,6 +6,7 @@ import json
 from os import makedirs
 from os.path import isdir, isfile
 import gzip
+import argparse
 from sklearn.metrics import matthews_corrcoef, normalized_mutual_info_score
 from torch.utils.data import DataLoader, Subset
 from wdsprites_dataset import BiasedNoisyDataset, BackgroundDataset
@@ -122,6 +123,9 @@ class AllMeasures:
         if not isdir(f"outputs/{self.experiment_name}"):
             print("creating folder", f"outputs/{self.experiment_name}")
             makedirs(f"outputs/{self.experiment_name}")
+        else:
+            print("Explanations Are Computed")
+            return 
 
         for rho_ind, rho in enumerate((pbar := tqdm(BIASES))):
             for m in self.iterations:
@@ -180,6 +184,9 @@ class AllMeasures:
                         rel_1,
                     )
                 results_m_r.save()
+        self.prediction_flip()
+        self.data_ground_truth(6400)
+        self.recompute_gt(6400)
 
     def heatmap_values(
         self,
@@ -694,6 +701,9 @@ class AllMeasures:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser("experiment")
+    parser.add_argument("experiment", help="experiment int", type=int, default=1)
+    args = parser.parse_args()
     (
         sample_set_size,
         _,
@@ -706,16 +716,12 @@ if __name__ == "__main__":
         _,
         _,
         _,
-    ) = init_experiment(1)
+    ) = init_experiment(args.experiment)
     allm = AllMeasures(
         sample_set_size=sample_set_size,
         layer_name=layer_name,
         model_path=model_path,
         experiment_name=experiment_name,
     )
-    # allm.compute_per_sample(is_random=is_random)
+    allm.compute_per_sample(is_random=is_random)
     allm.easy_compute_measures()
-    # allm.prediction_flip()
-    # allm.data_ground_truth(6400)
-    # allm.recompute_gt(6400)
-    # allm.gt_shape(128)

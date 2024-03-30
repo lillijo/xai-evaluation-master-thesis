@@ -2,6 +2,7 @@ import pickle
 import numpy as np
 import torch
 from tqdm import tqdm
+import argparse
 from os.path import  isfile
 import gzip
 from helper import init_experiment, to_name
@@ -215,6 +216,9 @@ class AllMeasures:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser("experiment")
+    parser.add_argument("experiment", help="experiment int", type=int, default=1)
+    args = parser.parse_args()
     (
         sample_set_size,
         _,
@@ -227,12 +231,11 @@ if __name__ == "__main__":
         _,
         _,
         _,
-    ) = init_experiment(1)
+    ) = init_experiment(args.experiment)
     allm = AllMeasures(
         sample_set_size=sample_set_size,
         layer_name=layer_name,
         model_path=model_path,
         experiment_name=experiment_name,
     )
-    # allm.compute_relevance_maximization()
     allm.compute_for_other_latent_factors(recompute_values=True)

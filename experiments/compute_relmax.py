@@ -1,6 +1,7 @@
 import pickle
 import numpy as np
 import torch
+import argparse
 from tqdm import tqdm
 import gzip
 from wdsprites_dataset import BiasedNoisyDataset, BackgroundDataset
@@ -128,7 +129,7 @@ class AllMeasures:
 
     def compute_relevance_maximization(self):
         for rho_ind, rho in enumerate(BIASES):
-            for m in range(10, 16):
+            for m in range(0, 16):
                 model_name = f"{self.experiment_name}_{to_name(rho, m)}"
                 model = load_model(self.model_path, rho, m, self.model_type)
                 print(model_name, "sum")
@@ -241,9 +242,9 @@ class AllMeasures:
                         overlap[inds1, 0] - overlap[inds0, 0]
                     )
 
-                    relmax_vals[f"{k}_m_rels"] = torch.abs(
-                        overlap[inds1, 1] - overlap[inds0, 1]
-                    ) / 2
+                    relmax_vals[f"{k}_m_rels"] = (
+                        torch.abs(overlap[inds1, 1] - overlap[inds0, 1]) / 2
+                    )
 
                     # class specific reference sets
                     # for both classes averaged
@@ -254,10 +255,13 @@ class AllMeasures:
                     ) / 2
 
                     # difference for stats images
-                    relmax_vals[f"{k}_stats_diff"] = torch.abs(
-                        (overlap[inds1, 5] + overlap[inds0, 7])
-                        - (overlap[inds0, 8] + overlap[inds1, 4]) 
-                    ) / 2
+                    relmax_vals[f"{k}_stats_diff"] = (
+                        torch.abs(
+                            (overlap[inds1, 5] + overlap[inds0, 7])
+                            - (overlap[inds0, 8] + overlap[inds1, 4])
+                        )
+                        / 2
+                    )
 
                 for vi, val in enumerate(relmax_vals.values()):
                     rel_max_measures[rho_ind, m, vi] = val
@@ -267,21 +271,11 @@ class AllMeasures:
 
 
 if __name__ == "__main__":
-    # Experiment 1:
-    
-    (
-        sample_set_size,_,layer_name,is_random,model_path,experiment_name,_,_,_,_,_,
-    ) = init_experiment(2)
-    allm = AllMeasures(
-        sample_set_size=sample_set_size,
-        layer_name=layer_name,
-        model_path=model_path,
-        experiment_name=experiment_name,
-    )
-    allm.compute_relmax_measures()
+    parser = argparse.ArgumentParser("experiment")
+    parser.add_argument("experiment", help="experiment int", type=int, default=1)
+    parser.add_argument("recompute", help="recompute bool", type=bool, default=False)
+    args = parser.parse_args()
 
-    # Experiment 2:
-    
     (
         sample_set_size,
         _,
@@ -294,13 +288,14 @@ if __name__ == "__main__":
         _,
         _,
         _,
-    ) = init_experiment(2)
+    ) = init_experiment(args.experiment)
     allm = AllMeasures(
         sample_set_size=sample_set_size,
         layer_name=layer_name,
         model_path=model_path,
         experiment_name=experiment_name,
     )
+    if args.recompute:
+        allm.compute_relevance_maximization()
     allm.compute_relmax_measures()
 
-    # allm.compute_relevance_maximization()

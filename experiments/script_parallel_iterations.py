@@ -1,7 +1,8 @@
 import numpy as np
 import os
 import json
-from helper import to_name
+from helper import to_name, create_dsprites_dataset
+
 
 BIASES = list(np.round(np.linspace(0, 1, 51), 3))
 
@@ -44,4 +45,5 @@ def compute_all():
 
 
 if __name__ == "__main__":
+    create_dsprites_dataset()
     compute_all()

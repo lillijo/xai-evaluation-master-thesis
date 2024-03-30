@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from os.path import isfile
+from os.path import isfile, isdir
 import json
 import pickle
 import gzip
@@ -93,3 +93,15 @@ def get_dr_methods():
     lle = LocallyLinearEmbedding(n_components=2, n_neighbors=20)
     methods = [tsne, iso, pca, nmf, mds, lle]
     return methods, m_names
+
+def create_dsprites_dataset():
+    if not isdir("dsprites-dataset"):
+        print("unpacking dsprites images for faster use")
+        with open('dsprites.pickle', 'rb') as f:
+            pdata = pickle.load(f)
+            fname_template='dsprites-dataset/images/{cap}.npy'
+            for i in range(len(pdata["dataset"])):
+                with open(fname_template.format(cap=i) , 'wb') as f:
+                    np.save(f, pdata["dataset"][i] )
+            with open('labels.pickle', 'wb') as handle:
+                pickle.dump(pdata["labels"], handle, protocol=pickle.HIGHEST_PROTOCOL) 
