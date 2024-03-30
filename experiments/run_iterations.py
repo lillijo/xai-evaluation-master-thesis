@@ -1,11 +1,13 @@
 import numpy as np
 import torch
 import json
+import argparse
+from torch.utils.data import DataLoader, random_split
+
 from network import train_network, accuracy_per_class
 from wdsprites_dataset import BackgroundDataset, BiasedNoisyDataset
 from test_dataset import TestDataset
-from torch.utils.data import DataLoader, random_split
-import argparse
+from helper import to_name
 
 LEARNING_RATE = 0.001
 STRENGTH = 0.5
@@ -17,12 +19,6 @@ IMAGE_PATH = "images/"
 SEED = 431
 EXPERIMENT = "pattern" # "watermark"
 
-
-def to_name(b, i):
-    return "b{}-i{}".format(
-        str(round(b, 2)).replace(".", "_"),
-        str(i),
-    )
 
 
 def train_model_evaluate(

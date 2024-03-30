@@ -5,17 +5,9 @@ from tqdm import tqdm
 import gzip
 from wdsprites_dataset import BiasedNoisyDataset, BackgroundDataset
 from crp_attribution import CRPAttribution
-from helper import init_experiment
+from helper import init_experiment, to_name
 from network import load_model
 from test_dataset import TestDataset
-
-
-def to_name(b, i):
-    return "b{}-i{}".format(
-        str(round(b, 2)).replace(".", "_"),
-        str(i),
-    )
-
 
 MAX_INDEX = 491519  # 491520 is true size, but not including last
 SAMPLE_SET_SIZE = 128

@@ -1,14 +1,9 @@
 import numpy as np
 import os
 import json
+from helper import to_name
 
 BIASES = list(np.round(np.linspace(0, 1, 51), 3))
-def to_name(b, i):
-    return "b{}-i{}".format(
-        str(round(b, 2)).replace(".", "_"),
-        str(i),
-    )
-
 
 def compute_all():
     with open("parallel_accuracies.json", "r") as f:

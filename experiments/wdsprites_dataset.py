@@ -13,7 +13,7 @@ IMG_PATH_DEFAULT = "dsprites-dataset/images/"
 BIAS_NOISE_OFFSET = 0.5
 
 
-class DSPritesDataset(Dataset):
+class DSpritesDataset(Dataset):
     def __init__(
         self,
         bias=0.0,
@@ -132,7 +132,7 @@ class DSPritesDataset(Dataset):
         raise NotImplementedError
 
 
-class BackgroundDataset(DSPritesDataset):
+class BackgroundDataset(DSpritesDataset):
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
         shape_mask = np.load(img_path, mmap_mode="r")
@@ -246,7 +246,7 @@ class BackgroundDataset(DSPritesDataset):
         return mask """
 
 
-class BiasedNoisyDataset(DSPritesDataset):
+class BiasedNoisyDataset(DSpritesDataset):
     def __getitem__(self, index):
         img_path = os.path.join(self.img_dir, f"{index}.npy")
         image = np.load(img_path, mmap_mode="r")

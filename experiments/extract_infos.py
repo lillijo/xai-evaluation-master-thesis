@@ -4,6 +4,8 @@ from os.path import isfile, join
 import json
 import argparse
 
+# SCRIPT TO EXTRACT THE LATEST ACCURACIES OF MODELS COMPUTED IN THE CLUSTER
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("accs_name")
     parser.add_argument("accs_name", help="accs_name string", type=str)
