@@ -1,10 +1,11 @@
 \chapter{Methods}\label{chapter:method}
-still missing here:  short introduction to the chapter
+This chapter lays out the steps necessary for our experiment to evaluate explanations' fidelity towards spurious feature importance. 
+After defining a causal model of the data and explanation generation process we construct the metrics we test both to yield a ground truth feature importance as well as the importance attributed in the explanation. We also describe how the experiment is conducted and through which analysis methods we compare the metrics.
 
 \section{Causal Model}\label{section:causal_model}
-The core aspect of our analysis is the combination of causal methods for data generation and ground-truth feature attribution. 
+One core aspect of our analysis is the combination of causal methods for data generation and ground-truth feature attribution. 
 The main process includes a hyperparameter, such as the later discussed coupling ratio $\rho$, which one can intervene on, together with predictions and explanations generated for multiple trained instances of a model and its output. 
-Within this greater structure a subprocess constructs the image dataset with a structural causal model, taking only $\rho$ as an input. While $\rho$ stays fixed for each model to be trained, it is a causal variable in the overarching structure. This way we create an array of causally generated datasets whose constitution only differs by this one variable. 
+Within this greater structure, a subprocess constructs the image dataset with a structural causal model taking only $\rho$ as an input. While $\rho$ stays fixed for each model to be trained, it is a causal variable in the overarching structure. This way we create an array of causally generated datasets whose constitution only differs by this one variable. 
 
 \subsection{Data Generating Causal Model}\label{section:data_gen_causal_model}
 For the most exact comparison of attribution between a model and its explanation it is imperative to know the ground truth of the training data. A structural causal model (SCM) can define variables and the \textit{independent} mechanisms with which they interact precisely. We want to define an SCM that closely mirrors image generation processes as they happen in realistic scenarios. 
@@ -35,6 +36,9 @@ Z&:= \eta^z \\
 \end{aligned}
 \end{equation}
 
+These assignments are visualized in the causal graph in \cref{fig:generating_scm}.
+Variables of interest are the spurious (watermark) feature $W$ and the target (shape) feature $S$ as well as their combination, the image dataset $\mathcal{X}$. $N$ represent noise or unobserved variables, $G$ the generator confounding $S$ and $W$, and $Z$ a multivariate variable describing all other factors of the dataset. 
+
 \begin{figure}[t!]
     \centering
     \includegraphics[width=0.9\textwidth]{pics/generating_scm.png}
@@ -43,7 +47,7 @@ Z&:= \eta^z \\
     \label{fig:generating_scm}
 \end{figure}
 
-The SCM, as seen in \cref{fig:generating_scm} and \cref{eq:scm}, serves as a ground truth for our experiment. It is mostly an additive model using Gaussian distributions for the noise terms, except for $Z$ which uniformly at random selects other image generating factors like rotation, scale and position of the shape. Also, the function $f_{image}$ generating the images out of the latent factors and the shape is not further specified.
+The SCM, as seen in \cref{fig:generating_scm} and \cref{eq:scm}, serves as a ground truth for our experiment. It is mostly an additive model using Gaussian distributions for the noise terms, except for $Z$ which uniformly at random selects other image generating factors like rotation, scale and position of a shape. Also, the function $f_{image}$ generating the images out of the latent factors and the shape is not further specified.
 
 The meta-variable $\rho$ adjusts how much information is shared between the true class information (shape), which we name \textit{core feature} following \cite{Singla2022} and the watermark or \textit{spurious feature} through a shared common ancestor named \textit{generator} $G$. For each model, coupling ratio $\rho$ is fixed to later enable a comparison between models trained with different coupling ratios. 
 A second parameter which we keep fixed for all experiments, determines how frequent the spurious feature is in the data. We set this parameter which can be seen as the \textit{prevalence} to one half, so that just as many images have a watermark as not. Notably, when $\rho$ is one this means that all ellipses will have the watermark and no rectangle will and when $\rho$ is zero there is no correlation of watermark and shape. 
@@ -56,8 +60,7 @@ The idea of investigating the effect of a coupling ratio $\rho$ was inspired by 
 The direction of causal links for image classification is, as can be seen from this example, highly debatable and shall not be the focus of this work. Whether the selection of the AI researcher reducing costs with free images resulted in classes being polluted with watermarks (\cref{fig:equivalent_scm}\textbf{a}), or whether a scientist marked x-rays with their diagnosis (\cref{fig:equivalent_scm}\textbf{b}) seems to not be distinguishable for ML models. 
 Instead, we only want to find to what degree a neural network learns and attribution method explains the distribution generated by a particular SCM.
 
-This first experiment is testing whether the framework we apply is in principle reasonable and to establish a baseline for how feature importance behaves. To further illuminate its applicability one needs to look at other SCMs with different datasets. We only compare the result of this experiment to a scenario where the core feature to one where they overlap but the SCM stays the same. 
-It would of course also be interesting to see if our framework also applies to the suppressor variable model or other SCMs.
+
 
 \begin{figure}[t!]
     \centering
@@ -109,7 +112,7 @@ Ratio $\rho$ is a meta-variable of our image generation process in a similar sen
 \end{figure}
 
 \subsection{Watermark Benchmark Dataset W-dSprites}\label{section:dataset_wdsprites}
-Although this thesis is not the first work to use a toy dataset with known generating factors to evaluate attribution methods, we newly adapt a dataset which is as simple as possible and yet mirrors the main workings of a realistic computer vision problem. For this, we alter the dSprites dataset \citep{dsprites17} by adding small watermarks in the shape of \textit{w}s to some images. The dSprites dataset was originally constructed as a means for testing the degree of disentanglement a machine learning model has achieved. It contains circa 700k images with rectangles, ellipses or hearts in varying positions, scales and rotations. To simplify the task more we only use the rectangle and ellipse class for our experiment. Another motive is that in a binary classification task positive and negative relevance might be used in varying strategies for prediction. In theory this could make the class-insensitivity studied by \citet{Sixt2020} visible or counteract it. Further details on our dataset can be found in \cref{appendix:dsprites}.
+Like other work using datasets with known features, we adapt an existing artificial dataset which is as simple as possible and yet mirrors the main workings of a realistic computer vision problem. For this, we alter the dSprites dataset \citep{dsprites17} by adding small watermarks in the shape of \textit{w}s to some images. The dSprites dataset was originally constructed as a means for testing the degree of disentanglement a machine learning model has achieved. It contains circa 700k images with rectangles, ellipses or hearts in varying positions, scales and rotations. To simplify the task more we only use the rectangle and ellipse class for our experiment. Another motive is that in a binary classification task positive and negative relevance might be used in varying strategies for prediction. In theory this could make the class-insensitivity studied by \citet{Sixt2020} visible it. Further details on our dataset can be found in \cref{appendix:dsprites}.
 
 \begin{figure}[t!]
     \centering

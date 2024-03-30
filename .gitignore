@@ -2,26 +2,24 @@
 *.pickle
 *.zip
 zennit-crp/
-dsprites-dataset/
-clevr-xai/
 model_*
-clustermodels/
-models/
 .vscode/
 *.npy
 archive/
 
+# Data generated
 experiments/crp-data
-experiments/heatmaps
-experiments/outputs/*
+experiments/outputs/attribution_output/*
+experiments/outputs/jobs/*
+experiments/outputs/measures/*
+experiments/outputs/overlap_attribution/*
+experiments/outputs/random_output/*
 *.pt
-experiments/model_*.*
-experiments/testdata
-experiments/test_background
-experiments/latent_factors
+experiments/model_*
+experiments/testdata*
 experiments/*.json
-experiments/watermark_test_data
-experiments/overlap_test_data
+experiments/clustermodels
+experiments/dsprites-dataset
 
 
 latex/thesis_latex_template/pics/

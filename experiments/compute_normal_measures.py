@@ -2,26 +2,17 @@ import pickle
 import numpy as np
 import torch
 from tqdm import tqdm
-import copy
 import json
 from os import makedirs
 from os.path import isdir, isfile
 import gzip
 from sklearn.metrics import matthews_corrcoef, normalized_mutual_info_score
 from torch.utils.data import DataLoader, Subset
-from expbasics.biased_noisy_dataset import BiasedNoisyDataset
-from expbasics.crp_attribution import CRPAttribution
-from expbasics.network import load_model
-from expbasics.background_dataset import BackgroundDataset
-from expbasics.test_dataset import TestDataset
-from expbasics.test_dataset_background import TestDataset as TestDatasetBackground
-
-
-def to_name(b, i):
-    return "b{}-i{}".format(
-        str(round(b, 2)).replace(".", "_"),
-        str(i),
-    )
+from wdsprites_dataset import BiasedNoisyDataset, BackgroundDataset
+from crp_attribution import CRPAttribution
+from network import load_model
+from helper import init_experiment, to_name
+from test_dataset import TestDataset
 
 
 MAX_INDEX = 491519  # 491520 is true size, but not including last
@@ -34,10 +25,10 @@ LAYER_ID_MAP = {
     "linear_layers.0": 6,
     "linear_layers.2": 2,
 }
-NAME = "../clustermodels/final"  # "../clustermodels/model_seeded"  #
+NAME = "clustermodels/final"  # "clustermodels/model_seeded"  #
 BIASES = list(np.round(np.linspace(0, 1, 51), 3))
 HEATMAP_FOLDER = "random_output"
-IMG_PATH = "../dsprites-dataset/images/"
+IMG_PATH = "dsprites-dataset/images/"
 
 
 def find_else(element, list_element):
@@ -86,16 +77,15 @@ class AllMeasures:
         self.max_index = MAX_INDEX
         self.len_x = sample_set_size
         self.iterations = list(range(16))
+
         if model_path.endswith("final"):
             self.ds = BiasedNoisyDataset(0, 0.5, False, img_path=img_path)
             self.model_type = "watermark"
-            self.test_data = TestDataset(length=300, im_dir="watermark_test_data")
+            self.test_data = TestDataset(length=300, experiment=self.model_type)
         else:
             self.ds = BackgroundDataset(0, 0.5, False, img_path=img_path)
-            self.model_type = "overlap"
-            self.test_data = TestDatasetBackground(
-                length=300, im_dir="overlap_test_data"
-            )
+            self.model_type = "pattern"
+            self.test_data = TestDataset(length=300, experiment=self.model_type)
         self.layer_name = layer_name
         self.len_neurons = LAYER_ID_MAP[self.layer_name]
         self.model_path = model_path
@@ -704,19 +694,19 @@ class AllMeasures:
 
 
 if __name__ == "__main__":
-
-    # Experiment 1:
-    model_path = "../clustermodels/final"
-    experiment_name = "attribution_output"
-    sample_set_size = 128
-    layer_name = "convolutional_layers.6"
-    is_random = False
-    # model_type = "watermark"
-    # iterations = 16
-    # datasettype = BiasedNoisyDataset
-    # mask = "bounding_box"
-    # accuracypath = "outputs/retrain.json"
-    # relsetds = TestDataset(length=300, im_dir="watermark_test_data")
+    (
+        sample_set_size,
+        _,
+        layer_name,
+        is_random,
+        model_path,
+        experiment_name,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = init_experiment(1)
     allm = AllMeasures(
         sample_set_size=sample_set_size,
         layer_name=layer_name,
@@ -729,24 +719,3 @@ if __name__ == "__main__":
     # allm.data_ground_truth(6400)
     # allm.recompute_gt(6400)
     # allm.gt_shape(128)
-
-    # Experiment 2:
-    model_path = "../clustermodels/background"
-    experiment_name = "overlap_attribution"
-    sample_set_size = 128
-    layer_name = "convolutional_layers.6"
-    is_random = False
-    # model_type = "overlap"
-    # iterations = 16
-    # datasettype = BackgroundDataset
-    # mask = "shape"
-    # accuracypath = "outputs/overlap1.json"
-    # relsetds = TestDatasetBackground(length=300, im_dir="overlap_test_data")
-    allm = AllMeasures(
-        sample_set_size=sample_set_size,
-        layer_name=layer_name,
-        model_path=model_path,
-        experiment_name=experiment_name,
-    )
-    # allm.compute_per_sample(is_random=is_random)
-    allm.easy_compute_measures()

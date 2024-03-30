@@ -12,7 +12,7 @@ EPOCHS = 4
 LEARNING_RATE = 0.0003
 MOMENTUM = 0.45
 OPTIMIZER = "Adam"
-IMG_PATH_DEFAULT = "../dsprites-dataset/images/"
+IMG_PATH_DEFAULT = "dsprites-dataset/images/"
 bad_seeds = {9: 379, 5: 967, 15: 29, 14: 719}
 
 
