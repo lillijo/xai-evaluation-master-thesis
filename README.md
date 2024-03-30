@@ -23,10 +23,11 @@ else create an issue asking for access to the precomputed evaluations
 1. Training Models
 if access to SLURM based cluster with gpu nodes: 
 - copy all files inside `experiments` folder to cluster
-- make sure that correct `EXPERIMENT` is selected in `run_iterations.py`
-- run `script_parallel_iterations.py`
+- do install steps on cluster
+- make sure that correct `EXPERIMENT` is selected in `python3 run_iterations.py`
+- run `python3 script_parallel_iterations.py`
 - if accuracies are not satisfactory, rerun until desired accuracy reached
-- copy jobs over from cluster and extract into file using `extract_infos.py`
+- copy jobs over from cluster and extract into file using `python3 extract_infos.py`
 else ask for pretrained models 
 
 2. Computing Explanations and Measures
