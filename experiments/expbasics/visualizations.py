@@ -345,11 +345,11 @@ def avg_max_neuron_ground_truth_plot(
     fig.savefig(f"outputs/imgs/{file_name}.png")
 
 
-def plot_accuracies(path, treshold=90, num_it=6, intervened=False):
+def plot_accuracies(path, treshold=90, num_it=6, intervened=False, istop=False, isleft=False):
     datas, bis, biases, alldata = data_iterations(path, num_it=num_it)
     rcol = matplotlib.cm.winter(np.linspace(0, 1, 4))  # type: ignore
     ecol = matplotlib.cm.spring(np.linspace(0, 1, 4))  # type: ignore
-    fig = plt.figure(figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 6))
     fig.set_facecolor(FACECOL)
     plt.ylim([0, 100])
 
@@ -453,8 +453,17 @@ def plot_accuracies(path, treshold=90, num_it=6, intervened=False):
         # borderaxespad=0.0,
         reverse=True,
     )
-    plt.ylabel("Accuracy in \%")
-    plt.xlabel("Coupling Ratio Rho")
+    if isleft:
+        plt.ylabel("Accuracy in \%")
+    else:
+        ax = plt.gca()
+        ax.get_yaxis().set_visible(False)
+    if not istop:
+        plt.xlabel("Coupling Ratio Rho")
+    else:
+        ax = plt.gca()
+        ax.get_xaxis().set_visible(False)
+
     return bads
 
 

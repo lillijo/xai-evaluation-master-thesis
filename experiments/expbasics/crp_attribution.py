@@ -26,7 +26,7 @@ from crp.helper import max_norm
 
 
 def vis_simple(
-    data_batch, heatmaps, rf=False, alpha=1.0, vis_th=0.05, crop_th=0.005, kernel_size=21,
+    data_batch, heatmaps, rf=False, alpha=1.0, vis_th=0.1, crop_th=0.005, kernel_size=21,
     cmap="bwr",
     vmin=None,
     vmax=None,
