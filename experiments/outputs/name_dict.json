@@ -14,10 +14,13 @@
     "m2_mac_l2square": "$m_2$: Attribution Maps Squared Distance",
     "m2_rma": "$m_2$: RMA weighted",
     "m2_rma_unweighted": "$m_2$: RMA top neuron per value of $W$",
+    "m2_rma_neuron1": "$m_2$: RMA top neuron",
     "m2_pg_weighted": "$m_2$: Pointing Game weighted",
     "m2_pg_unweighted": "$m_2$: Pointing Game top neuron per value of $W$",
+    "m2_pg_neuron1": "$m_2$: Pointing Game top neuron",
     "m2_rra_weighted": "$m_2$: RRA weighted",
     "m2_rra_unweighted": "$m_2$: RRA top neuron per value of $W$",
+    "m2_rra_neuron1": "$m_2$: RRA top neuron",
     "m2_Rel_max_diff": "$m_2$: relevance maxim.\n target = max,\ngeneral",
     "m2_Rel_max_m_rels": "$m_2$: relevance maxim.\n target = max,\n penalize shape",
     "m2_Rel_max_stats": "$m_2$: relevance maxim.\n target = max\n per class",
@@ -37,8 +40,5 @@
     "xxx1": "xxx1",
     "xxx2": "xxx2",
     "xxx3": "xxx3",
-    "xxx4": "xxx4",
-    "m2_rma_neuron1": "$m_2$: RMA top neuron",
-    "m2_pg_neuron1": "$m_2$: Pointing Game top neuron",
-    "m2_rra_neuron1": "$m_2$: RRA top neuron"
+    "xxx4": "xxx4"
 }

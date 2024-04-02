@@ -386,13 +386,13 @@ class CRPAttribution:
         images = {}
         for li, l in enumerate(self.layer_id_map.keys()):
             max_all = 0
-            conditions = [{l: [i]} for i in self.layer_id_map[l]]
+            conditions = [{l: [i], "y": [label]} for i in self.layer_id_map[l]]
             attr = self.attribution(
                 image,
                 conditions,
                 self.composite,
                 record_layer=self.layer_names,
-                start_layer=l,
+                #start_layer=l,
             )
             for h in range(attr.heatmap.shape[0]):
                 heatmap = attr.heatmap[h]
@@ -442,7 +442,7 @@ class CRPAttribution:
             edges[name] = {}
             in_counts[i[0]] += 1
             for j in connections[i]:
-                if np.abs(j[2]) > 0.05 and (
+                if np.abs(j[2]) > 0.01 and (
                     i[0] == "linear_layers.2" or name in used_nodes
                 ):
                     used_nodes.add(name)
