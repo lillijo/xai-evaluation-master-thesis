@@ -6,7 +6,9 @@
 %  Last upadte: C. Müller-Birn 2015-11-27
 %  Freie Universität Berlin, Institute of Computer Science, Human Centered Computing. 
 
-\documentclass[pdftex,a4paper,12pt,DIV=calc,BCOR=5mm,twoside,openany,smallheadings,titlepage, halfparskip-]{scrbook}   
+\documentclass[pdftex,a4paper,12pt,DIV=calc,BCOR=5mm,openany,bigheadings,titlepage, halfparskip-]{report}   
+
+\setlength\parskip{10pt}
 % ----- weitere Optionen 
 %draft,			% Entwurfsmodus zum Anzeigen zu leerer/voller Boxen 
 %DIV=calc
@@ -91,22 +93,22 @@
 %---------------------------------------------------
 %----- Customize page size
 %---------------------------------------------------
-\usepackage[top=2cm,right=3cm,bottom=4cm,left=4cm]{geometry}    
+\usepackage[top=2cm,right=3cm,bottom=4cm,left=3cm]{geometry}    
 %
 %---------------------------------------------------
 %----- Customize header and footer\pagestyle{fancy} 
 %---------------------------------------------------
-\pagestyle{fancy}
+
 
 \fancyhf{}  % delete all existing header formating
+\pagestyle{fancy}
+%\fancyhead[RE]{\nouppercase{\leftmark}}  % Chapter in the right on evens
+%\fancyhead[LO]{\nouppercase{\rightmark}}
+%\renewcommand{\chaptermark}[1]{ % adapt the shown chapter name: show it in lower case and with chapter number 
+%\markboth{\thechapter.\ #1}{}}   
 
-
-
-\fancyhead[RE]{\nouppercase{\leftmark}}  % Chapter in the right on evens
-
-\fancyhead[LO]{\nouppercase{\rightmark}}
-\renewcommand{\chaptermark}[1]{ % adapt the shown chapter name: show it in lower case and with chapter number 
-\markboth{\thechapter.\ #1}{}}   
+\fancyhead[L]{\nouppercase{\rightmark} }
+\fancyhead[R]{\nouppercase{\leftmark}}
 
 \renewcommand{\headrulewidth}{0pt} % remove lines from header
 \renewcommand{\footrulewidth}{0pt} % remove lines from header
@@ -114,11 +116,7 @@
 % independence sign _||_
 \newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
 \def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
-
-% have text above and below variable
-\newcommand\stackequal[2]{%
-  \mathrel{\stackunder[2pt]{\stackon[4pt]{=}{$\scriptscriptstyle#1$}}{%
-  $\scriptscriptstyle#2$}}}
+  
 % declare my measures as variables to have text above and below them 
 \DeclareMathOperator*{\MLC}{MLC}
 \DeclareMathOperator*{\MAC}{MAC}
@@ -130,8 +128,13 @@
 \DeclareMathOperator*{\PG}{PG}
 \DeclareMathOperator*{\sort}{sort}
 
-\fancyfoot{} % delete all existing footer formating
-\fancyfoot[LE,RO]{\thepage} % put page number on the left on even page and right on odd page
+\newcommand{\changelocaltocdepth}[1]{%
+  \addtocontents{toc}{\protect\setcounter{tocdepth}{#1}}%
+  \setcounter{tocdepth}{#1}%
+}
+
+%\fancyfoot{} % delete all existing footer formating
+%\fancyfoot[LE,RO]{\thepage} % put page number on the left on even page and right on odd page
 %
 %---------------------------------------------------      
 %----- Settings for word separation  
@@ -239,7 +242,7 @@ appendix
 %\sloppy
 \hyphenpenalty=4000
 \tolerance=2000
-
+\raggedbottom
 %---------------------------------------------------
 %----- Abstracts in English and German   
 %---------------------------------------------------
@@ -283,7 +286,7 @@ appendix
 \input{results}
 \input{discussion}
 
-\textit{This work used resources of the Deutsches Klimarechenzentrum (DKRZ) granted by its Scientific Steering Committee (WLA) under project ID 1083}
+\newpage
 %---------------------------------------------------
 %----- Bibliography
 %---------------------------------------------------
@@ -296,6 +299,9 @@ appendix
 %----- Appendix   
 %---------------------------------------------------
 %\backmatter
+
+\changelocaltocdepth{1}
 \appendix
 \include{appendix}
+
 \end{document}

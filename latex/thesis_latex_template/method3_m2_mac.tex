@@ -1,5 +1,5 @@
 
-\section{CRP Explanation Importance $m_2$}\label{section:measure}
+\section{CRP Explanation Importance Metrics $m_2$}\label{section:measure}
 Our goal is to compare the causal effect of an upstream intervention on the true feature importance $m_1$ and then the explained feature importance $m_2$. After having defined ways to measure the models true feature importance, we need to repeat the process for the concept-based explanation produced by CRP. It is not well known how humans perceive changes in an explanation and there is no agreed upon scale of importance, so we believe it is best to construct multiple measures to test against each other. Some of the proposed metrics are derived from existing work on evaluating feature importance for local attribution methods \citep{Sixt2020, Karimi2023, Arras2022}. Each candidate should be a variation of measuring the average causal effect of intervening on $W$ on an explanation $e$:
 \begin{center}
 \begin{equation}
@@ -14,12 +14,11 @@ The measures introduced in the following are roughly ordered from measures being
 
 Related work often removes negative relevances in attribution maps to enable comparison with XAI methods that do not measure negative relevance. Another reason could be that incautious aggregation of attribution results with negative and positive relevance introduces cancelling-out effects. We believe, however, that a spurious feature can be negatively as well as positively attributed for a model to be biased. Therefore, the measures equally incorporate both the magnitude of the positive and negative relevance. In our scenario with a binary classification task it is reasonable to assume that whatever is positively attributed for one class, should be negatively attributed to the other with the same magnitude, but we suppose that this should be tested by incorporating both.
 
-\subsection{Mean Attribution Change}\label{section:measure_mac}
-The likely most straight-forward way to calculate explanation importance for neurons in a layer using CRP is to measure the average causal effect of an intervention on the concept-wise attribution directly. This approach aims to emulate the \textit{mean logit change} of the prediction for the concept-based explanation. In a given layer $\ell \in L$, the relevance of each of the neurons $c \in \ell$, which we described as $R_c^{\ell}(\mathrm{x})$ in \cref{eq:normed_relevance} and the pixel-wise attribution maps $A_c(\mathrm{x})$ can be used for this.
-The causal effect of intervening on the spurious feature on one neuron is then the difference between its attribution map $A_c$ or relevance $R_c^{\ell}$ of one image where $W=1$ and the same image with $W=0$. If the model has indeed learned separate concepts for each feature, the same effect should become visible both for the attribution maps and the aggregated relevances.
+\subsection{Relevance Vectors and Attribution Maps}\label{section:measure_mac}
+The likely most straight-forward way to calculate explanation importance for neurons in a layer using CRP is to measure the average causal effect of an intervention on the concept-wise attribution directly. This approach aims to emulate the \textit{mean logit change} of the prediction for the concept-based explanation. In a given layer $\ell \in L$, the relevance of each of the neurons $c \in \ell$, which we described as $R_{c(,norm)}(\mathrm{x})$ in \cref{eq:normed_relevance} and the pixel-wise attribution maps $A_c(\mathrm{x})$ can be used for this.
+The causal effect of intervening on the spurious feature on one neuron is then the difference between its attribution map $A_c$ or relevance $R_c$ of one image where $W=1$ and the same image with $W=0$. If the model has indeed learned separate concepts for each feature, the same effect should become visible both for the attribution maps and the aggregated relevances.
 
 To look at the difference in explanation, we compare multiple types of dissimilarity between two sets of heatmaps (i.e. 2-dimensional pixel maps). Firstly, we look at a normalized absolute pixel-wise difference, or absolute error ($AE$). The mean squared error $SE$ also seems a natural approach and has been applied by, e.g., \citet{Karimi2023} previously: 
-
 \begin{align}
 \displaystyle 
 & A_{tot}^{\ell}(\mathrm{x}) = \sum_{c \in \ell} \sum_{(p,q) \in \mathrm{x}} |A_{p,q,c}(\mathrm{x})|  \label{eq:tot_abs_norm1} & \\
@@ -34,17 +33,14 @@ A sensible normalization for a set of attribution maps, which is needed for the 
 We therefore have to find a smaller divisor which scales a maximal difference between a set of attribution maps with and without watermark to approximately 1.
 To adjust for the sparsity of the attributions, we take the maximal sum of absolute values of all heatmaps over all samples for one model. This \textit{maximal absolute sum} scaling as seen in \cref{eq:tot_abs_norm1,eq:tot_abs_norm2} is very similar to what \citet{Achtibat2022} propose for the normalization of relevances of a layer, yet applied to more dimensions and multiple samples.
 
-Because we compute the $cosine$ distance for the relevance values $R_c^{\ell}$ as done among others by the authors of CRP \citep{Achtibat2023}, we also compute this metric for the high-dimensional attribution maps for completeness. This metric is especially applicable because it focuses on non-empty indices and normalizes the results independently of the dimensionality of the input. Note that we scale this metric by one half, because when negative and positive values are present, its maximal value is two.
-
+Because we compute the $cosine$ distance for the relevance values $R_c$ as done among others by the authors of CRP \citep{Achtibat2023}, we also compute this metric for the high-dimensional attribution maps for completeness. This metric is especially applicable because it focuses on non-empty indices and normalizes the results independently of the dimensionality of the input. Note that we scale this metric by one half, because, when negative and positive values are present, its maximal value is two.
 \begin{align}
 \displaystyle 
 & \MAC_{\rho, m,\mathrm{x}}^{cosine} = \left( 1- 
 \frac{A(\mathrm{x}) \cdot A(\mathrm{x'}) }{|A(\mathrm{x})|\cdot |A(\mathrm{x'})|}\right) * \tfrac{1}{2} &
 \end{align}
-
-We show the described distance metrics for the attribution map matrices. $A(\mathrm{x})$ represents an array of all $|\ell|$ (here 8) attribution maps of the concepts $c$ in a layer. The same metrics are computed for the relevance vector, which in our case consists of $|\ell|$ normalized relevance values $R_{c}^{\ell,(norm)}$. For these, the computation is considerably simplified as no aggregation per pixel is necessary. In principle, each of these distance metrics should produce comparable results. However, like \citet{Karimi2023}, we want to ensure that the choice of a distance metric has no adverse interaction with our results and therefore compare multiple candidates. 
+We show the described distance metrics for the attribution maps. $A(\mathrm{x})$ is a simplified notation of the array of all $|\ell|$ (here 8) attribution maps of the concepts $c$ in a layer ($A_c$). The same metrics are computed for the relevance vector, which in our case consists of $|\ell|$ normalized relevance values $R_{c,(norm)}$. For these, the computation is considerably simplified as no aggregation per pixel is necessary. In principle, each of these distance metrics should produce comparable results. However, like \citet{Karimi2023}, we want to ensure that the choice of a distance metric has no adverse interaction with our results and therefore compare multiple candidates. 
 For each distance metric we aggregate results over our set of sample images $\mathcal{X}$ for all models $m$ using the same value of $\rho$ (termed $M_{\rho})$:
-
 \begin{align}\label{eq:ace_metric}
 & ACE_{metric} = \frac{1}{|M_\rho|\cdot |\mathcal{X}| }\sum_{m}^{M_{\rho}} \sum_{\mathrm{x,x'}}^{\mathcal{X}} Metric(\mathrm{x,x'})
 \end{align}

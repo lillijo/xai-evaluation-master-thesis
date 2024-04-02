@@ -1,9 +1,9 @@
 \section{Data Ground Truth Correlation $m_0$}
-The goal of this analysis it to gather information on how a known coupling ratio of two features interacts with their importance to the model and their explained importance. 
-Measure $m_0 = \rho$ is the correlation between the shape and spurious feature in our data generating model. When $\rho$ is zero, the features are not associated at all, when it is one they correlate maximally. Conceived as a \textit{signal-to-noise} ratio between the correlated and uncorrelated parts of $S$ and $W$, it can directly be used as a measure of the coupling of spurious (watermark) and core (shape) feature in the data distribution. However, the data generating SCM introduces a small modification due to the binarization of the variables $W$ and $S$. It might therefore be more accurate to look at the actual correlation of the binary features in the generated data distribution as a ground-truth (see \cref{fig:finding_rho}). Considering that we have two binary variables, their correlation can be measured using the $\phi$-coefficient. It is also called \textit{Matthews} or \textit{Yule-phi} coefficient and can be interpreted as the Pearson correlation coefficient for two binary variables. For our symmetric model, where the number of ellipses is always equal to the number of rectangles and always exactly half of the instances share their value for the spurious feature, the formula is further simplified:
+The goal of our analysis it to gather information on how a known coupling ratio of two features interacts with their importance to the model and their explained importance. 
+Measure $m_0 = \rho$ is the correlation between the shape and spurious feature in our data generating model. When $\rho$ is zero, the features are not associated at all, when it is one they correlate maximally. Conceived as a \textit{signal-to-noise} ratio between the correlated and uncorrelated parts of $S$ and $W$, it can directly be used as a measure of the coupling of spurious (watermark) and target (shape) feature in the data distribution. However, the data generating SCM introduces a small modification due to the binarization of the variables $W$ and $S$. It might therefore be more accurate to look at the actual correlation of the binary features in the generated data distribution as a ground-truth (see \cref{fig:finding_rho}). Considering that we have two binary variables, their correlation can be measured using the $\phi$-coefficient. It is also called \textit{Matthews} or \textit{Yule-phi} coefficient and can be interpreted as the Pearson correlation coefficient for two binary variables. 
 
 \vspace{1em}
-\begin{minipage}[t]{0.45\textwidth}
+\begin{minipage}[t]{0.5\textwidth}
 \begin{tabular}{|c|c|c|c|}
     \hline
      & $W= 1$ & $W = 0$ & total  \\  \hline
@@ -12,11 +12,9 @@ Measure $m_0 = \rho$ is the correlation between the shape and spurious feature i
     total& $n_{*1}$ & $n_{*0}$ & $n$ \\ \hline
 \end{tabular}
 \end{minipage}%
-\begin{minipage}[c]{0.53\textwidth}
+\begin{minipage}[c]{0.45\textwidth}
 \begin{align}
-\phi & = \frac{n_{11} * n_{00} - n_{10}*n_{01}}{\sqrt{n_{1*}*n_{0*}*n_{*0}*n_{*1}}} \notag \\
-n_{11} = n_{00}, &n_{01} = n_{10}, n_{1*} = n_{0*} = n_{*1} = n_{*0}   \notag \\
-\rightarrow |\phi| & = 1- \frac{2 \cdot (n_{10} + n_{01} )}{n} \label{eq:simplified_phi}
+\phi & = \frac{n_{11} * n_{00} - n_{10}*n_{01}}{\sqrt{n_{1*}*n_{0*}*n_{*0}*n_{*1}}} \label{eq:phi_coefficient} 
 \end{align}
 \end{minipage}
 \vspace{1em}
@@ -26,7 +24,7 @@ Generally, we do not expect the model to perfectly reconstruct the coupling rati
 \begin{figure}[t!]
     \centering
     \includegraphics[width=0.6\textwidth]{thesis_latex_template/pics/gt_m0_phi_only.png}
-    \caption[True Data Distribution $m_0$]{$\phi$-coefficient between $W$ and $S$ of sampled training data distributions with growing coupling ratio $\rho$}
+    \caption[Data Distribution $m_0$]{$\phi$-coefficient between $W$ and $S$ of sampled training data distributions with growing coupling ratio $\rho$}
     \label{fig:finding_rho}
 \end{figure}
 
@@ -48,31 +46,34 @@ To account for the effect of the initialization of model weights and biases on t
 Computing the \textit{Prediction Flip}, as \citeauthor{Sixt2022a} call it in their experiments, is straight forward in our example as we can control all variables. 
 This binary causal effect can be estimated as the percentage of images for which the prediction changes, when the factor $W$ is changed, which in turn is equivalent to the magnitude of the $\phi$-coefficient between prediction $Y$ and spurious feature $W$ in our scenario. Therefore, this measure is apt for the comparison with the $(S,W)$-correlation in the training data distribution.
 
-For better readability we will refer to an image with the watermark $\mathrm{x}_{do(W=1)}$ as $\mathrm{x}$ and the same image without the watermark $\mathrm{x}_{do(W=0)}$ as $\mathrm{x'}$ in the rest of the thesis. As we average most metrics over a sample set of 128 images, selected uniformly from the full dataset, we denote this set as $\mathcal{X}$ from here on. The Prediction Flip (PF) for one model is then:
+For better readability we will refer to an image with the watermark $\mathrm{x}_{do(W=1)}$ as $\mathrm{x}$ and the same image without the watermark $\mathrm{x}_{do(W=0)}$ as $\mathrm{x'}$ in the rest of the thesis. As we average most metrics over a sample set of 128 images, selected uniformly from the full dataset, we denote this set as $\mathcal{X}$ from here on. The Prediction Flip (PF) for one model is then defined as:
 \begin{align}
 \displaystyle 
-& PF =\tfrac{1}{|\mathcal{X}|} \sum_{\mathrm{x} \in \mathcal{X}} |y(\mathrm{x}) - y(\mathrm{x'}) |. 
+PF &=\tfrac{1}{|\mathcal{X}|} \sum_{\mathrm{x} \in \mathcal{X}} |y(\mathrm{x}) - y(\mathrm{x'}) | \\
+ &= \tfrac{1}{|\mathcal{X}|} |y(\mathrm{x}) \neq y(\mathrm{x'})| 
 \end{align}
 
-\subsection{Mean Logit Change}
-For the W-dSprites classification task, the output vector consists of 2 logits $y_0$ and $y_1$. The model predicts \textit{rectangle} when $y_0 > y_1$ and \textit{ellipse} otherwise. To compute the mean logit change when intervening on our spurious feature $W$, we take a sufficient amount of samples $\mathcal{X}$ from our dataset and feed them through the model. First we predict for images with $W=1$ (containing a watermark) then for the same images with $W=0$. 
-To enable better comparison we apply the soft-max function to the outputs to yield confidences, as during the training process. This keeps the relative magnitudes within the sample set intact but brings them to the range $[0,1]$. 
-We expect this variant of the model importance to be slightly more sensitive to the spurious watermark feature $W$ for lower values of $\rho$ than the prediction flip. The reason being, that while the continuous output vector, i.e., confidence, might already be affected by the spurious feature for weakly biased models, the prediction will only change once the spurious feature becomes more easy to identify than the core feature. Vice versa, the confidence when only the spurious feature is used for prediction could be low and hence the prediction flip higher than the mean logit change.
+For our symmetric model, where the number of ellipses is always equal to the number of rectangles and always exactly half of the instances share their value for the spurious feature, the prediction flip, i.e., the binary causal effect, produces equivalent results to the magnitude of the $\phi$-coefficient between prediction $y(\mathrm{x})$ and variable $W$. Through minor modifications of \cref{eq:phi_coefficient} it can be shown that the values in our specific case correspond, this is however not part of the thesis.  
 
-It is important to choose a reasonable distance measure between the two output vectors, yet there is no agreed upon distance metric for the assessment of similarity of attribution maps and vectors. \citeauthor{Sixt2022a} and \citeauthor{Goyal2019} use the mean absolute difference (or $L1$-norm). 
-Recently, assessing the similarity of activation and relevance vectors has often been done using the cosine similarity \citep{Sixt2020,Achtibat2023,Dreyer2023a, Pahde2023}. Therefore, we include the cosine distance as a potential distance metric for the model output to enable comparison to the explanation. \citeauthor{Karimi2023} test different kernels for a kernelized treatment effect on multidimensional outputs and find that the relative effects are not sensitive to the choice of kernels. 
+\subsection{Mean Logit Change}
+For the W-dSprites classification task, the output vector consists of 2 logits $y_0$ and $y_1$. The model predicts \textit{rectangle} when $y_0 > y_1$ and \textit{ellipse} otherwise. To compute the mean logit change when intervening on our spurious feature $W$, we take samples $\mathcal{X}$ from our dataset and feed them through the model. First we predict for images with $W=1$ (containing a watermark) then for the same images with $W=0$. 
+To enable better comparison we apply the soft-max function to the outputs to yield confidences, as is usually done in neural networks during the training process. This keeps the relative magnitudes within the sample set intact but brings them to the range $[0,1]$. 
+We expect this variant of the model importance to be slightly more sensitive to the spurious watermark feature $W$ for lower values of $\rho$ than the prediction flip. The reason being, that while the continuous output vector, i.e., confidence, might already be affected by the spurious feature for weakly biased models, the prediction will only change once the spurious feature becomes more easy to identify than the target feature. Vice versa, the confidence when only the spurious feature is used for prediction could be low and hence the prediction flip higher than the mean logit change.
+
+It is necessary to choose a reasonable distance measure between the two output vectors, yet there is no agreed upon distance metric for output vectors and attribution vectors. \citeauthor{Sixt2022a} and \citeauthor{Goyal2019} use the mean absolute difference as seen in \cref{eq:mlc_abs}. The squared distance (\cref{eq:mlc_squared}) is another often applied measure for the error between output vectors
+Recently, assessing the similarity of activation and relevance vectors has often been done using the cosine similarity \citep{Sixt2020,Achtibat2023,Dreyer2023a, Pahde2023}. Therefore, we include the cosine distance (\cref{eq:mlc_cosine}) as a potential distance metric for the model output to enable comparison to the explanation. \citeauthor{Karimi2023} test different kernels for a kernelized treatment effect on multidimensional outputs and find that the relative effects are not sensitive to the choice of kernels. 
 We therefore assume that the trend of effects will not be majorly affected by the choice of a distance metric but still test this hypothesis.
 
 
 \begin{align}\displaystyle 
 & \text{Mean Absolute Distance:} & \notag \\
 &\MLC_{\rho, m}^{abs} = \tfrac{1}{|\mathcal{X}| * 2} \sum_{\mathrm{x} \in \mathcal{X}} 
-|y_0(\mathrm{x}) -y_0(\mathrm{x'})| + |y_1(\mathrm{x}) -y_1(\mathrm{x'})| \\
+|y_0(\mathrm{x}) -y_0(\mathrm{x'})| + |y_1(\mathrm{x}) -y_1(\mathrm{x'})| \label{eq:mlc_abs} \\
 & \text{Mean Squared Distance:} & \notag \\
-& \MLC_{\rho, m}^{sqa} = \MLC_{\rho, m}^{abs}^2\\
+& \MLC_{\rho, m}^{sqa} = \MLC_{\rho, m}^{abs}^2  \label{eq:mlc_squared}\\
 & \text{Cosine Distance:} &  \notag \\
 & \MLC_{\rho, m}^{cosine} = \tfrac{1}{|\mathcal{X}|}\sum_{\mathrm{x} \in \mathcal{X}}  
 1 - \frac{\vec{y}(\mathrm{x}) \cdot \vec{y}(\mathrm{x'})}
-{\lVert \vec{y}(\mathrm{x}) \rVert \lVert \vec{y}(\mathrm{x'})\rVert }
+{\lVert \vec{y}(\mathrm{x}) \rVert \lVert \vec{y}(\mathrm{x'})\rVert }  \label{eq:mlc_cosine}
 \end{align}
 
