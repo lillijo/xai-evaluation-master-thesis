@@ -453,7 +453,7 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles=
             cols * resize,
             rows * resize,
         ),
-        gridspec_kw={"wspace": 0.1, "hspace": 0},
+        gridspec_kw={"wspace": 0.1, "hspace": 0.2},
     )
     fig.set_facecolor(FACECOL)
     fig.set_alpha(0.0)

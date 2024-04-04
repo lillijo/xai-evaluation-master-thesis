@@ -229,14 +229,20 @@ class CRPAttribution:
             rf=False,
             plot_fn=vis_img_heat,  #
         )
-        plot_dict_grid(
+        plot_grid(
+            ref_c,
+            figsize=(no_ref_samples, 2 * len(neurons)),
+            padding=True,
+            symmetric=True,
+        )
+        """ plot_dict_grid(
             ref_c,
             figsize=(2 * no_ref_samples, 4 * len(neurons)),
             padding=True,
             symmetric=False,
             cmap="Greys",
             cmap_dim=1,
-        )
+        ) """
 
     def relevance_for_image(self, label, image, relevances, pred):
         image.requires_grad = True
@@ -392,7 +398,7 @@ class CRPAttribution:
                 conditions,
                 self.composite,
                 record_layer=self.layer_names,
-                #start_layer=l,
+                # start_layer=l,
             )
             for h in range(attr.heatmap.shape[0]):
                 heatmap = attr.heatmap[h]
@@ -490,6 +496,23 @@ class CRPAttribution:
             record_layer=self.layer_names,
         )
         return attr.heatmap, sample, pred
+
+    def relevance_layer(self, index, pred, layer):
+        if isinstance(index, int):
+            img, label = self.dataset[index]
+            sample = img.view(1, 1, 64, 64)
+            sample.requires_grad = True
+        else:
+            sample = index
+        conditions = [{"y": [pred]}]  # pred label
+        attr = self.attribution(
+            sample,
+            conditions,
+            self.composite,
+            record_layer=self.layer_names,
+        )
+        relevances = self.cc.attribute(attr.relevances[layer], abs_norm=True)
+        return relevances
 
     def heatmap_given_img(self, img, pred):
         sample = img.view(1, 1, 64, 64)

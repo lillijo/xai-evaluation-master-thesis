@@ -11,7 +11,6 @@ archive/
 experiments/crp-data
 experiments/outputs/attribution_output/*
 experiments/outputs/jobs/*
-experiments/outputs/measures/*
 experiments/outputs/overlap_attribution/*
 experiments/outputs/random_output/*
 *.pt
@@ -20,6 +19,7 @@ experiments/testdata*
 experiments/*.json
 experiments/clustermodels
 experiments/dsprites-dataset
+!experiments/outputs/measures/*.pickle
 
 
 latex/thesis_latex_template/pics/
