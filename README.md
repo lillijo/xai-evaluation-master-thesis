@@ -16,7 +16,9 @@ Next to the conda environment (`env.yml`) some other packages need to be install
 3. (optionally) install `tigramite` from isntructions at https://github.com/jakobrunge/tigramite/
 
 If one desires to rerun the whole experiment, follow the instructions below,
-else create an issue asking for access to the precomputed evaluations
+else all data necessary for the `compare_measures` notebook should be here. 
+If one wants to look at further visualizations of what the explanation heatmaps look like etc. 
+The trained models can be requested by making an issue here, or otherwise recomputed as seen below.
 
 ### Computation
 
