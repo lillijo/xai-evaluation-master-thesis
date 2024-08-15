@@ -17,7 +17,7 @@ from crp.graph import trace_model_graph
 
 from wdsprites_dataset import DSpritesDataset
 from test_dataset import TestDataset
-from plotting import plot_dict_grid
+from plotting import my_plot_grid, plot_dict_grid
 
 
 def vis_simple(
@@ -186,7 +186,7 @@ class CRPAttribution:
     def make_stats_references(
         self, cond_layer, neurons, relact="relevance", relevances=[]
     ):
-        no_ref_samples = 6
+        no_ref_samples = 10
         all_refs = {}
         for i in neurons:
             targets, rel = self.fv.compute_stats(
@@ -200,7 +200,7 @@ class CRPAttribution:
                     relact,
                     (0, no_ref_samples),
                     composite=self.composite,
-                    rf=True,
+                    # rf=True,
                     plot_fn=vis_simple,  # vis_img_heat,
                 )
                 if t == 0:
@@ -226,12 +226,12 @@ class CRPAttribution:
             relact,
             (0, no_ref_samples),
             composite=self.composite,
-            rf=False,
-            plot_fn=vis_img_heat,  #
+            rf=True,
+            plot_fn=vis_simple,  # vis_img_heat,  #
         )
         plot_grid(
             ref_c,
-            figsize=(no_ref_samples, 2 * len(neurons)),
+            figsize=(no_ref_samples, 2.2 * len(neurons)),
             padding=True,
             symmetric=True,
         )
@@ -267,22 +267,22 @@ class CRPAttribution:
             for h in range(attr.heatmap.shape[0]):
                 images[li, h] = attr.heatmap[h]
         fig, axs = plt.subplots(
-            lenl, 8, figsize=(20, 16), gridspec_kw={"wspace": 0.1, "hspace": 0.2}
+            8, lenl, figsize=(16, 16), gridspec_kw={"wspace": 0.0, "hspace": 0.3}
         )
         # fig.suptitle("Concept-Conditional Heatmap per concept in layer")
         fig.set_alpha(0.0)
         for il, l in enumerate(self.layer_id_map.keys()):
             for n in range(8):
-                axs[il, n].xaxis.set_visible(False)
-                axs[il, n].yaxis.set_visible(False)
+                axs[n, il].xaxis.set_visible(False)
+                axs[n, il].yaxis.set_visible(False)
                 if n < len(self.layer_id_map[l]):
-                    axs[il, n].set_title(
+                    axs[n, il].set_title(
                         f"{str(round(relevances[il][n],1))} \\%",
                         fontsize=20,  # {str(round(relevances[il][n],1))}%
                     )  # ,
-                    axs[il, n].text(
-                        1,
-                        1,
+                    axs[n, il].text(
+                        14,
+                        12,
                         f"concept {n}",
                         size=14,
                     )
@@ -292,22 +292,22 @@ class CRPAttribution:
                     divnorm = mpl.colors.TwoSlopeNorm(
                         vmin=-maxv, vcenter=center, vmax=maxv
                     )
-                    axs[il, n].imshow(images[il, n], cmap="bwr", norm=divnorm)
+                    axs[n, il].imshow(images[il, n], cmap="bwr", norm=divnorm)
                 else:
-                    axs[il, n].axis("off")
-            axs[il, 0].yaxis.set_visible(True)
-            axs[il, 0].set_yticks([])
-            axs[il, 0].set_ylabel(l.replace("_layers", ""))  # f"{l[:4]}_{l[-1]}")
+                    axs[n, il].axis("off")
+            axs[3, il].yaxis.set_visible(True)
+            axs[3, il].set_yticks([])
+            axs[3, il].set_ylabel(l.replace("_layers", ""))  # f"{l[:4]}_{l[-1]}")
         image.requires_grad = False
-        axs[lenl - 1, 5].axis("on")
+        axs[5, lenl - 1].axis("on")
         lab = ["rectangle", "ellipse"]
-        axs[lenl - 1, 5].set_title(
-            f"original {lab[label]} ({label}), predicted: {lab[pred]} ({pred})"
+        axs[5, lenl - 1].set_title(
+            f"original {lab[label]} ({label}),\n predicted: {lab[pred]} ({pred})"
         )
         maxv = max(float(image[0, 0].abs().max()), 0.0001)
         center = 0.0
         divnorm = mpl.colors.TwoSlopeNorm(vmin=-maxv, vcenter=center, vmax=maxv)
-        axs[lenl - 1, 5].imshow(image[0, 0], cmap="coolwarm", norm=divnorm)
+        axs[5, lenl - 1].imshow(image[0, 0], cmap="coolwarm", norm=divnorm)
         return fig
 
     def image_info(self, index=None, verbose=False, onlywm=False):

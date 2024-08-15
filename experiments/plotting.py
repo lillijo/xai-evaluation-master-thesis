@@ -16,6 +16,7 @@ from wdsprites_dataset import DSpritesDataset
 METHOD = 2
 FACECOL = "#fff"
 
+
 def draw_graph(nodes, connections, ax=None):
     edges = [
         (
@@ -369,7 +370,7 @@ def plot_fancy_distribution(dataset=None, s=[], w=[], bias=0.75, strength=0.5):
         w = dataset.bias * generator + (1 - dataset.bias) * dataset.rng.uniform(
             0, 1, TOTAL
         )
-    plt.scatter(s[:TOTAL], w[:TOTAL], color="#C8D672", s=16)
+    plt.scatter(s[:TOTAL], w[:TOTAL], color="#00AEB3", s=16)
     plt.ylabel(
         "spurious feature",
     )
@@ -384,25 +385,35 @@ def plot_fancy_distribution(dataset=None, s=[], w=[], bias=0.75, strength=0.5):
         lim_y[1] * 0.65 - dataset.strength,
         "rectangle\nW = 0",
         size=12,
+        bbox={"fc": "#fff", "alpha": 0.8, "ec": "#fff"},
     )
     plt.text(
         lim_x[0] + 0.01,
         lim_y[0] + 0.35 + dataset.strength,
         "rectangle\nW = 1",
         size=12,
+        bbox={"fc": "#fff", "alpha": 0.8, "ec": "#fff"},
     )
-    plt.text(lim_x[0] + 0.1, dataset.strength + 0.02, "strength", size=12)
+    plt.text(
+        lim_x[0] + 0.1,
+        dataset.strength + 0.02,
+        "strength",
+        size=12,
+        bbox={"fc": "#fff", "alpha": 0.8, "ec": "#fff"},
+    )
     plt.text(
         lim_x[1] - 0.4,
         lim_y[1] * 0.65 - dataset.strength,
         "ellipse \nW = 0",
         size=12,
+        bbox={"fc": "#fff", "alpha": 0.8, "ec": "#fff"},
     )
     plt.text(
         lim_x[1] - 0.4,
         lim_y[0] + 0.35 + dataset.strength,
         "ellipse\nW = 1",
         size=12,
+        bbox={"fc": "#fff", "alpha": 0.8, "ec": "#fff"},
     )
     plt.title(
         f"$\\rho$ = {dataset.bias}",
@@ -420,7 +431,7 @@ def plot_fancy_distribution(dataset=None, s=[], w=[], bias=0.75, strength=0.5):
         linewidth=1,
     )
 
-    plt.text(
+    """ plt.text(
         (lim_x[0] + lim_x[1]) * 0.5 - 0.1,
         (lim_y[0] + lim_y[1]) * 0.5 - 0.1,
         "1 - $\\rho$",
@@ -441,8 +452,7 @@ def plot_fancy_distribution(dataset=None, s=[], w=[], bias=0.75, strength=0.5):
         c="red",
         linewidth=5,
         alpha=0.8,
-    )
-
+    ) """
 
 
 def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles=None):
@@ -506,6 +516,7 @@ def my_plot_grid(images, rows, cols, resize=1, norm=False, cmap="Greys", titles=
                     # axs[il, n].axis("off")
     # return np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     # Image.fromarray(np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)) #
+
 
 def plot_dict_grid(
     ref_c: Dict[int, Any],
